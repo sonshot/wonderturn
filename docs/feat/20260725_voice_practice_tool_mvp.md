@@ -2,129 +2,134 @@
 
 ## Problem
 
-Kids (ages 8-12) benefit from open-ended, curiosity-driven conversation
-practice — asking questions, exploring topics, talking through ideas — in a
-way that feels natural, not like a quiz or a typing exercise. There isn't a
-simple, private way for the user's own kids to have that kind of conversation
-today — one that happens by voice, responds quickly enough to feel like a
-real back-and-forth, and is trustworthy enough that a parent doesn't have to
+Tweens (8-12) benefit from open-ended, curiosity-driven conversation
+practice — asking questions, exploring ideas, thinking aloud — in a way
+that feels natural rather than like a quiz or a typing drill. The user's own
+kids have no simple, private way to do that today: by voice, fast enough
+for real back-and-forth, and trustworthy enough that a parent needn't
 supervise every exchange.
 
-This needs to run somewhere reachable over the internet rather than only on
-the user's own machine, which means it can't rely on an unlisted link as its
-only gate — a link can leak or be guessed, and every conversation costs real
-money to run. Access has to be restricted to people the user actually
-approves, not just people who happen to have the URL.
+Tweens set the quality bar but aren't the only users. An adult in the
+family practicing spoken English wants much the same thing, and nothing
+here needs to shut them out.
 
-## Principles
+It has to run somewhere reachable over the internet rather than only on the
+user's own machine, so an unlisted link can't be the only gate — links leak
+or get guessed, and every conversation costs real money. Access is
+restricted to people the user actually approves.
+
+## Product principles
+
+Durable intent for this feature, distinct from the engineering principles
+in `AGENTS.md`; a Decision Log entry in the active plan may override
+either, with rationale.
 
 1. **A conversation-practice tool, not a friend or companion.** It succeeds
-   by what it builds in a kid — conversational confidence, curiosity — not
-   by how long or how often it's used.
-   - No streaks, no "come back" nudges, no dark patterns or reward loops, no
-     hook questions asked just to extend a turn.
-   - Honest about its own limits rather than performing confidence it
-     doesn't have — it never implies it remembers a past conversation, has
-     feelings, or is more certain about the world than it actually is.
+   by what it builds — confidence, curiosity — not by how long or how
+   often it's used.
+   - No streaks, "come back" nudges, dark patterns, reward loops, or hook
+     questions asked just to extend a turn.
+   - Honest about its limits: it never implies it remembers an earlier
+     conversation, has feelings, or is more certain than it is. (It follows
+     the thread within a sitting; nothing carries across.)
    - No opinions on what belongs to the family — faith, values, discipline,
-     family conflict — it defers to a trusted adult, even when nothing
-     unsafe is being discussed.
-2. **Safe enough for a kid to use unsupervised.** No adult needs to be
-   present or monitoring in real time.
-   - Every reply is checked for appropriateness before it's spoken.
-   - A genuine disclosure (a kid saying something that suggests they're
-     hurt, bullied, or unsafe) gets a distinct, warmer response that hands
-     off to a trusted adult, rather than trying to handle it directly.
+     conflict — even when nothing unsafe is at stake. It defers to a
+     trusted adult naturally ("that's a great one to ask your mum or dad
+     about") rather than refusing to engage.
+2. **Safe by default, whoever is talking.** An unsupervised kid is the
+   strictest case and the bar held at all times; the guardrails never
+   loosen for an older-sounding voice.
+   - Nothing reaches the person, on screen or in audio, before it has been
+     checked; the transcript never shows uncleared content.
+   - What the person says is separately checked for a genuine disclosure —
+     hurt, bullied, unsafe — before a reply forms. That gets a distinct,
+     warmer response pointing to a trusted adult instead of the tool
+     handling it directly, and it takes precedence over the ordinary safety
+     redirect.
+   - If a check can't run, nothing is said: an unavailable check yields the
+     ordinary failure state, never an unchecked reply.
 
 ## Proposal
 
-A voice tool a kid can use to practice conversation: tap a button to start
-talking, tap it again to stop, and hear an age-appropriate spoken reply back
-— no typing required, in English both ways for v1.
+A voice tool for practicing conversation: tap to start talking, tap again
+to stop, hear a spoken reply — no typing, English both ways for v1. An
+adult wanting the same practice gets the same tool, with no separate mode
+and no per-person tuning.
 
-A genuine disclosure gets a distinct, adult-pointing response instead of the
-ordinary safety redirect (see Principles) — neither case leaves the kid
-with silence or a broken interaction.
+Replies are cleared before they're shown or spoken, and a genuine
+disclosure gets its own adult-pointing response instead (see Product
+principles). Access is gated by sign-in against an approved family
+allowlist, with no memory, profile, or identity beyond that (see Scope).
 
-Access is gated by sign-in, restricted to a short, approved allowlist of
-family accounts (see Scope) — anyone else is turned away before a single
-conversation happens.
-
-For v1 there's no memory or per-kid profiles, no identity beyond "signed in
-with an approved account" (see Scope for what's planned later). In short:
-sign in, talk, get a safe, natural-sounding reply, repeat.
+Reloading starts fresh — also how a second family member takes a turn. In
+short: sign in, talk, get a safe reply, repeat.
 
 ## Scope and fences
 
 **In scope:**
 
-- A single, ongoing back-and-forth voice conversation in one sitting (nothing
-  is remembered once the page is closed or reloaded).
-- One general-purpose, kid-safe persona for v1 — same for every session.
-- A safety check on every reply before it's spoken, with a fixed fallback
-  response when a reply doesn't pass.
-- A distinct disclosure response, separate from the generic safety-redirect
-  fallback (see Principles).
-- Sign in (mechanism not yet decided — see plan), gated to a short,
-  explicitly-approved allowlist of accounts (the family's own) — anyone else
-  is denied access. If a third-party provider is used, major providers
-  require under-13 kids to use a supervised or parent-linked account rather
-  than a standalone one, so the allowlist will likely be parent accounts in
-  practice, not the kids' own — confirmed once the mechanism is picked and
-  before build.
+- A single, ongoing voice conversation in one sitting; nothing survives a
+  close or reload, and reloading is how to start over.
+- One general-purpose persona for v1, calibrated so the youngest expected
+  user is well served without an older one being talked down to; no
+  per-person calibration.
+- The disclosure check on what's said and the clearing check on everything
+  produced (see Product principles), with a fixed fallback response when
+  something doesn't pass.
+- The family-topics deferral (see Product principles), as a persona
+  requirement with test coverage, not a separate response type.
+- Sign-in (mechanism TBD — see plan), gated to a short, approved family
+  allowlist; anyone else denied. Sessions are long-lived and refreshed by
+  use so a kid can practice unsupervised (risk: see Security); the exact
+  window may be whatever the mechanism gives, which isn't product-critical.
+- Third-party providers' rules on minors are the real age constraint (see
+  Security), pushing the allowlist toward parent accounts rather than the
+  kids' own — confirmed once the mechanism is picked and before build.
 
 **Out of scope (explicitly deferred):**
 
-- The lowest-latency, most expressive voice architecture — replies are
-  screened for safety before they're spoken, which this MVP treats as more
-  important than shaving off a second of latency; revisit only if response
-  speed becomes an issue in real use.
-- Remembering conversations across sessions, or multiple profiles (e.g.,
-  separate kids, or separate practice languages like English vs. Spanish) —
-  planned for a later version once the MVP proves the core experience; v1
-  has no memory and a single shared, general-purpose persona.
-- A parent-facing dashboard or usage limits/controls. No cost cap or spend
-  limit — the allowlist is treated as sufficient protection against
-  unbounded cost, and the family sharing a single device is an accepted
-  limitation for v1.
-- Self-service sign-up, invites, or any way to grow the allowlist without the
-  user manually approving it.
-- Languages other than English, for v1 — even if addressed in another
-  language, it only understands and replies in English; other practice
-  languages are part of the later multi-profile plan above, not this MVP.
-- Analytics or usage tracking beyond knowing something broke.
+- The lowest-latency, most expressive voice architecture: clearing replies
+  matters more than shaving off a second, bounded by the latency bar in
+  Acceptance outcomes rather than left open-ended.
+- Cross-session memory and multiple profiles (separate kids, separate
+  practice languages, per-person register), for a later version once the
+  MVP proves the core experience.
+- A parent-facing dashboard, and any cost or usage concept the person can
+  see: no remaining credits, no turns left, no quota warnings. A spend
+  ceiling exists (see Security), but hitting it is the ordinary failure
+  state, with no "out of budget" experience to design.
+- Self-service sign-up, invites, or any way to grow the allowlist without
+  the user manually approving it.
+- Languages other than English for v1: it understands and replies in
+  English whatever it's addressed in; others belong to the later
+  multi-profile plan.
+- Analytics or usage tracking beyond the operator knowing something broke.
 
 ## UI/UX
 
 Phone-first, single-screen, minimal chrome, since family testing happens
-mostly on phones; laptop/tablet only needs to stay usable, not optimized for.
+mostly on phones; laptop and tablet only need to stay usable.
 
-The talk screen is one big tappable control (tap to start, tap again to
-stop — no press-and-hold), anchored low on the screen for one-handed thumb
-reach, with a transcript panel above it. While it works out its reply, the
-control shows a simple "thinking" cue rather than silence, so a multi-second
-pause doesn't read as broken. Every state (idle, listening, thinking,
-talking, the empty-input nudge, the safety redirect, the disclosure
-response, an error) reuses this same layout — only the control's label and
-transcript content change.
+One big tappable control (tap to start, tap again to stop — no
+press-and-hold), anchored low for one-handed thumb reach, with a transcript
+panel above it and a "thinking" cue instead of silence while a reply is
+worked out. Every state — idle, listening, thinking, talking, the
+empty-input nudge, the safety redirect, the disclosure response, an
+interruption, an error — reuses this layout, changing only the label and
+the transcript.
 
-The transcript sits above the control rather than below it: new lines grow
-upward toward eye level, landing closest to the button so the most recent
-line stays easy to track, and it keeps scrolling text clear of the phone's
-bottom-edge gesture zones (home-indicator swipe, Android's back-swipe area).
-It streams both sides of the conversation in real time — the kid's words as
-they're recognized, its reply as it's generated — visible as well as
-audible, though the kid never has to read it. It doesn't change the app's
-no-storage stance (see Security).
+The transcript sits above the control so new lines grow upward toward eye
+level, the latest landing closest to the button, and scrolling text stays
+clear of the phone's bottom-edge gesture zones (home-indicator swipe,
+Android's back-swipe). It streams both sides — words as they're recognized,
+the reply once cleared — visible as well as audible, though nobody has to
+read it, and it doesn't change the no-storage stance (see Security).
 
-Mobile-specific behavior worth calling out for build/test:
-
-- Tapping (not holding) sidesteps the long-press-vs-native-context-menu
-  conflict, but rapid double-tapping can still trigger the browser's
-  double-tap-to-zoom gesture — the tap target needs to guard against that.
-- Microphone permission prompts, recording, and playback need to be
-  verified on both a Safari-based phone browser and an Android/Chrome-based
-  phone browser — the two the family will actually use.
+An interruption (see Key flows) isn't an error. If the OS discards the
+backgrounded page outright, the next visit is a fresh, empty conversation —
+a clean start, not a crash. The error state says what happened in one line
+and, if it persists, suggests telling a grown-up — the operator's only path
+when a failure never reaches them.
 
 Screens (illustrative, not final visual design):
 
@@ -179,61 +184,118 @@ Talk screen — talking (reply streaming in)
 
 ## Key flows
 
-1. **Sign-in gate:** Visitor opens the link → prompted to sign in → if their
-   account isn't on the approved allowlist, they're denied access with a
-   plain "not available to you" message and nothing further happens. If
-   approved, they land on the talk screen.
-2. **Happy path:** Kid taps to start talking, asks something, taps again to
-   stop → the kid's words stream onto the screen as they're recognized → a
-   "thinking" cue shows while it understands what was said, forms an
-   age-appropriate reply, and confirms the reply is safe → the reply
-   streams onto the screen as it's generated and is spoken back at the same
-   time, within a few seconds of tapping stop.
-3. **Empty or hesitant recording:** Kid taps to start, hesitates or says
-   something like "never mind," and taps to stop with little or no real
-   speech captured → it gives a light, non-punishing nudge ("didn't quite
-   catch that, want to try again?") rather than treating it as an error or
-   a failed safety check.
-4. **Safety redirect:** A reply doesn't pass the safety check → the kid
-   sees and hears a friendly, generic redirect line instead, with no
-   visible difference in how the interaction feels or flows — the
-   transcript shows the redirect text, never the checked content.
-5. **Disclosure response:** What the kid said reads as a genuine concern
-   (being hurt, bullied, unsafe) → it responds warmly and points toward a
-   trusted adult, using non-generic wording, distinct from the ordinary
-   safety redirect, shown in the transcript like any other reply.
-6. **Something goes wrong:** Any part of the pipeline fails, including being
-   interrupted mid-conversation (a call, notification, or screen lock on the
-   kid's phone) → the kid sees/hears one simple, clear "something went
-   wrong, try again" moment. No half-finished replies, no silent guessing at
-   what was meant.
+1. **Sign-in gate:** Opens the link, signs in. Not on the allowlist (see
+   Scope): denied with a plain "not available to you," and nothing further
+   happens. Approved: lands on the talk screen and stays signed in for
+   later visits.
+2. **Happy path:** Tap to start, ask something, tap to stop → words stream
+   in as they're recognized → a "thinking" cue while a reply is formed and
+   cleared → the start of it appears and is spoken within the latency bar
+   (see Acceptance outcomes), the rest following as it becomes available. A
+   longer answer may finish later; it may not start later.
+3. **Empty or hesitant recording:** Hesitating or saying "never mind," then
+   stopping with little or no real speech captured → a light,
+   non-punishing nudge ("didn't quite catch that, want to try again?"), not
+   an error or a failed check. Threshold pinned in the plan.
+4. **Safety redirect:** Something produced doesn't pass its check (see
+   Product principles) → a friendly, generic redirect is shown and spoken
+   instead, with no visible change in how the interaction flows. The
+   transcript shows the redirect, never the content that failed.
+5. **Disclosure response:** What was said reads as genuine concern (hurt,
+   bullied, unsafe) → a warm, non-generic, adult-pointing reply, shown in
+   the transcript like any other, taking precedence over the redirect (see
+   Product principles).
+6. **Interrupted:** A call, notification, or screen lock takes over →
+   playback stops, the transcript stays, the control returns to idle, and
+   the conversation continues with another tap. No error, because nothing
+   went wrong.
+7. **Something goes wrong:** Any pipeline failure, including the safety
+   check being unavailable or the spend ceiling being hit (see Security) →
+   one clear "something went wrong, try again," plus the grown-up nudge if
+   it persists. No half-finished, unchecked, or guessed replies.
 
 ## Security, privacy, and authorization
 
-- Nothing a kid says or hears is stored by this app in v1. The streaming
-  transcript is a live, on-screen display of the current exchange only — it
-  exists in the browser for that conversation and disappears on reload, the
-  same as the audio — neither is logged or retained by anything the user
-  builds. Only the fact that something failed (not its content) may be
-  logged for debugging. This covers the app itself — the third-party
-  speech, language, and safety-check providers it calls have their own
-  retention policies, outside this app's control. A later version is
-  expected to persist conversations to support multiple profiles (see
-  Proposal); that's a deliberate future change, not an accidental one.
-- This is a private, non-commercial tool used only by the user's own family
-  — the kind of regulatory exposure aimed at commercial operators collecting
-  children's data (e.g., COPPA) doesn't apply here, so no additional
-  compliance work is planned for v1.
-- Sign-in is used only to check "is this person on the approved list," not
-  to collect or use any profile information about the signed-in account.
-- The approved allowlist is a short, manually-maintained list the user
-  controls directly (see Scope).
-- This access gate exists primarily to control cost exposure and keep the
-  app away from strangers; it is a hard requirement for deployment, not a
-  fast-follow.
-- The safety check and the disclosure response are both hard requirements
-  for launch, verified against adversarial test prompts and disclosure
-  phrasings before shipping — not validated by design alone.
+- Nothing said or heard is stored by this app in v1. The transcript is a
+  live, browser-only display that disappears on reload, like the audio;
+  neither is logged or retained. Only the fact that something failed, never
+  its content, may be logged. This covers the app itself, not the
+  third-party speech, language, and safety-check providers it calls, which
+  retain per their own policies. A later version is expected to persist
+  conversations for multiple profiles (see Scope) — deliberate, not
+  accidental.
+- That claim can't be proven from the app's code alone, since hosting
+  layers capture request and response bodies by default in more places than
+  expected; it's verified against the deployed platform's own logs (see
+  Acceptance outcomes).
+- Private, non-commercial and family-only, so the regimes aimed at
+  commercial operators collecting children's data (e.g., COPPA) aren't what
+  constrains it. The binding constraint is third-party providers' terms —
+  several restrict or prohibit standalone under-13 accounts — which is what
+  pushes the allowlist toward parent accounts (see Scope), confirmed before
+  build because it can block it.
+- Sign-in only checks list membership, never profile data. The allowlist is
+  a short list the user maintains directly, and removing an account revokes
+  access.
+- The account is not the speaker: the app doesn't know or care which family
+  member is talking, which is what makes a parent-account allowlist
+  workable.
+- Sessions are long-lived by design, so anyone holding an unlocked,
+  already-signed-in family device can use the tool. Accepted risk: the gate
+  controls cost exposure and keeps strangers out rather than authenticating
+  each use, and a shared family device is an accepted v1 limitation.
+- The allowlist bounds who can talk, not how much — an approved account
+  could leave the page open for hours — so an operator-side hard spend
+  ceiling covers that. Exceeding it fails loudly, with only the ordinary
+  error shown.
+- Failures reach the operator out-of-band, carrying category and endpoint
+  only and never content, so a tool that breaks during unsupervised use
+  doesn't stay broken unnoticed.
+- The safety check, the disclosure response, and the access gate are hard
+  launch requirements, verified rather than validated by design alone (see
+  Acceptance outcomes) — not fast-follows.
+
+## Acceptance outcomes
+
+Shipped when all of these hold, each with evidence:
+
+1. **Access is closed.** A non-approved account is denied before any
+   conversation, tested with a real one; an approved one stays signed in on
+   a later visit without re-authenticating.
+2. **Nothing unchecked reaches the person.** No transcript line or audio
+   holds uncleared content, even when a reply fails partway. Tested against
+   adversarial prompts.
+3. **Disclosures land.** Real-sounding phrasings each produce the distinct
+   adult-pointing response, not the generic redirect or an ordinary reply —
+   including a case where the redirect could also have fired, to prove
+   precedence.
+4. **Failing closed works.** Safety check made unavailable → error state,
+   nothing spoken.
+5. **It feels like a conversation.** First visible-and-audible response
+   within 4 seconds of tapping stop, typically around 2; a longer answer
+   may run on after that but must not start later. Measured on the two
+   phones the family uses.
+6. **The register fits both ends.** A fixed suite of asks spanning an
+   8-year-old and an English-practicing adult, judged on vocabulary,
+   length, absence of condescension or hook questions, and family topics
+   deferred without moralizing. Re-runnable after any persona change,
+   confirmed by real sessions with the user's own kids.
+7. **Nothing is retained.** The deployed platform's logs hold no transcript
+   text or audio, checked after a real conversation rather than inferred
+   from code. A reload leaves nothing behind.
+8. **The awkward moments are gentle.** An empty or hesitant recording gets
+   the nudge, never an error or safety message; an interruption returns to
+   idle with the transcript intact and no error shown.
+9. **It works on the real devices.** Mic permission, recording, and
+   playback verified on a Safari-based phone browser and an Android/Chrome
+   one, including that rapid tapping doesn't trigger double-tap-to-zoom.
+10. **Breakage is visible.** An induced failure reaches the operator
+    out-of-band, with no conversation content in it.
+
+Left for the plan to pin: the sign-in mechanism and the provider-terms
+confirmation gating it; how clearing works alongside streaming; the "little
+or no real speech" threshold; the spend ceiling's scope, values, and
+window; and how failure visibility is wired.
 
 ## Ownership
 
