@@ -47,18 +47,12 @@ guarantees are hard launch requirements (see Security).
      is never a half-said one to take back. The person's live transcription
      may appear as speech is recognized, but it isn't a cleared reply.
    - What the person says is separately checked for a genuine disclosure —
-     hurt, bullied, unsafe — before a reply forms. That gets a distinct,
-     warmer response pointing to a trusted adult instead of the tool
+     hurt, bullied, unsafe — before any generated reply reaches them. That
+     gets a distinct, fixed, adult-pointing response instead of the tool
      handling it directly, and it takes precedence over the ordinary safety
-     redirect. Once a disclosure has been recognized, a fixed, pre-approved
-     adult-pointing response stands behind any failure while forming or
-     clearing its dynamic response, wherever response delivery remains
-     possible.
-   - If a required check can't run, no dynamic reply is said: an unavailable
-     check ordinarily yields the failure state, never an unchecked reply.
-     The only exception is the fixed, pre-approved response after a
-     disclosure has already been recognized. If the disclosure check itself
-     can't run, the ordinary failure state applies.
+     redirect.
+   - If a required check can't run, nothing is said: an unavailable check
+     yields the failure state, never an unchecked reply.
 
 ## Proposal
 
@@ -86,23 +80,22 @@ repeat.
 - One general-purpose persona for v1, calibrated so the youngest expected
   user is well served without an older one being talked down to; no
   per-person calibration.
-- The disclosure check on what's said and the clearing check on everything
-  produced (see Product principles), with a fixed fallback response when
-  something doesn't pass.
+- The disclosure check on what's said and the clearing check on generated
+  replies (see Product principles), with fixed, pre-approved responses for a
+  disclosure or a reply that doesn't pass.
 - Short replies by design — brevity is what the practice format wants (see
   Product principles), and it is what lets a whole reply be cleared inside
   the latency bar. The bound is pinned in the plan.
 - The family-topics deferral (see Product principles), as a persona
   requirement with test coverage, not a separate response type.
 - Sign-in (mechanism TBD — see plan), gated to a short, approved family
-  allowlist; anyone else denied. Sessions stay signed in as long as is
-  safely possible, refreshed by use: with a parent-account allowlist a kid
-  can't re-authenticate alone, so expiry doesn't re-prompt — it takes the
-  tool offline until an adult is free (risk: see Security). The window is
-  the plan's to pin.
-- Third-party providers' rules on minors are the real age constraint (see
-  Security), pushing the allowlist toward parent accounts rather than the
-  kids' own — confirmed once the mechanism is picked and before build.
+  allowlist; anyone else denied. Sessions use a fixed, long-lived window:
+  with a parent-account allowlist a kid can't re-authenticate alone, so
+  expiry doesn't re-prompt — it takes the tool offline until an adult is
+  free (risk: see Security). The window is the plan's to pin.
+- Provider legal and policy review is explicitly deferred for the private,
+  family-only first version. That accepted external risk must be revisited
+  before access expands beyond the family (see Security).
 
 **Out of scope (explicitly deferred):**
 
@@ -239,13 +232,12 @@ Talk screen — talking (cleared reply, rendering)
    place, with no visible change in how the interaction flows. The
    transcript shows the redirect, never the content that failed.
 6. **Disclosure response:** What was said reads as genuine concern (hurt,
-   bullied, unsafe) → a warm, non-generic, adult-pointing reply, shown in
-   the transcript like any other, taking precedence over the redirect (see
-   Product principles). That reply is cleared like anything else, but if it
-   fails while being formed or cleared, a fixed, pre-approved adult-pointing
-   response takes its place wherever response delivery remains possible,
-   never the generic redirect. If the disclosure check itself can't run,
-   the ordinary failure state applies.
+   bullied, unsafe) → a warm, fixed, pre-approved adult-pointing response,
+   shown in the transcript like any other and taking precedence over the
+   redirect (see Product principles). It has matching audio bundled with the
+   app, so it requires no generated reply, clearing call, or runtime speech
+   synthesis. If the disclosure check itself can't run, the ordinary failure
+   state applies.
 7. **Interrupted:** A call, notification, or screen lock takes over →
    playback stops, any unfinished listening or thinking turn is discarded,
    completed transcript entries stay, the control returns to idle, and the
@@ -260,10 +252,7 @@ Talk screen — talking (cleared reply, rendering)
 9. **Something goes wrong:** Any pipeline failure, including the safety
    check being unavailable or the spend ceiling being hit (see Security) →
    one clear "something went wrong, try again," plus the grown-up nudge if
-   it persists. No half-finished, unchecked, or guessed replies. The single
-   exception is a recognized disclosure whose response fails while being
-   formed or cleared, which falls back to its own fixed response instead of
-   this one wherever response delivery remains possible.
+   it persists. No half-finished, unchecked, or guessed replies.
 
 ## Security, privacy, and authorization
 
@@ -279,12 +268,10 @@ Talk screen — talking (cleared reply, rendering)
   layers capture request and response bodies by default in more places than
   expected; it's verified against the deployed platform's own logs (see
   Acceptance outcomes).
-- Private, non-commercial and family-only, so the regimes aimed at
-  commercial operators collecting children's data (e.g., COPPA) aren't what
-  constrains it. The binding constraint is third-party providers' terms —
-  several restrict or prohibit standalone under-13 accounts — which is what
-  pushes the allowlist toward parent accounts (see Scope), confirmed before
-  build because it can block it.
+- Provider legal and policy review is out of scope for the private,
+  family-only first version. This records an accepted external risk rather
+  than a compliance claim; the review becomes a gate before access expands
+  beyond the family.
 - Sign-in only checks list membership, never profile data. The allowlist is
   a short list the user maintains directly, and removing an account revokes
   access.
@@ -299,10 +286,12 @@ Talk screen — talking (cleared reply, rendering)
   could leave the page open for hours — so an operator-side hard spend
   ceiling covers that. Exceeding it fails loudly, with only the ordinary
   error shown.
-- Provider calls go through this app's own server, never straight from the
-  browser: the spend ceiling has to be enforced somewhere the person can't
-  reach, and the alternative would put provider credentials on a family
-  device.
+- Credentialed and paid provider calls go through this app's own server:
+  the spend ceiling has to be enforced somewhere the person can't reach,
+  and provider credentials never belong on a family device. Browser-managed
+  speech recognition is the exception; its processing location depends on
+  the browser and platform, and the app treats that vendor as another
+  processor without giving it app credentials.
 - Failures reach the operator out-of-band, carrying category and endpoint
   only and never content, so a tool that breaks during unsupervised use
   doesn't stay broken unnoticed.
@@ -325,9 +314,9 @@ Shipped when all of these hold, each with evidence:
 3. **Disclosures land.** Real-sounding phrasings each produce the distinct
    adult-pointing response, not the generic redirect or an ordinary reply —
    including a case where the redirect could also have fired, to prove
-   precedence, and a forced clearing failure after the disclosure has been
-   recognized, which must yield the fixed response wherever delivery remains
-   possible.
+   precedence, and short cases such as "help me," which must not be mistaken
+   for empty input. The response uses its bundled text and audio without
+   generation, clearing, or runtime speech synthesis.
 4. **Failing closed works.** The disclosure check made unavailable → error
    state, nothing spoken. The clearing check made unavailable for an
    ordinary reply → the same.
@@ -364,13 +353,12 @@ Shipped when all of these hold, each with evidence:
     failure state. The plan pins the ceiling's scope, values, window, and
     concurrency semantics.
 
-Left for the plan to pin: the sign-in mechanism and the provider-terms
-confirmation gating it; the session window and how soon removal from the
-allowlist bites; the reply-length bound that keeps a whole-reply check
-inside the latency bar; the "little or no real speech" threshold; the
-wording of the fixed disclosure response; the spend ceiling's scope,
-values, window, and concurrency semantics; and how failure visibility is
-wired.
+Left for the plan to pin: the sign-in mechanism; the session window and how
+soon removal from the allowlist bites; the reply-length bound that keeps a
+whole-reply check inside the latency bar; the "little or no real speech"
+threshold; the wording of the fixed disclosure response; the spend ceiling's
+scope, values, window, and concurrency semantics; and how failure visibility
+is wired.
 
 ## Ownership
 
