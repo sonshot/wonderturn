@@ -25,13 +25,13 @@ under Pinned semantics.
 | Host | Vercel |
 | Speech in | Web Speech API, browser-managed; processing may be local or use the platform vendor |
 | Models | Vercel AI Gateway via AI SDK |
-| Reply | Claude Sonnet 5 |
-| Input classification + clearing checks | Claude Haiku 4.5 |
-| Speech out | OpenAI TTS via AI Gateway (beta audio lane) |
+| Reply | `google/gemini-3.5-flash-lite` (D31) |
+| Input classification + clearing checks | `anthropic/claude-haiku-4.5` (D32) |
+| Speech out | ElevenLabs, called directly (D33) |
 | Auth | Google sign-in, verified once; fixed 180-day signed httpOnly cookie thereafter |
 | Storage | None — no database, no client persistence |
 | Validation | Zod |
-| Spend ceiling | AI Gateway budget (provider-native, not app code) |
+| Spend ceiling | Two provider-native caps: AI Gateway budget and the ElevenLabs plan (D34) |
 | Package manager | pnpm, version pinned in `packageManager` |
 | Format | Prettier |
 | Git hooks | Husky |
@@ -43,6 +43,17 @@ The app is stateless. The client holds the conversation in memory and sends
 it with each turn; nothing persists anywhere, which is the no-storage stance
 expressed in the wire format rather than merely promised.
 
+**The three model rows are decisions as of 2026-07-26, not conclusions.**
+They rest on one afternoon of measurement recorded in
+[`20260726_phase0_spike.md`](20260726_phase0_spike.md) — eight round-robin
+rounds and an eight-prompt register read, which is enough to start building
+and nowhere near enough to settle anything. They are expected to be revisited
+once Phase 3's fixtures and register asks exist, because that is the first
+point where a swap can be judged on evidence instead of on a smoke test. The
+Gateway is what keeps this cheap: each row is a model string, so revisiting
+is a config change and a re-run, not a refactor. Treat a row that has
+outlived its evidence as a bug in this table, not as settled architecture.
+
 ## Prerequisites and external gates
 
 | | Gate | Owner | Blocks |
@@ -52,6 +63,7 @@ expressed in the wire format rather than merely promised.
 | G3 | Google OAuth client ID for the sign-in button | Son | Phase 1 |
 | G4 | Deployment URL — Vercel subdomain is sufficient for v1 | Son | Phase 4 |
 | G5 | Out-of-band alert channel (ntfy topic or Telegram bot) | Son | Phase 4 |
+| G6 | ElevenLabs account with a synthesis-scoped key, a plan cap set, and a chosen voice | Son | Phase 2 (D33) |
 
 G1 is deliberately deferred for the private, family-only first version. It
 does not block implementation or internal use, but it must be resolved before
@@ -121,17 +133,22 @@ leave their numbers behind rather than causing a renumber (D24).
   issuance and is not extended by activity. One absolute deadline, no sliding
   window. Expiry returns to sign-in; allowlist removal denies the next
   protected request once the updated env configuration is deployed.
-- **P12 — Spend is bounded by one Gateway key.** The app uses a dedicated
+- **P12 — Spend is bounded by two provider caps.** The app uses a dedicated
   AI Gateway key with a $10 monthly budget and no automatic top-up. A request
   already accepted by the Gateway, including the request that crosses the
   budget, may finish; later requests fail. Concurrently accepted work may
   also finish. `test:live` and `register` draw on this same key: D21 deleted
   the eval-only key along with the harness that justified it, so test spend
-  and family spend share one ceiling. What that ceiling buys in practice —
-  turns per month, cost per test pass, whether $10 is the right number — is
-  deliberately not sized here: per-turn cost is dominated by the reply model
-  and speech synthesis, and the spike is still deciding both. Size it when
-  those land.
+  and family spend share one ceiling.
+
+  Now sized, from spike measurements (D34). Language-model work is about
+  $0.0005 per turn on the chosen models, so $10 buys roughly 20,000 turns —
+  far more than this family will use, and not the binding constraint.
+  **Speech is 80–90% of per-turn cost**, at roughly $0.002–0.003 for 250
+  characters, and it sits outside the Gateway entirely (D33). The real
+  ceiling is therefore the ElevenLabs plan, which needs its own cap set to
+  fail closed the same way. Two ceilings, both provider-native, still no app
+  code.
 - **P13 — Text behaviour has one execution seam.** `runTextTurn` owns input
   classification, candidate generation, precedence, and clearing. Two
   optional injection points keep production and tests on the same code path:
@@ -146,6 +163,13 @@ leave their numbers behind rather than causing a renumber (D24).
   are cleared are the bytes that are rendered and synthesized. Nothing
   rewrites, re-truncates, or re-normalizes a reply after it has passed its
   check.
+
+  Normalization strips markdown. The spike found models returning `**magma**`
+  and `*Maya was reluctant…*`, which in a voice channel are either spoken
+  aloud as punctuation or silently mangled. Truncation is also detected, not
+  just applied: a candidate that ran into the token cap mid-clause is cut
+  back to the last complete sentence, because a spoken reply that stops
+  mid-sentence is worse than a short one.
 - **P19 — Each check sees only its own subject.** The clearing check receives
   the candidate reply alone; the input classifier receives `said` alone.
   Neither receives conversation history. P8's client-supplied history is a
@@ -193,21 +217,24 @@ Scaffold the durable project before feature code:
 
 ### Phase 0b — De-risk on real devices
 
-Throwaway code, deleted afterwards. Two iOS Safari risks and one latency
-question, all in one sitting on the two phones the family uses. Run locally
-behind a `cloudflared` quick tunnel; nothing is deployed.
+Throwaway code, deleted afterwards. Run locally behind a `cloudflared` quick
+tunnel on the two phones the family uses; nothing is deployed.
+
+The latency leg is **complete** — measurements, model selection, and the
+register comparison are recorded in
+[`20260726_phase0_spike.md`](20260726_phase0_spike.md), with its harness
+committed under `spike/` and absorbed per D30. What remains is the browser
+behaviour, which no measurement from a laptop can answer.
 
 1. Web Speech API: interim results, restart-on-silence behaviour, accuracy
    on the kids' actual voices, and the observed local-or-vendor processing
    boundary on each target browser.
 2. Audio unlock: `play()` called in the tap handler, `src` swapped in ~1.5s
    later, confirmed to actually play.
-3. Measured round-trip for one Gateway call to Haiku and one OpenAI TTS
-   synthesis, to confirm the budget in Phase 2 is real.
 
-**Exit:** both browser behaviours work on iOS Safari and Android Chrome,
-and the measured legs fit the timeline below. Any failure sends us back to
-Deepgram streaming on a container host before further work.
+**Exit:** both browser behaviours work on iOS Safari and Android Chrome.
+Any failure sends us back to server-side speech recognition on a container
+host before further work.
 
 ### Phase 1 — Access gate
 
@@ -246,6 +273,12 @@ hidden inside the HTTP handler.
 - A required check or ordinary-reply TTS failure produces P7's single error
   shape; losing speculative branches are cancelled where practical and
   always discarded.
+
+The classifier prompt is adopted here from the spike, not written fresh
+(D30). It carries category definitions, an explicit instruction to err
+toward `disclosure`, and worked examples, because the spike showed a naive
+one-line prompt silently routing real disclosures to `ordinary` or `nudge`.
+It is production code and versioned as such, not a fixture.
 
 The screen is one layout with **five** states: idle, listening, thinking,
 talking, error. The others named in the feature doc are not states — `nudge`,
@@ -315,8 +348,22 @@ play session cannot provide on demand (D29).
 
 Committed fixtures contain synthetic text only.
 
-**Exit:** the offline contract tests pass in `verify`, and `pnpm test:live`
-produces the expected `kind` for every fixture.
+The disclosure fixtures and the register asks are **adopted from the spike**
+rather than authored fresh (D30): the ten labelled disclosure cases that took
+all three candidate models to ten out of ten, and the eight tagged register
+asks spanning curiosity, a sensitive topic, family topics, and adult English
+practice. `spike/` is deleted in this phase once they and the classifier
+prompt are absorbed, leaving the suite as the single source of truth.
+
+If any later work compares model latency, it must interleave providers and
+randomize order per round, the way `spike/bench-rr.mjs` did. Measuring one
+provider's calls in a block and then the next confounds provider with
+time-of-run, and produced two rankings during the spike that had to be
+retracted.
+
+**Exit:** the offline contract tests pass in `verify`, `pnpm test:live`
+produces the expected `kind` for every fixture, and `spike/` no longer
+exists.
 
 ### Phase 4 — Production hardening
 
@@ -365,7 +412,7 @@ Each feature-doc acceptance outcome, with where it is proven.
 | 2. Nothing unchecked reaches the person | `test:live` adversarial fixtures plus injected known-bad candidates against `runTextTurn`; offline commit-gate contracts | 3 |
 | 3. Disclosures land | `test:live` disclosure fixtures incl. precedence, short phrases, and false positives; bundled text/audio integration check | 3 |
 | 4. Failing closed works | Offline Vitest forces input classifier, clearing check, and ordinary TTS unavailable separately | 3 |
-| 5. Feels like a conversation | Ten-turn voice script on both phones | 4 |
+| 5. Feels like a conversation | Ten-turn voice script on both phones, against the bar as written; median at risk pending the Vercel timing measurement (D35) | 4 |
 | 6. Register fits both ends | `pnpm register` asks read by the operator after any persona change, plus real sessions with the kids | 3, 5 |
 | 7. Nothing is retained by us | Vercel + Gateway log inspection after a real conversation | 4 |
 | 8. Awkward moments are gentle | Manual: nudge, interruption, barge-in; delayed stale results after start-over/new turn | 2 |
@@ -575,3 +622,77 @@ Append-only. Stable IDs; reversals say what they supersede.
   still claimed they gated every commit. They are offline, deterministic, and
   fast, and they are the only thing separating "fails closed" from a belief,
   so the hook runs `typecheck` and `test`. Formatting stays out.
+- **D30 (2026-07-26) — The spike is absorbed, then deleted.** The Phase 0
+  harness in `spike/` is committed as evidence for its findings, but it is
+  not a second home for product assets. Four things migrate: the classifier
+  prompt into production code in Phase 2, and the labelled disclosure cases,
+  the tagged register asks, and the interleaved latency method into the
+  Phase 3 suite. `spike/` is removed in Phase 3 once they are absorbed. The
+  point is a single source of truth — a prompt or fixture that exists in two
+  places will drift, and the copy nobody runs is the one that looks
+  authoritative later. The findings document survives the deletion; it
+  records why decisions were made, which the code cannot.
+- **D31 (2026-07-26) — The reply model is `google/gemini-3.5-flash-lite`.
+  Supersedes the Sonnet 5 row, and the Haiku 4.5 that briefly replaced it.**
+  Sonnet 5 was chosen for register quality before anything was measured; it
+  is 2.7s median against flash-lite's 1.48s. Among the fast tier, flash-lite
+  won the dimension hardest to fix by prompting — it declined to take a
+  position on faith and pointed at the family, where `gpt-5.6-luna` moralized
+  and `mistral-medium-3.5` offered an opinion. It also emits no markdown,
+  sits closest to the ~60-word bound, and costs three to five times less.
+  **This is a decision as of today, on eight round-robin rounds and eight
+  register prompts.** It is expected to be re-examined once Phase 3 exists;
+  the watch items are one dropped call in eight, and an exclamatory tone that
+  could drift toward the companion register the feature doc forbids.
+- **D32 (2026-07-26) — The checks stay on `anthropic/claude-haiku-4.5`, a
+  different model family from the reply.** All three candidates scored 10/10
+  on disclosure classification once the prompt was written properly, so
+  accuracy did not decide this. Two things did. Haiku was the faster of the
+  viable options on short check calls, and check cost is negligible at ~8
+  output tokens. More importantly, a clearing check performed by the same
+  model that wrote the reply shares its blind spots: a reply a model was
+  willing to generate is one it is more likely to judge acceptable. A
+  different family decorrelates that failure mode for no meaningful cost.
+  This is a judgment, not a measurement — the spike could not test it.
+- **D33 (2026-07-26) — Speech synthesis leaves the Gateway. Supersedes D6.**
+  D6 chose OpenAI TTS through the Gateway to keep spend in one dashboard.
+  Every Gateway speech model measures 4.7–10.5s on a funded key, including
+  the newest, against 0.25–0.67s to first audio from ElevenLabs streaming.
+  A five-to-tenfold latency gap is not a price worth paying for a tidier
+  bill. The Gateway lists only three speech models, two from 2023, so this
+  is a limitation of that catalog rather than of any one model. Model choice
+  within ElevenLabs is deferred to Phase 0b: `eleven_v3` if progressive
+  playback works on iOS Safari, since its 0.67s first audio arrives before
+  the clearing check finishes and therefore costs nothing; otherwise
+  `eleven_flash_v2_5` with the atomic single response.
+- **D34 (2026-07-26) — The spend ceiling is two provider-native caps.
+  Extends D13.** The $10 Gateway budget stands and buys roughly 20,000 turns
+  of language-model work, which is not the binding constraint. Speech is
+  80–90% of per-turn cost and now sits outside the Gateway, so the
+  ElevenLabs plan needs its own cap. Both fail closed into P7's one error
+  shape; neither requires app code. The cost of D33 is a second dashboard,
+  and the honest consequence is that no single number expresses the ceiling.
+- **D35 (2026-07-26) — Feature-doc Outcome 5 is at risk, not renegotiated.**
+  The 4-second ceiling holds comfortably on the chosen models. The 2-second
+  median is unproven in either direction, so the feature doc is left
+  unchanged and the entry it requires for a change has not been earned.
+
+  An earlier reading of the spike called the median unreachable on a measured
+  floor near 2.6s. That reading is withdrawn. Streaming the same calls shows
+  the cost is almost entirely pre-token: a check call spends ~1.09s waiting
+  for response headers and 0.01s generating, and the reply spends 1.17s
+  before its first byte and 0.78s producing text. Generation is not the
+  constraint, and no model swap addresses it — `mistral-medium-3.5` generates
+  slower than `gemini-3.5-flash-lite` and only looked faster because its
+  overhead happened to be lower on that run.
+
+  With two sequential stages, `2 × overhead + 0.78 + 0.10 < 2.0` means
+  **per-call overhead under roughly 0.56s clears the median.** Every spike
+  figure was taken from a laptop, so its round-trip to the Gateway is inside
+  that ~1.1s; a Vercel function calling the Gateway is a datacenter hop
+  instead. Whether that closes the gap is unmeasured, and a tunnel cannot
+  measure it because the code still executes locally.
+
+  Settled by a timing endpoint deployed to Vercel, which also yields the
+  cold-start figures no local run can produce. Until then, Outcome 5 stands
+  as written.

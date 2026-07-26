@@ -217,6 +217,36 @@ constraint; the ElevenLabs plan is.
   spoken before it has been checked, and these emit audio directly. Recorded
   so the option is visibly rejected rather than rediscovered later.
 
+## Where the time actually goes
+
+Streaming the same calls and timing response headers, first content token,
+and completion separately. Five rounds, interleaved and randomized.
+
+| | Headers | TTFT | Total | Generation |
+| --- | --- | --- | --- | --- |
+| reply `gemini-3.5-flash-lite` | 1.17s | 1.19s | 1.97s | **0.78s** |
+| reply `mistral-medium-3.5` | 0.62s | 0.63s | 1.70s | **1.07s** |
+| check `haiku-4.5` | 1.08s | 1.09s | 1.09s | **0.01s** |
+| check `gemini-3.5-flash-lite` | 1.29s | 1.42s | 1.42s | **0.00s** |
+
+**The checks do essentially no generating.** A check call spends its entire
+second waiting for response headers and one hundredth of a second producing
+tokens. The reply is the same shape: 1.17s before the first byte, then 0.78s
+of text.
+
+Two consequences. **No model swap fixes this** — `mistral-medium-3.5`
+actually generates *slower* than `gemini-3.5-flash-lite` and only appeared
+faster because its overhead was lower on the run that measured it. And the
+per-call cost is not the model thinking; it is network, proxy, provider
+queue, and prefill, all before the first token.
+
+**These figures were taken from a laptop**, so a round-trip to the Gateway's
+region is inside every "headers" number. A Vercel function calling the
+Gateway is a datacenter hop instead. How much of the ~1.1s is distance rather
+than architecture is the single most consequential thing this spike did not
+measure, and no local run or tunnel can answer it — the code has to execute
+on Vercel.
+
 ## The turn budget
 
 Leading configuration — `gemini-3.5-flash-lite` for all three calls,
@@ -230,9 +260,14 @@ ElevenLabs streaming:
 | **First visible and audible** | **~2.6s** |
 
 With `mistral-medium-3.5` throughout, ~2.1s. Both are inside the 4s ceiling.
-Neither reliably clears a 2s median once p90 is taken into account, and the
-check legs have not yet been measured round-robin, so these totals are
-weaker evidence than the reply table above.
+
+**Neither total should be read as a floor.** Both carry two laptop-to-Gateway
+round-trips. The decomposition above gives the criterion that matters:
+`2 × overhead + 0.78 + 0.10 < 2.0`, so **per-call overhead under roughly
+0.56s clears a 2s median.** We measure ~1.1s from here. Whether a Vercel
+function closes that gap is unknown. The check legs also have not been
+measured round-robin, so these totals are weaker evidence than the reply
+table above.
 
 ## Findings
 
@@ -246,15 +281,20 @@ weaker evidence than the reply table above.
    at 0.67s while the clearing check runs to ~1.0s, so clearing gates
    playback, not synthesis. Full synthesis finishes near 6.4s against roughly
    16s of speech, so playback never catches generation.
-4. **Round-trips are the cost, not tokens.** Latency work should target the
-   number of sequential model calls, not reply length.
+4. **Round-trips are the cost, not tokens.** Streaming confirms it: checks
+   generate for 0.01s and wait ~1.09s for headers. Latency work should target
+   the number of sequential model calls and the overhead of each, never reply
+   length or model choice.
 5. **The disclosure classifier fails silently on a naive prompt** and
    recovers fully with definitions and examples. Prompt quality on this one
    call is a safety property.
 6. **Voice output needs text normalization.** Markdown and mid-sentence
    truncation both occur and both reach the listener.
-7. **A 2s median is marginal at best.** ~2.1–2.6s is achievable; the 4s
-   ceiling is comfortable.
+7. **A 2s median is unresolved, not ruled out.** An earlier version of this
+   document called it unreachable on a measured floor near 2.6s. That is
+   withdrawn: the floor is set by per-call overhead, every measurement of
+   which includes a laptop-to-Gateway round-trip. Overhead under ~0.56s per
+   call clears the median. The 4s ceiling is comfortable either way.
 
 ## Still untested
 
@@ -266,10 +306,15 @@ weaker evidence than the reply table above.
   streamed response without a MediaSource path that breaks on iPhone.
 - **Check legs measured round-robin.** Classifier and clearing numbers are
   still block-sampled and therefore unreliable.
-- **Gateway overhead versus a direct provider call.** A four-token answer
-  costing ~1s suggests meaningful proxy overhead; if a direct call is
-  materially faster, moving the two checks off the Gateway could recover
-  several hundred milliseconds. Requires a direct provider key.
+- **Per-call overhead measured from Vercel, not from a laptop.** Now the
+  decisive open question, and the one that decides Outcome 5. Streaming
+  proved the ~1.1s is entirely pre-token, but not what causes it — laptop
+  distance, the Gateway hop, or provider queue are all still candidates. A
+  tunnel cannot answer this because the code still executes locally. The test
+  is a timing endpoint deployed to Vercel running the three calls
+  server-side, which also yields the cold-start figures no local run can
+  produce. A direct provider key would separate the Gateway hop from the
+  rest, but is secondary to simply measuring from the right place.
 - **Register at length.** Eight prompts is a smoke test, not the Outcome 6
   suite.
 
@@ -289,9 +334,11 @@ table, Phase 2 timeline, pinned semantics, and definition of done:
    are preferred, accepting mild position-taking on faith and replies at half
    spec length. `gpt-5.6-luna` is excluded on moral positioning and
    truncation.
-3. **Feature-doc Outcome 5 is renegotiated.** A 2s median is marginal; the 4s
-   ceiling holds. The feature doc names this as the one renegotiable outcome
-   requiring a Decision Log entry — this is that case.
+3. **Feature-doc Outcome 5 is at risk, not renegotiated.** An earlier version
+   of this document proposed dropping the 2s median. That is withdrawn: the
+   evidence was measured from the wrong vantage point. The doc stands as
+   written until a Vercel-side measurement settles it, and the Decision Log
+   entry the feature doc requires for a change has not been earned.
 4. **Streaming audio is reconsidered**, reversing D5, but only if iOS
    progressive playback passes. If it fails, fall back to
    `eleven_flash_v2_5` with the atomic single POST at similar total latency

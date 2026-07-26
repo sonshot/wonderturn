@@ -16,6 +16,7 @@ Needs an untracked `.env.local` here with `AI_GATEWAY_API_KEY` and
 | Script | Finding | Trust |
 | --- | --- | --- |
 | `bench-rr.mjs` | Reply-model latency: median, p90, failures, output length | **Authoritative.** Interleaved, randomized order per round |
+| `ttft.mjs` | Latency decomposition: headers vs first token vs generation | **Authoritative.** Interleaved; showed the cost is pre-token |
 | `register.mjs` | Register comparison; family deferral; markdown and truncation | Qualitative, 8 prompts |
 | `bench5.mjs` | Disclosure classification 10/10 with an engineered prompt | Holds the prompt worth keeping |
 | `bench4.mjs` | Disclosure classification 1–3/6 with a naive prompt | The safety finding |
@@ -36,3 +37,6 @@ and then retracted. `bench-rr.mjs` is the corrected approach.
    family, adult-ESL).
 4. The interleaving method in `bench-rr.mjs` — any latency comparison that
    runs providers in blocks will reproduce the original error.
+5. The header/TTFT/total decomposition in `ttft.mjs`. Wall-clock alone hid
+   that the checks generate for 0.01s and wait a full second, which is what
+   turned "swap the model" into "reduce the overhead."

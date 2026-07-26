@@ -76,8 +76,12 @@ authorization, or exposed data; architecture, data source, schema, or dependency
 deployment target or external gate; a pinned correctness semantic; or a reversal of
 a prior decision.
 
-- Append; never rewrite. Give entries stable IDs (`D1`, `D2`, …); say
-  `Supersedes D<N>` when reversing.
+- Prefer appending to rewriting. Give entries stable IDs (`D1`, `D2`, …); say
+  `Supersedes D<N>` when reversing. Rewriting an entry is fine while it is still
+  uncommitted or nothing has been built on it — git keeps the history either way.
+  Once an entry has shipped or later work leans on it, supersede instead: the
+  point is that a reader of today's document sees the reversal without going
+  digging for it.
 - Record the decision alongside the change, and update the affected scope, tasks,
   definition of done, config, and code in the same change so the plan stays coherent.
 - If a decision changes durable intent, update the feature doc too; if it only
