@@ -11,6 +11,34 @@ truth. Do not build on it.
 Needs an untracked `.env.local` here with `AI_GATEWAY_API_KEY` and
 `ELEVENLABS_API_KEY`, then `npm install`.
 
+## Device diagnostic
+
+The browser leg now lives as a durable operator surface at `/diagnostics`. It
+uses no provider credentials. Submissions are validated by the server and
+written to the server console; there is no report database yet.
+
+Run the application from the repository root:
+
+```sh
+pnpm dev
+cloudflared tunnel --url http://localhost:3000
+```
+
+Open the tunnel URL with `/diagnostics` appended on both target phones.
+On each phone:
+
+1. Capture the environment.
+2. Run speech recognition, including a long pause that forces a restart.
+3. Reload, disconnect the phone from the network, and repeat recognition to
+   observe whether processing requires the browser vendor.
+4. Run delayed audio unlock; the tone must play without a second tap.
+5. Run progressive audio; it passes only when playback begins before the
+   six-second response finishes.
+6. Deny microphone access, grant it in browser settings, repeat, rapidly tap
+   each control, then record the behavior in Notes.
+7. Submit the report, note its reference, and add the observed result to the
+   findings document.
+
 ## Which script produced which finding
 
 | Script | Finding | Trust |

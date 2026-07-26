@@ -1,6 +1,7 @@
 # Voice Practice Tool MVP — Implementation Plan
 
 Feature doc: [`docs/feat/20260725_voice_practice_tool_mvp.md`](../feat/20260725_voice_practice_tool_mvp.md)
+Diagnostics feature doc: [`docs/feat/20260726_device_diagnostics.md`](../feat/20260726_device_diagnostics.md)
 
 ## Status
 
@@ -244,8 +245,9 @@ root route successfully.
 
 ### Phase 0b — De-risk on real devices
 
-Throwaway code, deleted afterwards. Run locally behind a `cloudflared` quick
-tunnel on the two phones the family uses; nothing is deployed.
+Run locally behind a `cloudflared` quick tunnel on the two phones the family
+uses; nothing is deployed. The browser harness begins here, then remains as the
+durable `/diagnostics` operator surface described by D46.
 
 The latency leg is **complete** — measurements, model selection, and the
 register comparison are recorded in
@@ -262,6 +264,11 @@ behaviour, which no measurement from a laptop can answer.
 **Exit:** both browser behaviours work on iOS Safari and Android Chrome.
 Any failure sends us back to server-side speech recognition on a container
 host before further work.
+
+The diagnostic surface itself is complete when it infers the device from the
+user agent, preserves the browser checks above, validates direct submissions at
+the server boundary, and returns a report reference. Its temporary sink is the
+server console; persistent storage remains out of scope.
 
 ### Phase 1 — Access gate
 
@@ -943,3 +950,24 @@ Append-only. Stable IDs; reversals say what they supersede.
   reason it exists. The pre-commit hook from D29 now runs `lint`, `typecheck`,
   and the offline tests. Formatting remains outside the hook, while `verify`
   names all four deterministic checks explicitly.
+- **D46 (2026-07-26) — The device harness becomes a durable operator
+  diagnostic.** Supersedes Phase 0b's instruction to delete the browser
+  harness. Testing it on Android showed that the page is useful beyond the
+  one-time stack gate: it turns browser-specific voice and playback behavior
+  into a structured report that can later support real-device failures.
+
+  The stable route is `/diagnostics`. Browser, operating system, and device
+  class are inferred with Bowser from the user agent rather than entered by
+  hand. Reports cross a Zod-validated POST boundary and receive a server-issued
+  reference. The temporary sink is one structured server-console entry; there
+  is no report database, viewer, or retention system yet. Reports include the
+  visible transcript and notes, so the page states that before submission and
+  the eventual production route inherits the application's access gate.
+  This is a narrow exception to the engineering rule against payload logging:
+  the submitted report is itself the requested diagnostic output and the
+  console is its temporary sink. Validation and other failure logs remain
+  metadata-only.
+
+  This does not promote spike visuals into the product design system. The
+  diagnostics are an operator surface and remain semantic and visually generic
+  until there is evidence that they need dedicated design treatment.

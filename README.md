@@ -26,6 +26,8 @@ pnpm dev
 
 Then open `http://localhost:3000`.
 
+The operator device checks live at `http://localhost:3000/diagnostics`.
+
 ## Verification
 
 ```sh

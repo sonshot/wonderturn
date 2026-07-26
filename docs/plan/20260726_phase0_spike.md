@@ -5,8 +5,28 @@ Feature doc: [`../feat/20260725_voice_practice_tool_mvp.md`](../feat/20260725_vo
 
 ## Status
 
-Latency, model-selection, and register legs complete (2026-07-26). Device
-legs not started.
+Latency, model-selection, and register legs complete (2026-07-26). Android
+Chrome browser checks are partially complete; offline recognition, accuracy on
+the kids' voices, and iOS Safari remain open.
+
+## Android Chrome device result
+
+Observed through the local production server behind a `cloudflared` quick
+tunnel on Chrome 150 / Android 10:
+
+- Secure context and Web Speech API were available.
+- Interim and final English transcripts were accurate for the adult test
+  phrases, and recognition restarted repeatedly after silence.
+- The delayed audio source swap played without a second tap.
+- The progressive WAV began playing after 5.77s and therefore failed the
+  harness's 4.5s threshold. A separate tunnel measurement received the first
+  response byte at 0.82s and completed at 5.79s, so the tunnel did not buffer
+  the complete response. The browser appears to have buffered this WAV; that
+  result must not be generalized to ElevenLabs' MP3 stream without a
+  representative-codec test.
+
+This is a provisional Android pass for the two Phase 0b exit behaviors, not
+completion of the device leg.
 
 The findings below invalidate the plan's Phase 2 timeline, its reply-model
 and speech-out choices, and surface one safety issue that is not in the plan
