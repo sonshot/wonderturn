@@ -7,8 +7,15 @@ current structure, and configuration live in `README.md`, the feature documents 
 
 ## Engineering principles
 
-Defaults for all new work. A Decision Log entry in the active plan may override a
-principle for a specific case with rationale — but the burden is on the exception.
+Defaults for all new work. A Decision Log entry in the active plan may override an
+engineering principle for a specific case with rationale — but the burden is on the
+exception.
+
+These govern how the code is built. A feature doc may define its own _product
+principles_ for what a feature is and does; those belong to the doc that defines
+them, which may also limit what a Decision Log is allowed to override there. When
+this file and a feature doc both use the word "principle", they are talking about
+different things.
 
 1. **Greenfield.** No users yet, no legacy to protect. Don't add backward-compat
    shims, migrations, deprecation paths, or "reusable for later" scaffolding.
@@ -28,6 +35,14 @@ principle for a specific case with rationale — but the burden is on the except
    fallbacks, no partial-success degradation, no swallowed errors. A loud failure
    now beats a quiet wrong answer later. Log only failure category, endpoint, and
    status — never payloads.
+5. **Parse at the boundary, then trust the types.** Everything crossing into the
+   app — HTTP payloads, model output, environment configuration, third-party
+   responses — is parsed by a Zod schema at the edge, and every layer inside works
+   from the types that parse produced. Derive types from schemas rather than
+   declaring the same shape twice. TypeScript runs strict; `any` and unchecked casts
+   are defects, not shortcuts. This is not in tension with the happy path: a schema
+   describes only what we actually consume, and anything that doesn't match it is a
+   fail-fast error rather than a case to recover from.
 
 ## How work flows
 
@@ -73,7 +88,8 @@ a prior decision.
 Keep this file about _how we work_, not how the code currently happens to be built.
 
 - `README.md` owns setup and operator configuration.
-- Feature docs own durable intent and product/architecture boundaries.
+- Feature docs own durable intent, product/architecture boundaries, and any product
+  principles specific to a feature.
 - The active plan and its Decision Log own current scope, gates, and semantics.
 - Code, tests, package scripts, and CI own executable behavior and verification
   commands.
