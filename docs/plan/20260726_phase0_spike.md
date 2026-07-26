@@ -7,8 +7,10 @@ Feature doc: [`../feat/20260725_voice_practice_tool_mvp.md`](../feat/20260725_vo
 
 Latency, model-selection, and register legs complete (2026-07-26). Basic Web
 Speech compatibility is now observed on Android Chrome and iOS Safari. Browser
-checks remain partially complete: accuracy on the kids' voices, offline
-recognition, and Safari audio playback still need real-device results.
+checks remain partially complete: accuracy on the kids' voices still needs a
+real-device result. Safari delayed atomic playback now passes. Offline
+recognition remains a useful observation about the browser-vendor boundary,
+not an availability requirement or exit gate (D56).
 
 ## Android Chrome device result
 
@@ -48,7 +50,9 @@ submitted diagnostic report is
   factory” instead of “Maya packed three”; and the question changed “shape” to
   “chef.”
 - Delayed audio unlock, progressive playback, and offline recognition were not
-  run in this Safari report.
+  run in this submitted Safari report. A later operator run confirmed that the
+  delayed source swap plays without a second tap. Progressive playback is no
+  longer relevant after the atomic Flash selection (D55).
 
 This is a compatibility pass with first-run-permission and accuracy caveats,
 not completion of the Safari device leg.
@@ -70,7 +74,9 @@ reading because its API cannot accept the recorded blob.
 
 Fast browser response does not establish that recognition is local. Web Speech
 remains browser-managed and may use a vendor service; offline testing is still
-the observation that can clarify that boundary.
+the observation that can clarify that boundary. It need not succeed and does
+not gate the MVP; the product already discloses browser-vendor processing and
+fails closed when recognition is unavailable (D56).
 
 The findings below drove the main plan's model, speech-out, safety, and
 diagnostic decisions. Its append-only Decision Log is authoritative for the

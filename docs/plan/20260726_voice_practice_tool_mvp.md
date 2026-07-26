@@ -7,7 +7,9 @@ Diagnostics feature doc: [`docs/feat/20260726_device_diagnostics.md`](../feat/20
 
 Phase 0a is complete. Its frozen install, deterministic verification lane,
 production build, and local root-route smoke check pass on Node.js 24.
-Phase 0b's browser checks remain open.
+Phase 0b's child-voice accuracy check remains open. Safari delayed atomic
+playback passes, and offline recognition is an observational privacy check
+rather than an availability gate (D56).
 
 Phase 0a establishes the durable repository foundation. Phase 0b is a
 throwaway device spike whose result can invalidate the application stack;
@@ -39,8 +41,8 @@ offline too, as does the direct ElevenLabs synthesis adapter. Talia, the fixed
 copy, `eleven_flash_v2_5`, and the provider cap are operator-approved; all five
 fixed MP3s are committed behind a text/voice/model/hash contract and their
 rendered delivery is operator-approved (D54, D55). The HTTP route and
-interactive voice screen have not started. Phase 0b's remaining device checks
-still gate that work.
+interactive voice screen have not started. Phase 0b's remaining child-voice
+accuracy check still gates that work.
 
 ## Scope
 
@@ -286,12 +288,14 @@ The latency leg and basic browser compatibility are **complete** —
 measurements, model selection, the register comparison, and the Android/Safari
 observations are recorded in
 [`20260726_phase0_spike.md`](20260726_phase0_spike.md), with its harness
-committed under `spike/` and absorbed per D30. What remains is child-voice
-accuracy, offline recognition, and Safari audio playback.
+committed under `spike/` and absorbed per D30. Safari delayed atomic playback
+passes. What remains is child-voice accuracy; offline behavior is still worth
+observing for privacy documentation, but it need not work and is not an exit
+gate (D56).
 
 1. Web Speech API: interim results, restart-on-silence behaviour, accuracy
-   on the kids' actual voices, and the observed local-or-vendor processing
-   boundary on each target browser.
+   on the kids' actual voices, and, where convenient, the observed
+   local-or-vendor processing boundary on each target browser.
 2. Audio unlock: `play()` called in the tap handler, `src` swapped in ~1.5s
    later, confirmed to actually play.
 3. Remote speech recognition comparison: one bounded recording of the selected
@@ -300,9 +304,11 @@ accuracy, offline recognition, and Safari audio playback.
    Their transcripts and request timings are compared with the Web Speech result
    on the same device. The recording is not logged or retained by the app.
 
-**Exit:** the browser behaviors and the remote comparison work on iOS Safari
-and Android Chrome. Any Web Speech failure sends us back to server-side speech
-recognition on a container host before further work.
+**Exit:** recognition is accurate enough on the kids' actual voices, delayed
+atomic playback works on iOS Safari and Android Chrome, and the remote
+comparison works on both. A Web Speech availability or accuracy failure sends
+us back to server-side speech recognition on a container host before further
+work; failure while deliberately offline does not.
 
 The diagnostic surface itself is complete when it infers the device from the
 user agent, preserves the browser checks above, validates direct submissions at
@@ -1140,3 +1146,15 @@ Append-only. Stable IDs; reversals say what they supersede.
   SHA-256 hash, and `verify` checks those values against the committed files.
   The operator listened to and approved the five generated deliveries before
   they were committed.
+- **D56 (2026-07-26) — Safari delayed atomic playback passes; offline
+  recognition is evidence, not an exit gate.** The operator confirmed that the
+  diagnostic's delayed source swap plays in Safari without a second tap. That
+  validates the one-tap atomic Flash path selected by D55; progressive playback
+  is no longer part of the MVP.
+
+  Offline Web Speech behavior answers whether a browser is using a remote
+  vendor service, but the product never promised offline availability. It
+  already discloses the browser-vendor boundary and fails closed when
+  recognition is unavailable. An offline run remains useful privacy evidence,
+  but neither success nor failure blocks Phase 2. Phase 0b now has one
+  outstanding device gate: recognition accuracy on the kids' actual voices.
