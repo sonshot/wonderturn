@@ -1,162 +1,3 @@
----
-version: alpha
-name: Wonderturn
-description: A calm, age-neutral, phone-first visual system for voice practice.
-colors:
-  primary: "#0B6B5E"
-  primary-active: "#07564C"
-  on-primary: "#FFFFFF"
-  canvas: "#F6F3EC"
-  plinth: "#F0EBE1"
-  surface: "#FFFFFF"
-  ink: "#17211F"
-  ink-muted: "#4E5F5B"
-  line-soft: "#E5DFD3"
-  line-strong: "#7D776B"
-  focus: "#1457D9"
-  thinking-bg: "#FFF2C7"
-  thinking-ink: "#6B4E00"
-  speaking-bg: "#E9EEF7"
-  speaking-ink: "#33497F"
-  error-bg: "#FDEEEE"
-  error-ink: "#973B3B"
-fontFamilies:
-  reading: 'Literata, ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif'
-  ui: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-typography:
-  screen-title:
-    fontFamily: "{fontFamilies.reading}"
-    fontSize: 34px
-    fontWeight: 600
-    lineHeight: 40px
-    letterSpacing: -0.4px
-  section-title:
-    fontFamily: "{fontFamilies.reading}"
-    fontSize: 19px
-    fontWeight: 600
-    lineHeight: 24px
-    letterSpacing: -0.1px
-  transcript:
-    fontFamily: "{fontFamilies.reading}"
-    fontSize: 21px
-    fontWeight: 400
-    lineHeight: 32px
-    letterSpacing: 0
-  body:
-    fontFamily: "{fontFamilies.ui}"
-    fontSize: 16px
-    fontWeight: 400
-    lineHeight: 26px
-    letterSpacing: 0
-  button:
-    fontFamily: "{fontFamilies.ui}"
-    fontSize: 16px
-    fontWeight: 650
-    lineHeight: 20px
-    letterSpacing: 0
-  meta:
-    fontFamily: "{fontFamilies.ui}"
-    fontSize: 14px
-    fontWeight: 600
-    lineHeight: 20px
-    letterSpacing: 0.4px
-spacing:
-  xxs: 4px
-  xs: 8px
-  sm: 12px
-  md: 16px
-  lg: 24px
-  xl: 32px
-  xxl: 40px
-  xxxl: 48px
-  section: 64px
-rounded:
-  control: 8px
-  notice: 12px
-  full: 9999px
-components:
-  secondary-copy:
-    backgroundColor: "{colors.canvas}"
-    textColor: "{colors.ink-muted}"
-    typography: "{typography.body}"
-  divider-soft:
-    backgroundColor: "{colors.line-soft}"
-    size: 1px
-  control-outline:
-    backgroundColor: "{colors.line-strong}"
-    size: 1px
-  focus-ring:
-    backgroundColor: "{colors.focus}"
-    size: 3px
-    offset: 2px
-  glyph:
-    size: 24px
-    controlSize: 28px
-    strokeWidth: 1.5px
-  level-meter:
-    barColor: "{colors.ink-muted}"
-    barWidth: 3px
-    barGap: 2px
-    barCount: 5
-    minBarHeight: 4px
-    maxBarHeight: 20px
-  talk-control:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.on-primary}"
-    typography: "{typography.button}"
-    rounded: "{rounded.full}"
-    minSize: 104px
-    innerRim: 1.5px solid {colors.primary-active}
-    innerRimInset: 6px
-  talk-control-pressed:
-    backgroundColor: "{colors.primary-active}"
-    textColor: "{colors.on-primary}"
-    typography: "{typography.button}"
-    rounded: "{rounded.full}"
-    minSize: 104px
-  start-over:
-    backgroundColor: "{colors.canvas}"
-    textColor: "{colors.ink}"
-    typography: "{typography.button}"
-    rounded: "{rounded.control}"
-    border: 1px solid {colors.line-strong}
-    padding: 14px 16px
-    minHeight: 48px
-  status-thinking:
-    backgroundColor: "{colors.thinking-bg}"
-    textColor: "{colors.thinking-ink}"
-    typography: "{typography.meta}"
-    rounded: "{rounded.full}"
-    padding: 6px 12px
-  status-speaking:
-    backgroundColor: "{colors.speaking-bg}"
-    textColor: "{colors.speaking-ink}"
-    typography: "{typography.meta}"
-    rounded: "{rounded.full}"
-    padding: 6px 12px
-  inline-notice:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.notice}"
-    border: 1px solid {colors.line-soft}
-    padding: 16px
-  error-notice:
-    backgroundColor: "{colors.error-bg}"
-    textColor: "{colors.error-ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.notice}"
-    padding: 16px
-  sign-in-action:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    typography: "{typography.button}"
-    rounded: "{rounded.control}"
-    border: 1px solid {colors.line-strong}
-    padding: 14px 20px
-    minHeight: 48px
----
-
 # Wonderturn
 
 ## Overview
@@ -212,10 +53,11 @@ Numbers that carry an *argument* still belong here — the contrast ratios under
 Colors, the ~360px at which the control zone stops being sticky, "48px is a
 floor, not a fixed value." Those are reasoning, not configuration.
 
-The frontmatter below is a holding place, not the destination. It is deleted in
-Phase 1 (D45) when the theme lands, after which every token in this document is
-cited by its real custom property — `--color-canvas`, `--text-transcript` — and
-an offline test asserts that each one it cites actually exists.
+Theme primitives are cited by their real custom properties —
+`--color-canvas`, `--text-transcript` — and an offline test asserts that every
+custom property cited here exists in Tailwind's `@theme`. Values used by only
+one component live with that component rather than pretending to be reusable
+tokens.
 
 ### Design principles
 
@@ -279,29 +121,35 @@ The atmosphere is warm mineral paper with dark green-black ink. Deep teal is
 the sole primary action color. Supporting state colors are pale and
 functional; they never replace a text label or icon.
 
-- **Canvas (`{colors.canvas}`).** The full-page background, and genuinely warm:
+- **Canvas (`--color-canvas`).** The full-page background, and genuinely warm:
   red ≥ green > blue, the temperature of uncoated paper. Do not substitute pure
   white, a cool blue-gray, or a neutral off-white — a neutral canvas is the
   single fastest way to make this system look unfinished rather than calm.
-- **Plinth (`{colors.plinth}`).** One step deeper than the canvas, used for the
+- **Plinth (`--color-plinth`).** One step deeper than the canvas, used for the
   control zone only. It gives the screen two planes so the instrument reads as
   sitting *on* something. It is a tone, not a card: no border, no radius, no
   shadow of its own.
-- **Surface (`{colors.surface}`).** Notices and the sign-in action. Most
+- **Surface (`--color-surface`).** Notices and the sign-in action. Most
   transcript content sits directly on the canvas rather than inside cards.
-- **Ink (`{colors.ink}`).** Primary text, icons, and strong boundaries.
-- **Muted ink (`{colors.ink-muted}`).** Secondary explanations and metadata.
+- **Ink (`--color-ink`).** Primary text, icons, and strong boundaries.
+- **Muted ink (`--color-ink-muted`).** Secondary explanations and metadata.
   It is still body-readable, not decorative fine print.
-- **Primary (`{colors.primary}`).** The talk control and the rare highest
+- **Primary (`--color-primary`).** The talk control and the rare highest
   priority action. Do not spread teal across headings or transcript turns.
-- **Soft line (`{colors.line-soft}`).** Decorative separation only.
-- **Strong line (`{colors.line-strong}`).** Meaningful control boundaries
+- **Primary active (`--color-primary-active`).** The talk control's inner rim
+  and pressed fill; it is not a separate voice-state color.
+- **On primary (`--color-on-primary`).** Action text and glyphs placed on the
+  primary fill.
+- **Soft line (`--color-line-soft`).** Decorative separation only.
+- **Strong line (`--color-line-strong`).** Meaningful control boundaries
   where a fill is not present.
-- **Focus (`{colors.focus}`).** A dedicated three-pixel keyboard focus ring.
+- **Focus (`--color-focus`).** A dedicated three-pixel keyboard focus ring.
   Focus is never communicated by a subtle color shift alone.
-- **Thinking and speaking colors.** Reserved for their status chips. The
-  words and glyphs still carry the state.
-- **Error colors.** Reserved for actual failure. Listening is never red.
+- **Thinking (`--color-thinking-bg`, `--color-thinking-ink`) and speaking
+  (`--color-speaking-bg`, `--color-speaking-ink`).** Reserved for their status
+  chips. The words and glyphs still carry the state.
+- **Error (`--color-error-bg`, `--color-error-ink`).** Reserved for actual
+  failure. Listening is never red.
 
 The declared foreground/background pairs target WCAG 2.2 AA and were computed
 against the warm canvas, not the old neutral one: ink 14.9:1, muted ink 6.1:1
@@ -319,12 +167,12 @@ complete system.
 Two families, and the split carries meaning: **the serif is the conversation,
 the sans is the application.**
 
-- **Reading (`{fontFamilies.reading}`).** Literata, a serif designed for screen
+- **Reading (`--font-reading`).** Literata, a serif designed for screen
   reading. It sets the transcript and the titles — everything that is content or
   greeting. Serif is also what children's books are set in, which serves
   age-neutral competence better than a friendly sans ever could: it reads as a
   real book rather than as software being nice to a kid.
-- **UI (`{fontFamilies.ui}`).** The native stack. It sets buttons, status,
+- **UI (`--font-ui`).** The native stack. It sets buttons, status,
   notices, and labels — everything that is machinery.
 
 Literata is self-hosted through `next/font` with `font-display: optional` and
@@ -336,20 +184,22 @@ Georgia or Iowan Old Style and still reads as intended. Load one variable
 weight range, latin subset only, and nothing else; do not add a second face, an
 icon font, or a display face for headings.
 
-- **Screen title.** Sign-in and denial screens. Reading family.
-- **Section title.** Header title and short empty-state headings. Reading, and
-  deliberately *smaller* than the transcript: the header is chrome, not content,
-  and a one-word title does not need to outrank the conversation to be found.
-- **Transcript.** The main reading voice, and deliberately the largest text on
-  the screen — this is the content, and the hierarchy should be obvious at a
-  glance rather than inferred. Keep its generous line height and never shrink it
-  to fit more history.
-- **Body.** Explanations, notices, and status sentences. UI family, and a step
-  smaller than the transcript so it stays subordinate to it.
-- **Button.** Action labels. UI family, sentence case.
-- **Meta.** Speaker labels and compact state labels. UI family, with tracking,
-  because a small label earns its authority from letterspacing rather than from
-  size. Never use all caps.
+- **Screen title (`--text-screen-title`).** Sign-in and denial screens. Reading
+  family.
+- **Section title (`--text-section-title`).** Header title and short
+  empty-state headings. Reading, and deliberately *smaller* than the transcript:
+  the header is chrome, not content, and a one-word title does not need to
+  outrank the conversation to be found.
+- **Transcript (`--text-transcript`).** The main reading voice, and deliberately
+  the largest text on the screen — this is the content, and the hierarchy should
+  be obvious at a glance rather than inferred. Keep its generous line height and
+  never shrink it to fit more history.
+- **Body (`--text-body`).** Explanations, notices, and status sentences. UI
+  family, and a step smaller than the transcript so it stays subordinate to it.
+- **Button (`--text-button`).** Action labels. UI family, sentence case.
+- **Meta (`--text-meta`).** Speaker labels and compact state labels. UI family,
+  with tracking, because a small label earns its authority from letterspacing
+  rather than from size. Never use all caps.
 
 **On any screen showing a transcript, nothing is set larger than the
 transcript.** That is why `section-title` sits below it and why `screen-title`
@@ -400,8 +250,8 @@ of these five states is that the boxes never move.
 
 ### Phone layout
 
-- Default horizontal gutter: `{spacing.lg}` (24px).
-- At widths below 360px: reduce the gutter to `{spacing.md}` (16px).
+- Default horizontal gutter: `--spacing-lg`.
+- At widths below 360px: reduce the gutter to `--spacing-md`.
 - Header: at least 64px high, with `Practice` on the left and the full
   `Start over` label on the right.
 - Transcript: consumes the flexible middle space and scrolls independently
@@ -413,7 +263,7 @@ of these five states is that the boxes never move.
 - A notice replaces the empty state rather than joining it. Once a microphone
   or error notice is present, `Tap Talk…` is gone — leaving it there tells the
   person to do the thing that just didn't work.
-- Control zone: filled with `{colors.plinth}`, 16px top padding and
+- Control zone: filled with `--color-plinth`, `--spacing-md` top padding and
   `calc(16px + env(safe-area-inset-bottom))` bottom padding. The tone change is
   what marks the region — it takes no border, radius, or shadow of its own.
 - The control zone may be sticky, but it must never overlay transcript text.
@@ -424,10 +274,16 @@ of these five states is that the boxes never move.
 Whitespace communicates calm and separates turns. Prefer empty canvas over
 wrapping each item in a card.
 
+The named scale runs from `--spacing-xxs`, `--spacing-xs`, `--spacing-sm`,
+`--spacing-md`, and `--spacing-lg` through `--spacing-xl`, `--spacing-xxl`,
+`--spacing-xxxl`, and `--spacing-section`. Use the smallest steps for
+label-to-content relationships, the middle steps for component and gutter
+rhythm, and the largest steps only between screen sections.
+
 The empty state occupies the transcript region without illustration, and its
 composition is what keeps it from reading as an unfinished screen: set the two
 lines optically centred in the region — slightly above true centre — with
-`{spacing.xs}` between them, left-aligned to the same gutter as transcript
+`--spacing-xs` between them, left-aligned to the same gutter as transcript
 text rather than centred horizontally. It should look like the first page of a
 notebook, not like a placeholder waiting for content.
 
@@ -450,8 +306,8 @@ or multiple competing shadows.
 
 ## Shapes
 
-Most controls use `{rounded.control}` and notices use `{rounded.notice}`. The
-talk control and compact status chips are fully round. There is no
+Most controls use `--radius-control` and notices use `--radius-notice`. The
+talk control and compact status chips use `--radius-full`. There is no
 structural-panel radius, because there are no structural panels.
 
 Roundness is hierarchical, not decorative. Do not make every surface a pill
@@ -492,16 +348,16 @@ bubbles, portraits, timestamps, delivery marks, or typing indicators.
 
 Each turn contains:
 
-- A compact label in `{typography.meta}` and `{colors.ink-muted}`: `You` or
+- A compact label in `--text-meta` and `--color-ink-muted`: `You` or
   `AI reply`.
-- Transcript text underneath in `{typography.transcript}` and `{colors.ink}`,
-  `{spacing.xxs}` below its label.
-- At least `{spacing.lg}` between speakers.
+- Transcript text underneath in `--text-transcript` and `--color-ink`,
+  `--spacing-xxs` below its label.
+- At least `--spacing-lg` between speakers.
 
 Whitespace is the only separator. Do not draw a rule between turns, between
-speakers, or under the header. `{components.divider-soft}` has exactly one use
-in this system: parting the control zone from scrolling content, and only while
-content is actually scrolled.
+speakers, or under the header. The soft divider has exactly one use in this
+system: parting the control zone from scrolling content, and only while content
+is actually scrolled.
 
 Interim speech recognition updates the current `You` turn in place. Do not
 announce every interim word to assistive technology. A cleared AI reply is
@@ -534,12 +390,12 @@ is the rule, not an omission — the error notice below already carries a tonal
 error fill, and a second one directly above it turns one calm failure into the
 red spectacle this system forbids.
 
-Glyphs are `{components.glyph}`, always paired with visible text: open circle
-for Ready, microphone for both permission rows, ellipsis for Thinking, speaker
-for Speaking, exclamation for Error. Listening is the exception — its bars are
-a live level meter rather than an icon (see Listening cue).
+Status glyphs are always paired with visible text: open circle for Ready,
+microphone for both permission rows, ellipsis for Thinking, speaker for
+Speaking, exclamation for Error. Listening is the exception — its bars are a
+live level meter rather than an icon (see Listening cue).
 
-The gap between the status row and the talk control is `{spacing.md}`.
+The gap between the status row and the talk control is `--spacing-md`.
 
 A fresh screen opens on `Ready` with the `Talk` label. One activation both
 requests the microphone and starts listening, so an untouched screen must
@@ -574,23 +430,22 @@ listening. Only `Listening` differs, where a stop square matches `Done`. Do
 not put the speaker glyph on this control while the reply is playing — the
 status row already carries a speaker there, and repeating it on a button whose
 label says `Talk` is exactly the status/action collision this table exists to
-prevent. Glyphs are `{components.glyph}`: single-color line art at 24px with a
-1.5px stroke, `{spacing.xxs}` above the label.
+prevent. Action glyphs are single-color line art, `--spacing-xxs` above the
+label.
 
-The control is `{rounded.full}` at a **minimum** of 104 by 104 CSS pixels, not
+The control is `--radius-full` at a **minimum** of 104 by 104 CSS pixels, not
 a fixed 104. Under large text it grows; the label never clips and never
 overflows the circle. `Try again` at 200% is the case that proves it.
 
 Give it the quality of a real object, because it is the only one on the screen.
-The disc is a flat `{colors.primary}` fill with a hairline inner rim —
-`{components.talk-control.innerRim}`, inset `{components.talk-control.innerRimInset}`
-— which reads as a machined edge rather than as decoration. The glyph is
-`{components.glyph.controlSize}`, larger than a status glyph, with the label
-`{spacing.xxs}` beneath it. While Listening, add one static concentric ring in
-`{colors.primary}` 2px wide, 6px outside the disc. A ring is a form; it does not
-breathe, pulse, or glow, and it disappears the instant recording stops. That
-distinction is the whole line between an instrument and an orb: an instrument
-shows its state by holding a shape, a companion shows it by moving.
+The disc is a flat `--color-primary` fill with a hairline inner rim, which
+reads as a machined edge rather than as decoration. Its action glyph is larger
+than a status glyph, with the label `--spacing-xxs` beneath it. While
+Listening, add one static concentric ring in `--color-primary` outside the
+disc. A ring is a form; it does not breathe, pulse, or glow, and it disappears
+the instant recording stops. That distinction is the whole line between an
+instrument and an orb: an instrument shows its state by holding a shape, a
+companion shows it by moving.
 
 The rim is the entire effect. Do not add directional shading, an inner
 highlight, a soft inner shadow, or any other simulation of light falling on the
@@ -610,13 +465,12 @@ The state name is never conveyed by color alone. The control activates on
 release, not pointer-down. Do not use press-and-hold, swipe, hidden
 cancellation, or a call/hang-up metaphor.
 
-`{components.talk-control-pressed}` is the pressed fill and nothing else: it
+The talk control's pressed treatment changes the fill and nothing else: it
 applies while a pointer or key is held down, alongside the press-feedback
 transform under Motion, and it reverts on release. It is not the Listening
 state's fill. No voice state changes this control's color — the status row, the
-glyph, and the label carry state, and a state-colored button would put a
-fourth signal on the one element that must stay recognisable as a single
-instrument.
+glyph, and the label carry state, and a state-colored button would put a fourth
+signal on the one element that must stay recognisable as a single instrument.
 
 Set `touch-action: manipulation` on the control so a fast second tap cannot
 trigger double-tap zoom. Never reach for `user-scalable=no` to get that: the
@@ -626,10 +480,8 @@ breaks this document's own accessibility floor.
 ### Listening cue
 
 The Listening status glyph *is* the level meter — the "level bars" named under
-State status are live, not an icon of bars. Build it as
-`{components.level-meter}`: five bars, 3px wide with a 2px gap, muted ink,
-each between 4px and 20px tall, driven by real microphone amplitude at display
-refresh rate.
+State status are live, not an icon of bars. Its muted-ink bars are driven by
+real microphone amplitude at display refresh rate.
 
 Make this good rather than tolerable. It is the one genuinely alive moment the
 design permits, and it earns that permission by being honest: it reflects the
@@ -638,10 +490,10 @@ the fastest possible answer to the only question that matters while recording �
 *is it hearing me?*
 
 It never appears inside the talk control, which carries the stop glyph and
-`Done` at that moment. It stops on the same frame recording stops, rests at
-`{components.level-meter.minBarHeight}`, and never moves while the microphone is
-inactive. Under `prefers-reduced-motion: reduce`, hold the bars at rest and let
-the `Listening` text carry the state alone.
+`Done` at that moment. It stops on the same frame recording stops, rests at its
+minimum height, and never moves while the microphone is inactive. Under
+`prefers-reduced-motion: reduce`, hold the bars at rest and let the `Listening`
+text carry the state alone.
 
 ### Thinking cue
 

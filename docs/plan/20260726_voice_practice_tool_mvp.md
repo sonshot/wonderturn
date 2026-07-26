@@ -20,6 +20,11 @@ configuration, production proxy callback, dynamic host boundary, and offline
 contracts pass `verify` and a production build. G3 and G4 are resolved (D50):
 an approved account completes Google SSO on production and the branch preview
 in Safari, returns to the initiating host, and survives a reload on both.
+The Phase 1 design slice is also code-complete (D51): its theme primitives,
+locally bundled Literata variable font, sign-in and denied states, empty talk
+screen, and offline token-citation contract pass `verify` and a production
+build. A 320px browser check confirms the sign-in action's minimum height,
+warm canvas, reading font, and absence of horizontal overflow.
 The deployed denied-account and Safari restart-persistence checks remain open,
 so the phase is not complete.
 
@@ -1068,3 +1073,12 @@ Append-only. Stable IDs; reversals say what they supersede.
   Buying a custom domain later requires an explicit superseding decision plus
   coordinated Google redirect URI and environment changes; no dormant
   `wonderturn.com` compatibility is carried now.
+- **D51 (2026-07-26) — Literata is a local build input, not a build-time
+  download.** Refines D45's `next/font` choice. The app depends on
+  `@fontsource-variable/literata` and passes its Latin, normal-style,
+  variable-weight WOFF2 file to `next/font/local` with `font-display:
+  optional`. This preserves the planned one-file, Latin-only reading face and
+  fallback stack while keeping production builds independent of Google Fonts
+  availability. `next/font/google` was rejected after the production build
+  attempted seven remote subset downloads despite requesting only the Latin
+  subset.

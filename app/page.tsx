@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { isAllowedEmail } from "@/lib/auth/allowlist";
 import { auth } from "@/lib/auth/server";
 import { DeniedState } from "@/components/denied-state";
+import { PracticeScreen } from "@/components/practice-screen";
 import { SignInGate } from "@/components/sign-in-gate";
 
 export default async function Home() {
@@ -19,5 +20,5 @@ export default async function Home() {
     return <DeniedState />;
   }
 
-  return <main />;
+  return <PracticeScreen />;
 }

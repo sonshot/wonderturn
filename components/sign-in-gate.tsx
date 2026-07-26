@@ -25,26 +25,28 @@ export function SignInGate() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-[42rem] flex-col items-center justify-center gap-4 px-6 text-center">
-      <p className="text-sm">AI voice practice</p>
-      <h1 className="text-2xl font-medium">Ready to practice?</h1>
-      <p className="text-base">
-        Sign in with your family&apos;s approved Google account to continue.
-      </p>
-      <button
-        type="button"
-        className="inline-flex min-h-12 items-center gap-3 rounded border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-wait disabled:opacity-70"
-        disabled={isStarting}
-        onClick={signInWithGoogle}
-      >
-        <GoogleMark />
-        {isStarting ? "Opening Google…" : "Continue with Google"}
-      </button>
-      {hasError ? (
-        <p role="alert" className="text-sm">
-          Something went wrong. Try again.
+    <main className="px-lg py-xl max-[359px]:px-md mx-auto flex min-h-dvh w-full max-w-[42rem] items-center justify-center">
+      <div className="gap-md flex w-full max-w-[24rem] flex-col items-center text-center">
+        <p className="text-meta text-ink-muted">AI voice practice</p>
+        <h1 className="font-reading text-screen-title">Ready to practice?</h1>
+        <p className="text-body text-ink-muted">
+          Sign in with your family&apos;s approved Google account to continue.
         </p>
-      ) : null}
+        <button
+          type="button"
+          className="mt-xs gap-sm rounded-control border-line-strong bg-surface px-lg text-button text-ink hover:bg-plinth focus-visible:ring-focus focus-visible:ring-offset-canvas inline-flex min-h-12 items-center border py-[14px] transition-colors focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-wait disabled:opacity-70"
+          disabled={isStarting}
+          onClick={signInWithGoogle}
+        >
+          <GoogleMark />
+          {isStarting ? "Opening Google…" : "Continue with Google"}
+        </button>
+        {hasError ? (
+          <p role="alert" className="text-body text-error-ink">
+            Something went wrong. Try again.
+          </p>
+        ) : null}
+      </div>
     </main>
   );
 }

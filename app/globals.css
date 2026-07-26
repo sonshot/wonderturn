@@ -1,1 +1,80 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #0b6b5e;
+  --color-primary-active: #07564c;
+  --color-on-primary: #ffffff;
+  --color-canvas: #f6f3ec;
+  --color-plinth: #f0ebe1;
+  --color-surface: #ffffff;
+  --color-ink: #17211f;
+  --color-ink-muted: #4e5f5b;
+  --color-line-soft: #e5dfd3;
+  --color-line-strong: #7d776b;
+  --color-focus: #1457d9;
+  --color-thinking-bg: #fff2c7;
+  --color-thinking-ink: #6b4e00;
+  --color-speaking-bg: #e9eef7;
+  --color-speaking-ink: #33497f;
+  --color-error-bg: #fdeeee;
+  --color-error-ink: #973b3b;
+
+  --font-reading:
+    var(--font-literata), ui-serif, Georgia, "Iowan Old Style",
+    "Times New Roman", serif;
+  --font-ui:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --text-screen-title: 2.125rem;
+  --text-screen-title--line-height: 2.5rem;
+  --text-screen-title--font-weight: 600;
+  --text-screen-title--letter-spacing: -0.025rem;
+  --text-section-title: 1.1875rem;
+  --text-section-title--line-height: 1.5rem;
+  --text-section-title--font-weight: 600;
+  --text-section-title--letter-spacing: -0.00625rem;
+  --text-transcript: 1.3125rem;
+  --text-transcript--line-height: 2rem;
+  --text-transcript--font-weight: 400;
+  --text-body: 1rem;
+  --text-body--line-height: 1.625rem;
+  --text-body--font-weight: 400;
+  --text-button: 1rem;
+  --text-button--line-height: 1.25rem;
+  --text-button--font-weight: 650;
+  --text-meta: 0.875rem;
+  --text-meta--line-height: 1.25rem;
+  --text-meta--font-weight: 600;
+  --text-meta--letter-spacing: 0.025rem;
+
+  --spacing-xxs: 0.25rem;
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 0.75rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-xxl: 2.5rem;
+  --spacing-xxxl: 3rem;
+  --spacing-section: 4rem;
+
+  --radius-control: 0.5rem;
+  --radius-notice: 0.75rem;
+  --radius-full: 9999px;
+}
+
+@layer base {
+  html {
+    background: var(--color-canvas);
+  }
+
+  body {
+    min-height: 100dvh;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-ui);
+  }
+
+  button {
+    cursor: pointer;
+  }
+}
