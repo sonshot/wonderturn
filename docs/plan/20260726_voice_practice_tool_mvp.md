@@ -28,6 +28,15 @@ warm canvas, reading font, and absence of horizontal overflow.
 The deployed denied-account and Safari restart-persistence checks remain open,
 so the phase is not complete.
 
+Phase 2 has started with its provider-independent text seam and Gateway text
+adapters (D52). `runTextTurn` now owns empty-input short-circuiting,
+classification/generation concurrency, outcome precedence, speculative
+preparation, fail-closed checks, and immutable normalization/truncation. The
+classifier prompt is absorbed from the spike, model output is parsed at each
+adapter boundary, and the offline concurrency and failure contracts pass.
+The HTTP route, fixed audio, ordinary TTS, and interactive voice screen have
+not started; Phase 0b and G6 still gate that speech work.
+
 ## Scope
 
 This plan owns *how* the MVP gets built and verified. The feature doc owns
@@ -1082,3 +1091,11 @@ Append-only. Stable IDs; reversals say what they supersede.
   availability. `next/font/google` was rejected after the production build
   attempted seven remote subset downloads despite requesting only the Latin
   subset.
+- **D52 (2026-07-26) — Phase 2 may start at the provider-independent text
+  seam before the device gate exits.** Extends D49's operator-approved
+  sequencing exception from the access gate to this bounded text slice. The
+  implementation may absorb the classifier prompt, build `runTextTurn`, and
+  wire the selected Gateway text models because those contracts do not depend
+  on microphone or playback behavior. This does not waive Phase 0b, G2, or G6:
+  the HTTP/audio path and interactive voice screen remain gated until their
+  browser, funded-provider, voice, and cap prerequisites are resolved.
