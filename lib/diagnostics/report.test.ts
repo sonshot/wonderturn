@@ -20,9 +20,11 @@ const validReport = {
   interimTranscript: "",
   notes: "",
   offlineRecognition: "not-tested",
+  remoteTranscriptions: [],
   results: {
     delayedAudioUnlock: "passed",
     progressiveAudio: "failed",
+    remoteTranscription: "not-run",
     speechRecognition: "passed",
   },
   speechSampleId: "everyday",

@@ -27,6 +27,10 @@ pnpm dev
 Then open `http://localhost:3000`.
 
 The operator device checks live at `http://localhost:3000/diagnostics`.
+Its remote speech-to-text comparison uses Vercel AI Gateway. Vercel
+deployments authenticate with the project's OIDC identity; local development
+needs either a current `VERCEL_OIDC_TOKEN` from the linked project or an
+`AI_GATEWAY_API_KEY` in `.env.local`.
 
 ## Verification
 

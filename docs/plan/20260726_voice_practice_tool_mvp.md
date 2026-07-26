@@ -245,9 +245,9 @@ root route successfully.
 
 ### Phase 0b — De-risk on real devices
 
-Run locally behind a `cloudflared` quick tunnel on the two phones the family
-uses; nothing is deployed. The browser harness begins here, then remains as the
-durable `/diagnostics` operator surface described by D46.
+Run the Vercel branch preview on the two phones the family uses. The browser
+harness begins here, then remains as the durable `/diagnostics` operator
+surface described by D46.
 
 The latency leg is **complete** — measurements, model selection, and the
 register comparison are recorded in
@@ -260,15 +260,21 @@ behaviour, which no measurement from a laptop can answer.
    boundary on each target browser.
 2. Audio unlock: `play()` called in the tap handler, `src` swapped in ~1.5s
    later, confirmed to actually play.
+3. Remote speech recognition comparison: one bounded recording of the selected
+   test sentence is sent concurrently to
+   `openai/gpt-4o-mini-transcribe` and `xai/grok-stt` through AI Gateway.
+   Their transcripts and request timings are compared with the Web Speech result
+   on the same device. The recording is not logged or retained by the app.
 
-**Exit:** both browser behaviours work on iOS Safari and Android Chrome.
-Any failure sends us back to server-side speech recognition on a container
-host before further work.
+**Exit:** the browser behaviors and the remote comparison work on iOS Safari
+and Android Chrome. Any Web Speech failure sends us back to server-side speech
+recognition on a container host before further work.
 
 The diagnostic surface itself is complete when it infers the device from the
 user agent, preserves the browser checks above, validates direct submissions at
-the server boundary, and returns a report reference. Its temporary sink is the
-server console; persistent storage remains out of scope.
+the server boundary, compares browser recognition with two Gateway-routed
+providers, and returns a report reference. Its temporary sink is the server
+console; persistent report or audio storage remains out of scope.
 
 ### Phase 1 — Access gate
 
@@ -983,3 +989,18 @@ Append-only. Stable IDs; reversals say what they supersede.
   the experience of a child speaking naturally. Fixed input and captured output
   provide the comparison needed for the device gate without inventing a new
   subsystem.
+- **D48 (2026-07-26) — Remote STT comparison uses AI Gateway.** The July 22
+  Gateway audio release makes the Phase 0 spike's earlier lack-of-STT finding
+  obsolete. Diagnostics now sends one short MediaRecorder file concurrently to
+  `openai/gpt-4o-mini-transcribe` and `xai/grok-stt` through the AI SDK. This
+  gives two provider implementations behind the Vercel project's existing OIDC,
+  observability, and spend controls without introducing two provider keys or a
+  bespoke client.
+
+  This is batch transcription, not realtime streaming: the current question is
+  comparative accuracy and end-to-end response time for a completed child-sized
+  sentence. The app accepts at most 2 MB, times out each provider after 30
+  seconds, fails the comparison as a unit, and neither stores nor logs audio.
+  The diagnostic page discloses that audio leaves the device and that the
+  selected OpenAI route currently has no Gateway zero-data-retention support.
+  The report may include the resulting text and timings, but never the audio.

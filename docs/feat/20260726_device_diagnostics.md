@@ -28,6 +28,9 @@ In scope:
   an operator-recorded offline result.
 - A fixed set of short, child-readable speech samples so the expected and
   recognized text can be compared across speakers, browsers, and devices.
+- A short recorded sample sent to two remote speech-to-text models through
+  Vercel AI Gateway, with both transcripts and request timings shown beside the
+  browser result.
 - Delayed audio unlock and progressive audio playback timing.
 - Free-form operator notes, an event timeline, and direct report submission.
 - Strict server-side validation before a report reaches its sink.
@@ -40,6 +43,8 @@ Out of scope:
 - Device fingerprinting beyond ordinary user-agent parsing.
 - Product design-system treatment while the diagnostics remain an operator
   tool; the surface stays semantic and visually generic.
+- Realtime remote transcription; the comparison uses one bounded recording and
+  one batch request per provider.
 
 ## Privacy and access
 
@@ -47,10 +52,16 @@ A submitted report includes the visible speech transcripts and operator notes.
 The page says so before submission. The server derives device information from
 the request user agent rather than trusting a free-text label.
 
+The remote comparison is a separate, explicit action. It sends the selected
+recording through Vercel AI Gateway to OpenAI and xAI. The app does not persist
+or log the recording, but the Gateway and providers process it under their own
+retention policies; zero-data retention is not currently available for the
+selected OpenAI transcription model. Failure logs contain metadata only.
+
 The diagnostics surface uses the same access gate as the application once that
-gate exists. Until then it is used only on the local application through a
-temporary tunnel. Moving the sink beyond server logs requires a storage,
-retention, and access-control decision before implementation.
+gate exists. Until then it is used only through the Vercel preview deployment.
+Moving the sink beyond server logs requires a storage, retention, and
+access-control decision before implementation.
 
 ## Acceptance outcomes
 
@@ -63,3 +74,6 @@ retention, and access-control decision before implementation.
 5. The page does not offer clipboard export or a manual device-name field.
 6. A tester can choose one of three fixed sentences, see it beside the
    recognized transcript, and submit the selected sample with the report.
+7. A tester can record the same selected sentence once, receive OpenAI and xAI
+   transcripts with separate elapsed times, and submit those visible results
+   without the recorded audio entering the report.

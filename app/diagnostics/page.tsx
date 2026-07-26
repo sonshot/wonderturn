@@ -7,6 +7,11 @@ import {
   type DiagnosticReportSubmission,
 } from "@/lib/diagnostics/report";
 import {
+  REMOTE_TRANSCRIPTION_MODELS,
+  remoteTranscriptionResponseSchema,
+  type RemoteTranscriptionResult,
+} from "@/lib/diagnostics/remote-transcription";
+import {
   getSpeechSample,
   SPEECH_SAMPLES,
   type SpeechSampleId,
@@ -33,12 +38,19 @@ type EnvironmentSummary = {
 };
 
 type SubmissionState = "idle" | "submitting" | "submitted" | "failed";
+type RemoteActivity = "idle" | "recording" | "transcribing";
 
 const MAX_RECORDING_MS = 60_000;
+const MAX_REMOTE_RECORDING_MS = 15_000;
 const RESTART_DELAY_MS = 250;
 const DELAYED_SOURCE_MS = 1_500;
 const STREAM_RESPONSE_COMPLETE_MS = 5_000;
 const PROGRESSIVE_THRESHOLD_MS = 4_500;
+const RECORDING_MIME_TYPES = [
+  "audio/webm;codecs=opus",
+  "audio/webm",
+  "audio/mp4",
+] as const;
 
 function recognitionConstructor() {
   if (typeof SpeechRecognition !== "undefined") {
@@ -66,6 +78,11 @@ export default function DiagnosticsPage() {
   const [unlockResult, setUnlockResult] = useState<TestResult>("not-run");
   const [progressiveResult, setProgressiveResult] =
     useState<TestResult>("not-run");
+  const [remoteActivity, setRemoteActivity] = useState<RemoteActivity>("idle");
+  const [remoteResult, setRemoteResult] = useState<TestResult>("not-run");
+  const [remoteTranscriptions, setRemoteTranscriptions] = useState<
+    RemoteTranscriptionResult[]
+  >([]);
   const [offlineResult, setOfflineResult] =
     useState<DiagnosticReportSubmission["offlineRecognition"]>("not-tested");
   const [notes, setNotes] = useState("");
@@ -90,6 +107,10 @@ export default function DiagnosticsPage() {
   const progressiveAudioRef = useRef<HTMLAudioElement | null>(null);
   const progressiveStartedAtRef = useRef(0);
   const progressiveHasStartedRef = useRef(false);
+  const remoteRecorderRef = useRef<MediaRecorder | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
+  const remoteChunksRef = useRef<Blob[]>([]);
+  const remoteStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const appendEvent = (message: string) => {
     const now = performance.now();
@@ -109,6 +130,8 @@ export default function DiagnosticsPage() {
     setFinalTranscript("");
     setInterimTranscript("");
     setSpeechResult("not-run");
+    setRemoteTranscriptions([]);
+    setRemoteResult("not-run");
   };
 
   const stopSpeechTest = () => {
@@ -329,6 +352,142 @@ export default function DiagnosticsPage() {
     });
   };
 
+  const stopRemoteStream = () => {
+    remoteStreamRef.current?.getTracks().forEach((track) => track.stop());
+    remoteStreamRef.current = null;
+  };
+
+  const stopRemoteRecording = () => {
+    const recorder = remoteRecorderRef.current;
+
+    if (recorder === null || recorder.state === "inactive") {
+      return;
+    }
+
+    recorder.stop();
+    appendEvent("Remote STT recording stop requested");
+  };
+
+  const submitRemoteRecording = async (
+    recorder: MediaRecorder,
+    chunks: Blob[],
+  ) => {
+    const mimeType = recorder.mimeType || chunks.at(0)?.type || "";
+    const audio = new Blob(chunks, { type: mimeType });
+
+    if (audio.size === 0) {
+      throw new Error("empty-recording");
+    }
+
+    const extension = mimeType.startsWith("audio/mp4")
+      ? "m4a"
+      : mimeType.startsWith("audio/ogg")
+        ? "ogg"
+        : "webm";
+    const formData = new FormData();
+    formData.append("audio", audio, `speech-sample.${extension}`);
+    formData.append("speechSampleId", speechSampleId);
+    setRemoteActivity("transcribing");
+    appendEvent(
+      `Remote STT upload started: ${audio.size} bytes, ${mimeType || "unknown type"}`,
+    );
+
+    const response = await fetch("/api/diagnostics/transcriptions", {
+      body: formData,
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const result = remoteTranscriptionResponseSchema.parse(
+      await response.json(),
+    );
+    setRemoteTranscriptions(result.results);
+    setRemoteResult("passed");
+    setRemoteActivity("idle");
+
+    for (const transcription of result.results) {
+      appendEvent(
+        `Remote STT completed: ${transcription.model} in ${transcription.latencyMs}ms`,
+      );
+    }
+  };
+
+  const startRemoteRecording = async () => {
+    if (
+      typeof MediaRecorder === "undefined" ||
+      navigator.mediaDevices?.getUserMedia === undefined
+    ) {
+      setRemoteResult("failed");
+      appendEvent("MediaRecorder or getUserMedia unavailable");
+      return;
+    }
+
+    setRemoteResult("running");
+    setRemoteTranscriptions([]);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = RECORDING_MIME_TYPES.find((type) =>
+        MediaRecorder.isTypeSupported(type),
+      );
+      const recorder = new MediaRecorder(
+        stream,
+        mimeType === undefined ? undefined : { mimeType },
+      );
+
+      remoteStreamRef.current = stream;
+      remoteRecorderRef.current = recorder;
+      remoteChunksRef.current = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          remoteChunksRef.current.push(event.data);
+        }
+      };
+      recorder.onerror = (event) => {
+        setRemoteResult("failed");
+        setRemoteActivity("idle");
+        stopRemoteStream();
+        appendEvent(`Remote STT recording failed: ${event.error.name}`);
+      };
+      recorder.onstop = () => {
+        if (remoteStopRef.current !== null) {
+          clearTimeout(remoteStopRef.current);
+          remoteStopRef.current = null;
+        }
+
+        remoteRecorderRef.current = null;
+        stopRemoteStream();
+        const chunks = remoteChunksRef.current;
+        remoteChunksRef.current = [];
+
+        void submitRemoteRecording(recorder, chunks).catch((error: unknown) => {
+          setRemoteResult("failed");
+          setRemoteActivity("idle");
+          appendEvent(`Remote STT failed: ${errorName(error)}`);
+        });
+      };
+
+      recorder.start();
+      setRemoteActivity("recording");
+      appendEvent(
+        `Remote STT recording started: ${recorder.mimeType || "browser default"}`,
+      );
+      remoteStopRef.current = setTimeout(() => {
+        appendEvent("15-second remote recording limit reached");
+        stopRemoteRecording();
+      }, MAX_REMOTE_RECORDING_MS);
+    } catch (error) {
+      setRemoteResult("failed");
+      setRemoteActivity("idle");
+      stopRemoteStream();
+      appendEvent(`Remote STT recording failed: ${errorName(error)}`);
+    }
+  };
+
   const captureEnvironment = () => {
     const summary: EnvironmentSummary = {
       device: inferDevice(navigator.userAgent),
@@ -362,8 +521,10 @@ export default function DiagnosticsPage() {
       results: {
         delayedAudioUnlock: unlockResult,
         progressiveAudio: progressiveResult,
+        remoteTranscription: remoteResult,
         speechRecognition: speechResult,
       },
+      remoteTranscriptions,
       speechSampleId,
     };
 
@@ -414,6 +575,18 @@ export default function DiagnosticsPage() {
         clearTimeout(delayedTimerRef.current);
       }
 
+      if (remoteStopRef.current !== null) {
+        clearTimeout(remoteStopRef.current);
+      }
+
+      const remoteRecorder = remoteRecorderRef.current;
+      if (remoteRecorder !== null) {
+        remoteRecorder.onstop = null;
+        if (remoteRecorder.state !== "inactive") {
+          remoteRecorder.stop();
+        }
+      }
+      stopRemoteStream();
       delayedAudio?.pause();
       progressiveAudio?.pause();
     };
@@ -483,7 +656,9 @@ export default function DiagnosticsPage() {
               <input
                 checked={speechSampleId === sample.id}
                 className="mr-2"
-                disabled={speechResult === "running"}
+                disabled={
+                  speechResult === "running" || remoteResult === "running"
+                }
                 name="speech-sample"
                 onChange={() => selectSpeechSample(sample.id)}
                 type="radio"
@@ -498,7 +673,11 @@ export default function DiagnosticsPage() {
           {speechSample.text}
         </p>
         <div className="flex gap-3">
-          <button className="border px-3 py-2" onClick={startSpeechTest}>
+          <button
+            className="border px-3 py-2 disabled:opacity-50"
+            disabled={remoteResult === "running"}
+            onClick={startSpeechTest}
+          >
             Start speech test
           </button>
           <button className="border px-3 py-2" onClick={stopSpeechTest}>
@@ -539,7 +718,66 @@ export default function DiagnosticsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">3. Delayed audio unlock</h2>
+        <h2 className="text-xl font-semibold">
+          3. Remote speech-to-text comparison
+        </h2>
+        <p>
+          Record the selected sentence once. The recording is sent through
+          Vercel AI Gateway to OpenAI and xAI, then discarded by this app. The
+          Gateway and providers process the audio under their own retention
+          policies; zero-data retention is not currently available for the
+          OpenAI route.
+        </p>
+        <p className="border p-3 text-lg">
+          <span className="block text-sm font-semibold">Read aloud</span>
+          {speechSample.text}
+        </p>
+        <div className="flex gap-3">
+          <button
+            className="border px-3 py-2 disabled:opacity-50"
+            disabled={remoteResult === "running" || speechResult === "running"}
+            onClick={() => void startRemoteRecording()}
+          >
+            Record for remote comparison
+          </button>
+          <button
+            className="border px-3 py-2 disabled:opacity-50"
+            disabled={remoteActivity !== "recording"}
+            onClick={stopRemoteRecording}
+          >
+            Stop and transcribe
+          </button>
+        </div>
+        <p aria-live="polite">
+          Result: {remoteResult}
+          {remoteActivity === "recording"
+            ? " (recording)"
+            : remoteActivity === "transcribing"
+              ? " (transcribing)"
+              : ""}
+        </p>
+        <dl className="space-y-2">
+          {REMOTE_TRANSCRIPTION_MODELS.map((model) => {
+            const transcription = remoteTranscriptions.find(
+              (candidate) => candidate.model === model.id,
+            );
+
+            return (
+              <div key={model.id}>
+                <dt className="font-semibold">{model.label}</dt>
+                <dd>
+                  {transcription
+                    ? `${transcription.text || "—"} (${transcription.latencyMs}ms)`
+                    : "—"}
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">4. Delayed audio unlock</h2>
         <p>
           The tap calls play immediately on silence. After 1.5 seconds the
           source changes to a tone and play is called again. Pass only if the
@@ -566,7 +804,7 @@ export default function DiagnosticsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">4. Progressive audio response</h2>
+        <h2 className="text-xl font-semibold">5. Progressive audio response</h2>
         <p>
           The server sends six seconds of audio over about five seconds.
           Starting before 4.5 seconds is a clear progressive-playback pass; the
@@ -604,7 +842,7 @@ export default function DiagnosticsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">5. Notes and report</h2>
+        <h2 className="text-xl font-semibold">6. Notes and report</h2>
         <label className="block">
           Record permission behavior, recognition accuracy, rapid tapping, and
           anything surprising.

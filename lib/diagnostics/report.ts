@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { remoteTranscriptionResultSchema } from "./remote-transcription";
 import { SPEECH_SAMPLE_IDS } from "./speech-samples";
 
 const testResultSchema = z.enum(["not-run", "running", "passed", "failed"]);
@@ -27,10 +28,12 @@ export const diagnosticReportSubmissionSchema = z
     interimTranscript: z.string().max(20_000),
     notes: z.string().max(4_000),
     offlineRecognition: z.enum(["not-tested", "worked", "failed"]),
+    remoteTranscriptions: z.array(remoteTranscriptionResultSchema).max(2),
     results: z
       .object({
         delayedAudioUnlock: testResultSchema,
         progressiveAudio: testResultSchema,
+        remoteTranscription: testResultSchema,
         speechRecognition: testResultSchema,
       })
       .strict(),
