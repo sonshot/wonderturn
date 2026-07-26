@@ -77,7 +77,7 @@ The Phase 2 speech adapter calls ElevenLabs directly. Configure these variables
 locally and in Vercel:
 
 - `ELEVENLABS_API_KEY` — a synthesis-scoped key.
-- `ELEVENLABS_VOICE_ID` — the chosen voice's ElevenLabs ID.
+- `ELEVENLABS_VOICE_ID=OZ0L6eISlOejga3XjDFt` — Talia, the selected voice.
 - `ELEVENLABS_MODEL_ID` — either `eleven_flash_v2_5` for an atomic,
   low-latency response or `eleven_v3` when progressive playback is enabled
   after the iOS Safari device check.

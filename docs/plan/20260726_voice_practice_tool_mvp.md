@@ -37,7 +37,9 @@ adapter boundary, and the offline concurrency and failure contracts pass.
 The bounded HTTP request, success, and content-free failure contracts now pass
 offline too, as does the direct ElevenLabs synthesis adapter for either model
 allowed by D33. The HTTP route, fixed audio, and interactive voice screen have
-not started; Phase 0b and G6 still gate that speech work.
+not started. The fixed copy and Talia voice are operator-approved (D54);
+Phase 0b's model choice and G6's provider-cap confirmation still gate that
+speech work.
 
 ## Scope
 
@@ -96,7 +98,7 @@ outlived its evidence as a bug in this table, not as settled architecture.
 | G3 | Resolved (D50): Google OAuth web client ID and secret; production callback registered at `https://wonderturn.vercel.app/api/auth/callback/google`; dedicated proxy secret shared with previews | Son | Phase 1 |
 | G4 | Resolved (D50): `wonderturn.vercel.app` is production and `wonderturn-*-daohoangson.vercel.app` is the project-scoped preview pattern | Son | Phase 1, 4 |
 | G5 | Out-of-band alert channel (ntfy topic or Telegram bot) | Son | Phase 4 |
-| G6 | ElevenLabs account with a synthesis-scoped key, a plan cap set, and a chosen voice | Son | Phase 2 (D33) |
+| G6 | Partially resolved (D54): ElevenLabs synthesis-scoped key and Talia voice selected; plan cap confirmation remains open | Son | Phase 2 (D33) |
 
 G1 is deliberately deferred for the private, family-only first version. It
 does not block implementation or internal use, but it must be resolved before
@@ -144,9 +146,8 @@ leave their numbers behind rather than causing a renumber (D24).
   fires exactly when the pipeline is broken, which may include synthesis, and
   a kid who looked away waiting for a reply would otherwise get silence.
 
-  The redirect, nudge, and error wording is a first draft and needs operator
-  sign-off before the clips are generated; unlike a prompt, a bundled clip is
-  expensive to change your mind about.
+  The operator approved all five lines on 2026-07-26 (D54). Any wording change
+  now requires regenerating and re-approving its bundled clip.
 
   Microphone permission copy is deliberately *not* pinned here. It is
   screen-only, never spoken, and has no clip behind it, so `DESIGN.md` owns it
@@ -1109,3 +1110,14 @@ Append-only. Stable IDs; reversals say what they supersede.
   sending one oversized current transcript. The boundary rejects the request
   rather than truncating speech invisibly; the route will map that rejection
   to P7's validation failure.
+- **D54 (2026-07-26) — Talia is the single approved voice, and the fixed copy
+  is frozen.** The operator approved P3's five lines and selected ElevenLabs
+  Talia (`OZ0L6eISlOejga3XjDFt`). Its calm adult delivery fits the same
+  age-neutral instrument for a child or an English-practicing adult without
+  introducing a named on-screen character or companion framing.
+
+  The fixed clips wait for Phase 0b's D33 model result instead of being
+  generated under an arbitrary model. Bundled and ordinary speech should use
+  the same voice/model pairing so a safety redirect or disclosure does not
+  sound like a different persona. This resolves G6's copy and voice choices,
+  not its plan-cap confirmation or the model gate.
