@@ -33,12 +33,10 @@ under Pinned semantics.
 | Validation | Zod |
 | Spend ceiling | AI Gateway budget (provider-native, not app code) |
 | Package manager | pnpm, version pinned in `packageManager` |
-| Lint and format | ESLint flat config + Prettier |
+| Format | Prettier |
 | Git hooks | Husky |
 | CI | GitHub Actions |
-| Unit and contract tests | Vitest |
-| Text evals and red teaming | Promptfoo, through a custom TypeScript provider |
-| Eval judge | `openai/gpt-5.4-mini` through AI Gateway, separate from the reply model |
+| Tests | Vitest, for both offline contracts and on-demand model-backed outcome fixtures |
 | Observability | Vercel AI Gateway + Vercel Observability; no custom telemetry backend |
 
 The app is stateless. The client holds the conversation in memory and sends
@@ -50,10 +48,10 @@ expressed in the wire format rather than merely promised.
 | | Gate | Owner | Blocks |
 | --- | --- | --- | --- |
 | G1 | Provider legal and policy review | Son | Access beyond private family use; not this version (D12) |
-| G2 | Vercel account with AI Gateway enabled, credits funded, app and eval budget ceilings set | Son | Phase 2 |
+| G2 | Vercel account with AI Gateway enabled, credits funded, budget ceiling set | Son | Phase 2 |
 | G3 | Google OAuth client ID for the sign-in button | Son | Phase 1 |
-| G4 | Deployment URL — Vercel subdomain is sufficient for v1 | Son | Phase 5 |
-| G5 | Out-of-band alert channel (ntfy topic or Telegram bot) | Son | Phase 5 |
+| G4 | Deployment URL — Vercel subdomain is sufficient for v1 | Son | Phase 4 |
+| G5 | Out-of-band alert channel (ntfy topic or Telegram bot) | Son | Phase 4 |
 
 G1 is deliberately deferred for the private, family-only first version. It
 does not block implementation or internal use, but it must be resolved before
@@ -62,20 +60,48 @@ access expands beyond the family.
 ## Pinned semantics
 
 Correctness points the feature doc deliberately left open, or where an
-obvious implementation would be wrong.
+obvious implementation would be wrong. Numbering is stable: retired pins
+leave their numbers behind rather than causing a renumber (D24).
 
-- **P1 — Reveal is atomic.** A turn produces exactly one outcome, revealed
-  once. Speculative generation and synthesis may run ahead of their checks,
-  but discarded work never reaches the client in any form (D4).
+- **P1 — Reveal is atomic, and obsolete work never commits.** A turn produces
+  exactly one outcome, revealed once. Speculative generation and synthesis
+  may run ahead of their checks, but discarded work never reaches the client
+  in any form (D4). Starting over or beginning a new turn invalidates
+  unfinished earlier work; cancellation is best-effort, and correctness comes
+  from refusing to render, retain, or play a result for an obsolete turn.
+  Interrupted playback does not truncate history — the full cleared reply
+  stays in the client's history, because it was shown whole before a word was
+  spoken.
 - **P2 — Four outcome kinds.** `reply`, `redirect`, `disclosure`, `nudge`.
   Genuinely empty recognition produces `nudge` before the pipeline. For
   non-empty speech, precedence is `disclosure` → `nudge` → `redirect` →
   `reply`. Anything else is a non-200.
-- **P3 — Disclosure is fixed.** A recognized disclosure returns this
-  operator-authored text: "That sounds important. Please tell a grown-up you
-  trust, like a parent, teacher, or another family member, so they can help
-  you." Matching pre-generated audio is bundled with the app. This outcome
-  needs no reply generation, clearing call, or runtime TTS.
+- **P3 — Every fixed response is pinned, with bundled audio.** Each is
+  operator-authored, frozen into a committed audio clip, and needs no
+  generation, clearing call, or runtime TTS — which makes these the only
+  paths with no runtime model dependency: they still work during a provider
+  incident, when every other outcome correctly fails closed.
+
+  Three are outcome kinds, returned by the server (P2):
+  - `disclosure`: "That sounds important. Please tell a grown-up you trust,
+    like a parent, teacher, or another family member, so they can help you."
+  - `redirect`: "Let's talk about something else — what else are you curious
+    about?"
+  - `nudge`: "I didn't quite catch that — want to try again?"
+
+  The fourth is the failure state, rendered entirely client-side because P7's
+  error carries no content. It is spoken like the others:
+  - `error`: "Something went wrong. Let's try that again."
+  - `error`, on a repeat within the same sitting: "It's still not working —
+    maybe tell a grown-up so they can help."
+
+  The error is the strongest case for bundled audio, not an afterthought: it
+  fires exactly when the pipeline is broken, which may include synthesis, and
+  a kid who looked away waiting for a reply would otherwise get silence.
+
+  The redirect, nudge, and error wording is a first draft and needs operator
+  sign-off before the clips are generated; unlike a prompt, a bundled clip is
+  expensive to change your mind about.
 - **P4 — "Little or no real speech".** No recognized final speech produces
   `nudge` without a model call. Every non-empty transcript goes through the
   input classifier, which returns `disclosure`, `nudge`, or `ordinary`.
@@ -91,52 +117,49 @@ obvious implementation would be wrong.
 - **P8 — History is client-supplied.** The server trusts the submitted
   history for conversational continuity only; it grants nothing. Authorization
   comes from the cookie and the allowlist alone.
-- **P9 — Interrupted playback does not truncate history.** The full cleared
-  reply stays in the client's history, because it was shown whole before a
-  word was spoken.
-- **P10 — Obsolete work never commits.** Starting over or beginning a new
-  turn invalidates unfinished earlier work. Cancellation is best-effort;
-  correctness comes from refusing to render, retain, or play a result for an
-  obsolete turn.
 - **P11 — Session lifetime is fixed.** The signed cookie lasts 180 days from
-  issuance and is not extended by activity. It is `Secure`, `HttpOnly`,
-  `SameSite=Lax`, `Path=/`, and has no `Domain`. Expiry returns to sign-in;
-  allowlist removal denies the next protected request once the updated env
-  configuration is deployed.
+  issuance and is not extended by activity. One absolute deadline, no sliding
+  window. Expiry returns to sign-in; allowlist removal denies the next
+  protected request once the updated env configuration is deployed.
 - **P12 — Spend is bounded by one Gateway key.** The app uses a dedicated
   AI Gateway key with a $10 monthly budget and no automatic top-up. A request
   already accepted by the Gateway, including the request that crosses the
   budget, may finish; later requests fail. Concurrently accepted work may
-  also finish.
+  also finish. `test:live` and `register` draw on this same key: D21 deleted
+  the eval-only key along with the harness that justified it, so test spend
+  and family spend share one ceiling. What that ceiling buys in practice —
+  turns per month, cost per test pass, whether $10 is the right number — is
+  deliberately not sized here: per-turn cost is dominated by the reply model
+  and speech synthesis, and the spike is still deciding both. Size it when
+  those land.
 - **P13 — Text behaviour has one execution seam.** `runTextTurn` owns input
-  classification, candidate generation, precedence, and clearing. It accepts
-  an optional candidate-preparation callback: production supplies TTS so it
-  can run beside clearing; text evals omit it and receive only
-  `{ kind, text }`. Fixed outcome audio is attached outside this seam. The
-  HTTP route and eval provider both call this function, so evals cannot drift
-  into a second implementation of the product.
-- **P14 — Evals use an off-the-shelf runner.** Promptfoo owns fixtures,
-  assertions, model grading, red-team generation, latency measurement,
-  reports, and CI exit status. A thin TypeScript provider is the only custom
-  integration: it calls P13 without candidate preparation and serializes
-  `{ kind, text }`. Vitest remains responsible for deterministic code
-  contracts and forced dependency failures.
-- **P15 — Observability is platform-native.** AI Gateway owns model/provider
-  request volume, latency, token, and spend views; Vercel owns request and
-  function visibility. App logs and alerts contain only failure category,
-  endpoint, and status. No transcript, custom metrics service, trace vendor,
-  or product analytics is added in v1.
-- **P16 — Evals have a separate spend boundary.** Text evals, red teaming,
-  benchmarks, and the judge use a dedicated Gateway key with a $5 monthly
-  budget and no automatic top-up. The app key is never present in the eval
-  process, so a test run cannot consume production's P12 ceiling.
-- **P17 — Verification has fast local and expensive remote lanes.** The
-  deterministic `pnpm verify:fast` runs Prettier check, ESLint with zero
-  warnings, TypeScript type-checking, and Vitest. Husky runs that whole
-  command before every commit. It performs no network or model calls.
-  GitHub Actions repeats the fast lane and owns Promptfoo evals, red teaming,
-  and text benchmarks with P16's secret; none of those expensive checks run
-  from the pre-commit hook.
+  classification, candidate generation, precedence, and clearing. Two
+  optional injection points keep production and tests on the same code path:
+  a candidate-preparation callback, which production supplies as TTS so it
+  can run beside clearing, and a candidate override, which tests supply to
+  feed known-bad replies straight to the clearing check. Fixed outcome audio
+  is attached outside this seam. Production and every model-backed test call
+  this function, so tests cannot drift into a second implementation of the
+  product.
+- **P18 — A cleared string is immutable.** P5's truncation happens before the
+  clearing check, on normalized text, at a sentence boundary. The bytes that
+  are cleared are the bytes that are rendered and synthesized. Nothing
+  rewrites, re-truncates, or re-normalizes a reply after it has passed its
+  check.
+- **P19 — Each check sees only its own subject.** The clearing check receives
+  the candidate reply alone; the input classifier receives `said` alone.
+  Neither receives conversation history. P8's client-supplied history is a
+  generation input, never a checker input, so a modified client cannot plant
+  a prior turn that instructs a reviewer.
+- **P20 — The turn and the sitting are bounded.** A single recording stops
+  itself after 60 seconds, routed through the ordinary stop path so it never
+  reads as a failure. The request schema caps history at 20 turns and each
+  entry at 1,000 characters, with the oldest turns dropped client-side. This
+  is a cost bound as much as a latency one: stateless re-send makes token
+  cost quadratic in turn count, so one long happy session is the realistic
+  way P12's ceiling gets hit. The wait is bounded too: the client fetch
+  carries `AbortSignal.timeout(15_000)`, and the timeout resolves to P7's
+  one failure shape, so the thinking cue cannot run forever.
 
 ## Phases
 
@@ -146,26 +169,27 @@ Scaffold the durable project before feature code:
 
 - Next.js App Router and strict TypeScript, installed with the pinned pnpm
   version and committed lockfile.
-- ESLint flat config using the Next.js rules, `eslint-config-prettier` to
-  disable formatting conflicts, Prettier, Vitest, and Husky.
+- Prettier, Vitest, and Husky. No ESLint: with strict TypeScript on, its
+  marginal defect-catching here is close to zero and its marginal cost is a
+  blocked commit over an unused import (D22).
 - Package scripts:
   - `format` — Prettier write.
   - `format:check` — Prettier check.
-  - `lint` — ESLint across the repository with zero warnings allowed.
   - `typecheck` — `tsc --noEmit`.
-  - `test` — Vitest in non-watch mode.
-  - `verify:fast` — all four deterministic checks above.
-  - `eval:text`, `eval:redteam`, and `bench:text` — added when their
-    Promptfoo configuration lands in Phase 4.
-- A Husky pre-commit hook that runs only `pnpm verify:fast`. The hook fails
-  on the first bad command and never installs, downloads, or calls a model.
-- A GitHub Actions CI workflow for pull requests and branch pushes. Its
-  required `quality` job performs a clean `pnpm install --frozen-lockfile`,
-  then `pnpm verify:fast`.
-
-**Exit:** a deliberately malformed, unformatted, ill-typed, and failing-test
-change is rejected by the appropriate command; the pre-commit hook runs the
-complete fast lane; and the same lane passes in GitHub Actions.
+  - `test` — Vitest in non-watch mode, offline tests only.
+  - `verify` — the three deterministic checks above.
+  - `test:live` — the model-backed outcome fixtures, added in Phase 3. Never
+    part of `verify`, never run by a hook or by CI.
+  - `register` — the register asks, dumped for reading, added in Phase 3.
+    Same exclusions.
+- A Husky pre-commit hook that runs `pnpm typecheck` and `pnpm test`. Both
+  are offline and fast enough to survive daily use, and the offline set
+  includes the fail-closed contracts, which have to be a gate rather than a
+  habit to mean anything (D29). Formatting stays out of the hook.
+- A GitHub Actions workflow on push to any branch running `pnpm install
+  --frozen-lockfile` then `pnpm verify`. No required status checks and no
+  pull-request gating: there is no second contributor whose bad commit needs
+  stopping, and Vercel already fails the build on a type error.
 
 ### Phase 0b — De-risk on real devices
 
@@ -199,26 +223,37 @@ stable origin, rather than spiked in Phase 0b (D15).
 **Exit:** approved account reaches an empty talk screen; a real non-approved
 account cannot, verified against the deployed app.
 
-### Phase 2 — Turn pipeline
+### Phase 2 — Turn pipeline and talk screen
 
-`POST /api/turn` accepting `{ history, said }` and returning
-`{ kind, text, audio }`, with generated or bundled audio returned base64.
-The route calls P13's `runTextTurn`; there is no second text pipeline hidden
-inside the HTTP handler.
+Built together, because the pipeline cannot be meaningfully exercised without
+the screen and the screen has nothing to show without the pipeline (D23).
+
+`POST /api/turn` accepts `{ history, said }` — Zod-parsed with P20's bounds —
+and returns `{ kind, text, audio }`, with generated or bundled audio returned
+base64. The route calls P13's `runTextTurn`; there is no second text pipeline
+hidden inside the HTTP handler.
 
 - Genuinely empty recognition short-circuits to `nudge` before any model
   call (P4).
 - For non-empty speech, input classification and candidate reply generation
   start together. A `disclosure` or `nudge` classification discards the
   candidate and returns its fixed text and bundled audio (D4).
-- For `ordinary`, the clearing check and TTS start together. A clearing
-  rejection discards the speculative audio and returns the fixed redirect
-  with bundled audio. Only a clearing pass plus successful TTS releases the
-  candidate reply (D4). P13's candidate-preparation callback is the seam
-  that permits this parallel TTS without making text evals synthesize audio.
+- For `ordinary`, the candidate is normalized and truncated (P18), then the
+  clearing check and TTS start together. A clearing rejection discards the
+  speculative audio and returns the fixed redirect with bundled audio. Only a
+  clearing pass plus successful TTS releases the candidate reply (D4).
+- Each check receives only its own subject (P19).
 - A required check or ordinary-reply TTS failure produces P7's single error
   shape; losing speculative branches are cancelled where practical and
   always discarded.
+
+The screen is one layout with **five** states: idle, listening, thinking,
+talking, error. The others named in the feature doc are not states — `nudge`,
+`redirect`, and `disclosure` are three strings arriving through the `talking`
+path, `interrupted` is `idle` after `pause()`, and the microphone prompt is
+`idle` with a different label. Transcript above, control anchored low, header
+start-over. Barge-in stops playback and starts listening. A client turn
+identifier enforces P1; request cancellation only saves work.
 
 Target timeline, to be checked against Phase 0b measurements:
 
@@ -233,66 +268,57 @@ Target timeline, to be checked against Phase 0b measurements:
 If this misses, the clearing check is the critical path and the first lever
 — a smaller model or a single-token verdict — not the transport.
 
-**Exit:** every outcome kind is reachable through both `runTextTurn` and
-`curl`, including short disclosures and a forced clearing rejection that
-discards completed TTS. Their `{ kind, text }` results match. Each
-required-check and ordinary-TTS failure produces the one error shape.
-
-### Phase 3 — Talk screen
-
-One layout, all states: idle, microphone prompt, listening, thinking,
-talking, nudge, redirect, disclosure, interrupted, error. Transcript above,
-control anchored low, header start-over. Barge-in stops playback and starts
-listening (P9). A client turn identifier enforces P10; request cancellation
-only saves work.
-
-**Exit:** every state is reachable by hand on a phone. With a deliberately
+**Exit:** every outcome kind is reachable by hand on a phone, including a
+forced clearing rejection that discards completed TTS. With a deliberately
 delayed turn, starting over and starting a new turn both prevent the stale
 text and audio from appearing.
 
-### Phase 4 — Safety verification
+### Phase 3 — Safety verification
 
-Promptfoo calls `runTextTurn` directly through P14's TypeScript provider.
-These runs use text fixtures and real configured text models, with no
-browser, microphone, speech recognition, TTS, or HTTP route. Both the system
-under test and the judge use P16's eval-only Gateway key.
+One Vitest file of model-backed outcome fixtures calling `runTextTurn`
+directly through P13, with no browser, microphone, speech recognition, TTS,
+or HTTP route. Roughly 25 fixtures, asserting on `kind` only and never on
+prose — a discrete assertion that survives a model change, where a graded
+rubric would not (D21).
 
-- Curated adversarial fixtures against the clearing check.
-- Disclosure fixtures, including one where redirect could also have fired
-  and short phrases such as "help me."
-- Register fixtures spanning the youngest user and the English-practicing
-  adult, scored with Promptfoo `llm-rubric` assertions. The judge model and
-  rubric text are pinned in the committed config.
-- A small, pinned Promptfoo red-team configuration for relevant prompt
-  injection and unsafe-output categories; no default everything-scan.
-- Text latency assertions run with Promptfoo caching disabled. They measure
-  the text decision pipeline only, not speech or device latency.
-- Vitest forces the input classifier, clearing check, and ordinary TTS to
-  fail separately and verifies the one failure shape and that nothing is
-  committed.
+- Curated adversarial inputs, asserting the outcome is never `reply`.
+- Known-bad candidate replies injected through P13's candidate override, so
+  the clearing check is exercised directly. Without this the check may never
+  fire in a passing suite, and the suite would prove nothing about it.
+- Disclosure fixtures, including one where redirect could also have fired and
+  short phrases such as "help me."
+- Disclosure and nudge **false positives**, which precedence makes expensive:
+  third-person questions ("why do people bully other kids?"), story
+  narration, quoting a book, hypotheticals. A curiosity question answered
+  with the fixed adult-pointing text teaches the kid the tool is broken on
+  interesting subjects (D26).
 
-Committed fixtures contain synthetic text only. Promptfoo config, fixtures,
-and assertion thresholds are versioned; raw HTML/JSON reports are ignored.
-The package scripts are `pnpm eval:text`, `pnpm eval:redteam`, and
-`pnpm bench:text`.
+Run on demand as `pnpm test:live`, when a prompt, classifier, clearing rule,
+or model string changes. Not a commit hook, not a merge gate, not a CI job:
+it costs money, needs network, and there is no second contributor to gate.
 
-Add GitHub Actions workflows using the eval-only Gateway secret:
+Separately, and offline, ordinary Vitest tests force the input classifier,
+the clearing check, and ordinary TTS to fail one at a time, and verify P7's
+one failure shape and that nothing is committed. These are deterministic and
+free, so they run in `verify` on every commit. They are the difference
+between failing closed being tested and being believed.
 
-- `eval:text` is added to the CI workflow as a required pull-request job
-  depending on the `quality` job.
-- `eval:redteam` runs by manual dispatch and is required for the Phase 4 exit
-  and before family calibration, not for every commit.
-- `bench:text` runs by manual dispatch with Promptfoo caching disabled. Its
-  result is retained as a comparison artifact, not used as a noisy shared-CI
-  latency gate.
-- Workflow concurrency cancels an older run for the same branch so obsolete
-  commits do not keep spending.
+Alongside these, and separately from them, a committed file of register asks
+spanning the youngest user and the English-practicing adult, run by
+`pnpm register` and **dumped to the terminal for the operator to read**. It
+asserts nothing and has no judge — the grader is the person who eats dinner
+with all four users. It includes the "what do you remember from last time?"
+ask, which is where Outcome 11 is checked. What D21 deleted was the graded
+rubric, not the asks; the asks are what make the register outcome
+re-runnable after a persona change, which the feature doc requires and a
+play session cannot provide on demand (D29).
 
-**Exit:** deterministic assertions all pass, every model-graded fixture meets
-its declared threshold, and all three commands run successfully in their
-GitHub workflows after any persona, classifier, clearing, or model change.
+Committed fixtures contain synthetic text only.
 
-### Phase 5 — Production hardening
+**Exit:** the offline contract tests pass in `verify`, and `pnpm test:live`
+produces the expected `kind` for every fixture.
+
+### Phase 4 — Production hardening
 
 Deploy, then verify against the deployed platform rather than the code:
 Vercel runtime logs and AI Gateway observability hold no transcript text or
@@ -300,46 +326,55 @@ audio, with Gateway content logging configured off. Alert channel wired for
 category and endpoint only. The dedicated Gateway key has P12's budget and
 automatic top-up disabled. A deliberately tiny test budget proves the
 crossing request may complete and the next request is rejected before new
-provider work begins. AI Gateway's built-in views provide request volume,
-model/provider, latency, token, and spend visibility; no custom dashboard or
-telemetry store is built.
+provider work begins.
+
+Budget exhaustion routes to G5's channel as its own alert category. The
+feature doc deliberately gives the person no cost signal, which means the
+operator is the only one who can learn the tool went quiet for a reason other
+than breakage.
+
+AI Gateway's built-in views provide request volume, model/provider, latency,
+token, and spend visibility; no custom dashboard or telemetry store is built.
 
 **Exit:** a real conversation leaves no content in any log surface, and an
 induced failure reaches the phone.
 
-### Phase 6 — Register calibration
+### Phase 5 — Register calibration
 
-Real sessions with the kids; tune the persona against the Phase 4 suite
-until Outcome 6 holds. Expect several passes.
+Real sessions with the kids. Tune the persona by reading `pnpm register`
+output between sessions; re-run the Phase 3 `kind` fixtures after each change
+as a safety regression guard, not as a register signal — they assert on
+outcome kind and never on prose, so they cannot tell you whether a reply
+talks down to an 8-year-old. Expect several passes.
 
-**Exit:** the feature doc's register outcome confirmed by real use, not
-judged output alone.
+A calibration month draws three ways on P12's single ceiling: ordinary family
+use, `register` passes, and `test:live` runs. Whether that adds up to a
+problem depends on per-turn cost, which the spike hasn't settled — revisit it
+then. The failure mode to avoid is the tool going quiet mid-session with the
+kids while you are trying to judge whether it feels good.
+
+**Exit:** the feature doc's register outcome confirmed by real use.
 
 ## Definition of done
 
 Each feature-doc acceptance outcome, with where it is proven.
 
-Phase 0a's repository checks are a prerequisite for every outcome below:
-the pre-commit hook and GitHub quality workflow both pass `verify:fast`, and
-model-backed checks run only in GitHub.
-
 | Outcome | Verified by | Phase |
 | --- | --- | --- |
-| 1. Access is closed | Real non-approved account denied; approved session survives a restart; removing an authenticated account denies its next request after the env update is deployed | 1, 5 |
-| 2. Nothing unchecked reaches the person | Promptfoo adversarial suite against `runTextTurn`; Vitest commit-gate contracts | 4 |
-| 3. Disclosures land | Promptfoo disclosure suite incl. precedence and short phrases; bundled text/audio integration check | 4 |
-| 4. Failing closed works | Vitest forces input classifier and clearing check unavailable separately | 4 |
-| 5. Feels like a conversation | Promptfoo text latency benchmark plus ten-turn voice script on both phones | 4, 5 |
-| 6. Register fits both ends | Promptfoo model-graded register suite plus real sessions | 4, 6 |
-| 7. Nothing is retained by us | Vercel + Gateway log inspection after a real conversation | 5 |
-| 8. Awkward moments are gentle | Manual: nudge, interruption, barge-in; delayed stale results after start-over/new turn | 3 |
-| 9. Works on real devices | Both phones, incl. permission denial and rapid tapping | 0b, 5 |
-| 10. Breakage is visible | Induced failure reaches the alert channel | 5 |
-| 11. Doesn't pretend to remember | Part of the register suite | 4 |
-| 12. Spend ceiling holds | Tiny Gateway budget: crossing request may finish; next request rejected before new provider work | 5 |
+| 1. Access is closed | Real non-approved account denied; approved session survives a restart; removing an authenticated account denies its next request after the env update is deployed | 1, 4 |
+| 2. Nothing unchecked reaches the person | `test:live` adversarial fixtures plus injected known-bad candidates against `runTextTurn`; offline commit-gate contracts | 3 |
+| 3. Disclosures land | `test:live` disclosure fixtures incl. precedence, short phrases, and false positives; bundled text/audio integration check | 3 |
+| 4. Failing closed works | Offline Vitest forces input classifier, clearing check, and ordinary TTS unavailable separately | 3 |
+| 5. Feels like a conversation | Ten-turn voice script on both phones | 4 |
+| 6. Register fits both ends | `pnpm register` asks read by the operator after any persona change, plus real sessions with the kids | 3, 5 |
+| 7. Nothing is retained by us | Vercel + Gateway log inspection after a real conversation | 4 |
+| 8. Awkward moments are gentle | Manual: nudge, interruption, barge-in; delayed stale results after start-over/new turn | 2 |
+| 9. Works on real devices | Both phones, incl. permission denial and rapid tapping | 0b, 4 |
+| 10. Breakage is visible | Induced failure reaches the alert channel | 4 |
+| 11. Doesn't pretend to remember | The "what do you remember from last time?" ask in `pnpm register` | 3 |
+| 12. Spend ceiling holds | Tiny Gateway budget: crossing request may finish; next request rejected before new provider work | 4 |
 
-No phase is deployable while one of its MVP gates is open. G1 is a future
-gate on expanding access, not an MVP gate.
+G1 is a future gate on expanding access, not an MVP gate.
 
 ## Resolved doc alignment
 
@@ -460,3 +495,83 @@ Append-only. Stable IDs; reversals say what they supersede.
   requests; red teaming and text benchmarks use manual GitHub workflows.
   This keeps commits fail-fast without putting secrets, network latency, or
   model spend in the local hook.
+- **D21 (2026-07-26) — Safety verification is one on-demand Vitest file.
+  Supersedes D16 and D19; narrows D17.** Promptfoo, the custom provider, the
+  `gpt-5.4-mini` judge, `llm-rubric` register grading, the red-team config,
+  the text benchmark, the three eval workflows, and the eval-only Gateway key
+  are all removed. What replaces them is ~25 fixtures through `runTextTurn`
+  asserting on `kind` only. Rationale: a pinned judge model is not stable
+  across its own revisions, so a model-graded threshold drifts and gets
+  retuned to fit the output, which measures nothing. Discrete outcome
+  assertions survive a model change. Register quality was the one thing the
+  rubric was really for, and the operator eats dinner with all four users —
+  that signal is free and better. Accepted cost: no generated adversarial
+  phrasings, so the curated fixtures must be extended by hand when the kids
+  find something. D17's shared-orchestration principle survives and is
+  strengthened; only its Promptfoo consumer is replaced.
+- **D22 (2026-07-26) — Local tooling and CI are reduced to what a solo
+  developer will actually run. Supersedes D20.** ESLint is dropped: strict
+  TypeScript already catches what matters here. The pre-commit hook runs
+  `typecheck` only, because a hook slow enough to resent is a hook that gets
+  `--no-verify`'d and then provides negative value. `verify` remains the full
+  deterministic lane, run deliberately and in one CI workflow on push. No
+  required status checks and no pull-request gating: there is no second
+  contributor, and Vercel already fails the build on a type error.
+- **D23 (2026-07-26) — Phases collapse and exit criteria stop duplicating
+  each other.** The turn pipeline and the talk screen become one phase: the
+  pipeline cannot be meaningfully exercised without a UI, and the previous
+  Phase 2 exit — proving every outcome kind through both `runTextTurn` and
+  `curl` — was re-verified by tapping a button one phase later. Phase gating
+  exists to coordinate people and to stop half-finished work reaching users;
+  neither problem exists here.
+- **D24 (2026-07-26) — The pinned-semantics list is trimmed to load-bearing
+  pins.** P9 and P10 fold into P1, which they were restating. P14, P15, P16,
+  and P17 are deleted as verbatim restatements of D16, D18, D19, and D20 in
+  the same file. Retired numbers are not reused, so existing references stay
+  valid. A pin earns its place only when the obvious implementation is wrong
+  and the wrongness is a real defect.
+- **D25 (2026-07-26) — Three safety semantics are pinned that the design
+  previously left to chance.** P18: truncation happens before clearing, so a
+  cleared string is immutable — the previous ordering allowed clearing string
+  X and delivering X′, which voids the guarantee outright and can invert
+  meaning mid-sentence. P19: each check sees only its own subject, closing
+  the path by which P8's client-supplied history could instruct a reviewer
+  rather than merely inform a generator. P20: the turn and the sitting are
+  bounded, because stateless re-send makes token cost quadratic in turn count,
+  and an unbounded sitting is the one shape that turns a comfortable ceiling
+  into a tight one.
+- **D26 (2026-07-26) — Disclosure and nudge false positives get explicit
+  coverage. Extends D14.** Precedence makes `disclosure` maximally sticky, so
+  its false-positive cost is high and was measured nowhere: "why do people
+  bully other kids?" is exactly the curiosity question this tool exists for,
+  and answering it with the fixed adult-pointing text teaches the kid the
+  tool is broken on interesting subjects.
+- **D27 (2026-07-26) — The multilingual-input promise is withdrawn.** The
+  feature doc previously said the tool "understands and replies in English
+  whatever it's addressed in." A locale-bound recognizer cannot deliver that:
+  Vietnamese addressed to an English recognizer arrives as garbled English,
+  not as text a model can understand and answer. `SpeechRecognition.lang` is
+  fixed to English and non-English input is not a case to detect or recover
+  from — it takes the existing P4 and classifier paths unchanged. The feature
+  doc's out-of-scope list now states this. Narrows promised scope; no
+  implementation cost either way.
+- **D28 (2026-07-26) — The disclosure outcome stays invisible to the
+  operator.** Nothing tells the parent that the adult-pointing response
+  fired. This falls out of the no-storage and no-analytics stances but was
+  never argued, so the feature doc now states it as a deliberate, accepted
+  limitation rather than an omission. The counter-case — a content-free ping
+  over the existing alert channel, with the kids told it works that way — is
+  recorded there as the thing to revisit, and depends on D26's false-positive
+  work landing first, or it is pure noise.
+- **D29 (2026-07-26) — Two corrections to D21 and D22, found by review.**
+  First: D21 deleted the register *asks* along with the register *judge*, but
+  only the judge was argued. The feature doc requires a fixed suite that is
+  re-runnable after any persona change, and a play session with two children
+  is not re-runnable on demand — so outcomes 6 and 11 had nothing behind them
+  between D21 and this entry. A committed asks file, dumped for the operator
+  to read with no judge and no assertions, restores the guarantee at none of
+  the cost D21 objected to. Second: D22 reduced the pre-commit hook to
+  `typecheck`, which made the fail-closed contracts advisory while the plan
+  still claimed they gated every commit. They are offline, deterministic, and
+  fast, and they are the only thing separating "fails closed" from a belief,
+  so the hook runs `typecheck` and `test`. Formatting stays out.

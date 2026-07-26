@@ -82,17 +82,27 @@ repeat.
   per-person calibration.
 - The disclosure check on what's said and the clearing check on generated
   replies (see Product principles), with fixed, pre-approved responses for a
-  disclosure or a reply that doesn't pass.
+  disclosure or a reply that doesn't pass. Every fixed response has bundled
+  audio — including the failure state, which is the one most likely to be
+  needed when speech synthesis itself is down — so none of them depends on
+  runtime synthesis.
 - Short replies by design — brevity is what the practice format wants (see
   Product principles), and it is what lets a whole reply be cleared inside
   the latency bar. The bound is pinned in the plan.
+- A bounded turn and a bounded sitting: a single recording stops itself if it
+  runs long, ending the turn the ordinary way rather than as an error, and
+  only a recent window of the conversation is carried forward. Both protect
+  the latency bar the way the reply-length bound does, and both protect the
+  spend ceiling (see Security) from one long, happy session. Values are
+  pinned in the plan.
 - The family-topics deferral (see Product principles), as a persona
   requirement with test coverage, not a separate response type.
 - Sign-in (mechanism TBD — see plan), gated to a short, approved family
   allowlist; anyone else denied. Sessions use a fixed, long-lived window:
-  with a parent-account allowlist a kid can't re-authenticate alone, so
-  expiry doesn't re-prompt — it takes the tool offline until an adult is
-  free (risk: see Security). The window is the plan's to pin.
+  expiry returns to the sign-in gate, but with a parent-account allowlist a
+  kid can't re-authenticate alone, so re-prompting doesn't help — the tool is
+  effectively offline until an adult is free (risk: see Security). The window
+  is the plan's to pin.
 - Provider legal and policy review is explicitly deferred for the private,
   family-only first version. That accepted external risk must be revisited
   before access expands beyond the family (see Security).
@@ -113,9 +123,11 @@ repeat.
   state, with no "out of budget" experience to design.
 - Self-service sign-up, invites, or any way to grow the allowlist without
   the user manually approving it.
-- Languages other than English for v1: it understands and replies in
-  English whatever it's addressed in; others belong to the later
-  multi-profile plan.
+- Languages other than English for v1: it listens for English and replies in
+  English. Speech in another language is recognized poorly or not at all, and
+  lands on the empty-input nudge rather than a translated reply — the
+  recognizer is locale-bound, so there is no graceful multilingual input to
+  promise. Others belong to the later multi-profile plan.
 - Analytics or usage tracking beyond the operator knowing something broke.
 
 ## UI/UX
@@ -126,7 +138,9 @@ mostly on phones; laptop and tablet only need to stay usable.
 One big tappable control (tap to start, tap again to stop — no
 press-and-hold), anchored low for one-handed thumb reach, with a transcript
 panel above it and a "thinking" cue instead of silence while a reply is
-worked out — a cue that has to carry the whole wait. Every state — idle,
+worked out — a cue that has to carry the whole wait, though not an unbounded
+one: a turn that hasn't landed by the deadline the plan pins becomes the
+ordinary failure state, so the cue can never run forever. Every state — idle,
 listening, thinking, talking, the microphone prompt, the empty-input nudge,
 the safety redirect, the disclosure response, an interruption, an error —
 reuses this layout, changing only the label and the transcript.
@@ -154,7 +168,9 @@ An interruption (see Key flows) isn't an error. If the OS discards the
 backgrounded page outright, the next visit is a fresh, empty conversation —
 a clean start, not a crash. The error state says what happened in one line
 and, if it persists, suggests telling a grown-up — the operator's only path
-when a failure never reaches them.
+when a failure never reaches them. It is spoken as well as shown, like every
+other fixed response: a kid who looked away waiting for a reply shouldn't
+just get silence.
 
 Screens (illustrative, not final visual design):
 
@@ -248,11 +264,16 @@ Talk screen — talking (cleared reply, rendering)
    same thing in every state, and often the reply has simply been read off
    the transcript already and the audio is no longer wanted. The reply still
    counts as said in full: cutting the audio short doesn't cut the reply
-   short.
+   short. Tapping while a reply is still being worked out does the same
+   thing, abandoning that turn for a new one — there is no state in which
+   the button means something else.
 9. **Something goes wrong:** Any pipeline failure, including the safety
    check being unavailable or the spend ceiling being hit (see Security) →
    one clear "something went wrong, try again," plus the grown-up nudge if
-   it persists. No half-finished, unchecked, or guessed replies.
+   it persists. No half-finished, unchecked, or guessed replies. A reply is
+   delivered visibly and audibly or not at all — if speech synthesis fails,
+   the cleared reply is discarded with everything else rather than shown in
+   silence.
 
 ## Security, privacy, and authorization
 
@@ -295,6 +316,14 @@ Talk screen — talking (cleared reply, rendering)
 - Failures reach the operator out-of-band, carrying category and endpoint
   only and never content, so a tool that breaks during unsupervised use
   doesn't stay broken unnoticed.
+- A disclosure is not surfaced to the operator or to any parent. The
+  out-of-band channel carries failures only, nothing is stored, and the app
+  doesn't know which family member is speaking — so the fixed adult-pointing
+  response is the whole intervention. Accepted v1 limitation, and a
+  deliberate one: the tool's job is to hand the moment to a real adult in the
+  room, not to report on the child. Revisit it if the alternative — a
+  content-free "the disclosure response fired" ping, with the kids told it
+  works that way — turns out to be worth the trade.
 - The safety check, the disclosure response, and the access gate are hard
   launch requirements, verified rather than validated by design alone (see
   Acceptance outcomes) — not fast-follows.
