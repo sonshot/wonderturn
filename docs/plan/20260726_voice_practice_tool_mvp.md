@@ -1214,3 +1214,12 @@ Append-only. Stable IDs; reversals say what they supersede.
   Better Auth's production URL, which makes the plugin skip proxying. Safari
   completed the direct callback with the approved account and retained the
   stateless session across reload on 2026-07-26.
+- **D62 (2026-07-26) — The latest intelligible interim transcript is valid
+  input when listening stops. Extends P4 and D26.** Safari can display an
+  interim result without promoting it to a final result before `stop()` ends
+  recognition. Submitting only final results therefore turned visible speech
+  such as "hello hello" into an empty-input nudge. The client now submits the
+  latest displayed transcript, while still preferring each final result as it
+  arrives. The classifier also pins greetings, short answers, and repetitions
+  of real words to `ordinary`; `nudge` remains for genuinely content-free
+  input.

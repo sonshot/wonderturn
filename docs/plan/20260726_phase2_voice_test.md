@@ -34,6 +34,9 @@ the recognized text differs from what you said.
    advance once to `Still thinking`.
 9. Confirm your recognized speech appears under `You`, one reply appears under
    `AI reply`, and Talia reads that same complete reply aloud.
+10. Start another turn, say **“Hello hello”**, and tap `Done` as soon as the
+    words appear. Confirm both words remain under `You` and the result is an
+    ordinary reply, not **“I didn't quite catch that — want to try again?”**
 
 | Check | Result | Notes |
 | --- | --- | --- |
@@ -42,6 +45,7 @@ the recognized text differs from what you said.
 | State sequence correct |  |  |
 | Reply text appeared once |  |  |
 | Talia played once and matched the text |  |  |
+| Short repeated greeting was retained and answered |  | Recognized: |
 
 ## B. Barge in during playback
 

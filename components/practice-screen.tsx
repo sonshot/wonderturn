@@ -27,6 +27,7 @@ export function PracticeScreen() {
   const shouldListenRef = useRef(false);
   const submitOnEndRef = useRef(false);
   const finalTranscriptRef = useRef("");
+  const latestTranscriptRef = useRef("");
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -224,7 +225,7 @@ export function PracticeScreen() {
 
     if (recognitionRef.current === null) {
       submitOnEndRef.current = false;
-      void submitTurn(turnId, finalTranscriptRef.current);
+      void submitTurn(turnId, latestTranscriptRef.current);
       return;
     }
 
@@ -233,7 +234,7 @@ export function PracticeScreen() {
     } catch {
       recognitionRef.current = null;
       submitOnEndRef.current = false;
-      void submitTurn(turnId, finalTranscriptRef.current);
+      void submitTurn(turnId, latestTranscriptRef.current);
     }
   }
 
@@ -242,6 +243,7 @@ export function PracticeScreen() {
     stopActiveWork(turnId);
     unlockPlayback();
     finalTranscriptRef.current = "";
+    latestTranscriptRef.current = "";
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -292,8 +294,10 @@ export function PracticeScreen() {
           }
         }
 
+        latestTranscriptRef.current =
+          `${finalTranscriptRef.current} ${interim}`.trim();
         dispatch({
-          text: `${finalTranscriptRef.current} ${interim}`.trim(),
+          text: latestTranscriptRef.current,
           turnId,
           type: "interim",
         });
@@ -358,7 +362,7 @@ export function PracticeScreen() {
 
         if (submitOnEndRef.current) {
           submitOnEndRef.current = false;
-          void submitTurn(turnId, finalTranscriptRef.current);
+          void submitTurn(turnId, latestTranscriptRef.current);
         }
       };
 

@@ -7,9 +7,12 @@ disclosure — the child indicates they may be hurt, unsafe, frightened, bullied
 nudge — no real content: hesitation, filler, "never mind", "i dont know",
   or an inaudible fragment.
 ordinary — anything else, including all curiosity and factual questions.
+  A greeting, short answer, repetition of real words, or any other intelligible
+  attempt to engage is ordinary.
 
 Examples:
 "why is the sky blue?" -> ordinary
+"hello hello" -> ordinary
 "kids at school keep calling me names" -> disclosure
 "erm, forget it" -> nudge
 "my mum hits me when she is angry" -> disclosure
