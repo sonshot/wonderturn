@@ -7,15 +7,16 @@ Diagnostics feature doc: [`docs/feat/20260726_device_diagnostics.md`](../feat/20
 
 Phase 0a is complete. Its frozen install, deterministic verification lane,
 production build, and local root-route smoke check pass on Node.js 24.
-Phase 0b's child-voice accuracy check remains open. Safari delayed atomic
-playback passes, and offline recognition is an observational privacy check
-rather than an availability gate (D56).
+Phase 0b is complete (D57). Safari delayed atomic playback passes, offline
+recognition fails as expected for the observed network-dependent browser
+service, and the operator accepts the low child-voice accuracy for this private
+MVP.
 
 Phase 0a establishes the durable repository foundation. Phase 0b is a
 throwaway device spike whose result can invalidate the application stack;
 the operator has explicitly started Phase 1's access-gate slice before that
-gate passes (D49). Phase 0b still blocks the voice pipeline and Phase 1 does
-not exit until its deployed-account checks pass.
+gate passed (D49). That device gate is now resolved; Phase 1 still does not
+exit until its deployed-account checks pass.
 
 Phase 1's auth slice is code-complete locally: the stateless Better Auth
 configuration, production proxy callback, dynamic host boundary, and offline
@@ -41,8 +42,8 @@ offline too, as does the direct ElevenLabs synthesis adapter. Talia, the fixed
 copy, `eleven_flash_v2_5`, and the provider cap are operator-approved; all five
 fixed MP3s are committed behind a text/voice/model/hash contract and their
 rendered delivery is operator-approved (D54, D55). The HTTP route and
-interactive voice screen have not started. Phase 0b's remaining child-voice
-accuracy check still gates that work.
+interactive voice screen have not started. Phase 0b, G2, and G6 no longer
+block that work (D55, D57, D58).
 
 ## Scope
 
@@ -97,7 +98,7 @@ outlived its evidence as a bug in this table, not as settled architecture.
 | | Gate | Owner | Blocks |
 | --- | --- | --- | --- |
 | G1 | Provider legal and policy review | Son | Access beyond private family use; not this version (D12) |
-| G2 | Vercel account with AI Gateway enabled, credits funded, budget ceiling set | Son | Phase 2 |
+| G2 | Resolved (D58): Vercel AI Gateway enabled and funded with the planned $10 monthly budget | Son | Phase 2 |
 | G3 | Resolved (D50): Google OAuth web client ID and secret; production callback registered at `https://wonderturn.vercel.app/api/auth/callback/google`; dedicated proxy secret shared with previews | Son | Phase 1 |
 | G4 | Resolved (D50): `wonderturn.vercel.app` is production and `wonderturn-*-daohoangson.vercel.app` is the project-scoped preview pattern | Son | Phase 1, 4 |
 | G5 | Out-of-band alert channel (ntfy topic or Telegram bot) | Son | Phase 4 |
@@ -284,14 +285,13 @@ Run the Vercel branch preview on the two phones the family uses. The browser
 harness begins here, then remains as the durable `/diagnostics` operator
 surface described by D46.
 
-The latency leg and basic browser compatibility are **complete** —
-measurements, model selection, the register comparison, and the Android/Safari
-observations are recorded in
+Phase 0b is **complete** (D57). Measurements, model selection, the register
+comparison, and the Android/Safari observations are recorded in
 [`20260726_phase0_spike.md`](20260726_phase0_spike.md), with its harness
 committed under `spike/` and absorbed per D30. Safari delayed atomic playback
-passes. What remains is child-voice accuracy; offline behavior is still worth
-observing for privacy documentation, but it need not work and is not an exit
-gate (D56).
+passes. Offline recognition fails in the tested context, and child-voice
+accuracy is low; the operator accepts both outcomes for this private,
+online-only MVP.
 
 1. Web Speech API: interim results, restart-on-silence behaviour, accuracy
    on the kids' actual voices, and, where convenient, the observed
@@ -1158,3 +1158,20 @@ Append-only. Stable IDs; reversals say what they supersede.
   recognition is unavailable. An offline run remains useful privacy evidence,
   but neither success nor failure blocks Phase 2. Phase 0b now has one
   outstanding device gate: recognition accuracy on the kids' actual voices.
+- **D57 (2026-07-26) — Phase 0b passes with low child-voice accuracy and
+  network-dependent recognition. Supersedes D56's remaining accuracy gate.**
+  The operator tested the kids' actual voices and accepts the observed low
+  recognition accuracy for the private MVP. This is an explicit product
+  tradeoff, not a claim that the recognizer met an objective score. Real family
+  use remains the signal for whether server-side transcription must replace it.
+
+  Recognition does not work offline in the tested context, confirming the
+  browser-managed path depends on a network service there. That result matches
+  the disclosed browser-vendor boundary and the existing fail-closed behavior;
+  the product remains online-only. Together with D56's Safari delayed-playback
+  pass, this closes Phase 0b and unblocks the voice pipeline.
+- **D58 (2026-07-26) — The AI Gateway spend gate is resolved.** The operator
+  confirmed that Vercel AI Gateway is enabled and funded with P12's planned
+  `$10` monthly budget. G2 no longer blocks Phase 2. The application still
+  treats an exhausted budget or any Gateway failure as P7's single fail-closed
+  error state.

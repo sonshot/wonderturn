@@ -5,12 +5,12 @@ Feature doc: [`../feat/20260725_voice_practice_tool_mvp.md`](../feat/20260725_vo
 
 ## Status
 
-Latency, model-selection, and register legs complete (2026-07-26). Basic Web
-Speech compatibility is now observed on Android Chrome and iOS Safari. Browser
-checks remain partially complete: accuracy on the kids' voices still needs a
-real-device result. Safari delayed atomic playback now passes. Offline
-recognition remains a useful observation about the browser-vendor boundary,
-not an availability requirement or exit gate (D56).
+Complete (2026-07-26). Latency, model selection, register, browser
+compatibility, child-voice accuracy, and delayed-playback legs have operator
+results on the target devices. Recognition accuracy on the kids' voices is low
+but accepted for the private MVP; Safari delayed atomic playback passes.
+Offline recognition does not work, confirming the browser-managed recognizer
+requires network access in the tested context (D56, D57).
 
 ## Android Chrome device result
 
@@ -56,6 +56,16 @@ submitted diagnostic report is
 
 This is a compatibility pass with first-run-permission and accuracy caveats,
 not completion of the Safari device leg.
+
+## Final operator gate result
+
+The operator subsequently tested recognition with the kids' actual voices and
+judged its low accuracy acceptable for the private MVP. This is a product
+acceptance call, not a claim that recognition is objectively accurate. The
+diagnostic also confirmed that recognition does not work offline, which is
+consistent with a network-dependent browser-vendor boundary and does not block
+the online-only MVP. Together with the delayed Safari playback pass, this
+closes Phase 0b (D57).
 
 ## Remote transcription comparison
 
