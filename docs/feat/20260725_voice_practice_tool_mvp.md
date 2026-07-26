@@ -42,17 +42,23 @@ guarantees are hard launch requirements (see Security).
 2. **Safe by default, whoever is talking.** An unsupervised kid is the
    strictest case and the bar held at all times; the guardrails never
    loosen for an older-sounding voice.
-   - Nothing reaches the person, on screen or in audio, before it has been
-     checked — a reply is cleared whole, so there is never a half-said one
-     to take back; the transcript never shows uncleared content.
+   - No assistant-generated reply reaches the person, on screen or in
+     audio, before it has been checked — a reply is cleared whole, so there
+     is never a half-said one to take back. The person's live transcription
+     may appear as speech is recognized, but it isn't a cleared reply.
    - What the person says is separately checked for a genuine disclosure —
      hurt, bullied, unsafe — before a reply forms. That gets a distinct,
      warmer response pointing to a trusted adult instead of the tool
      handling it directly, and it takes precedence over the ordinary safety
-     redirect. The disclosure path never degrades into that redirect or into
-     the error state; a fixed adult-pointing response stands behind it.
-   - If a check can't run, nothing is said: an unavailable check yields the
-     ordinary failure state, never an unchecked reply.
+     redirect. Once a disclosure has been recognized, a fixed, pre-approved
+     adult-pointing response stands behind any failure while forming or
+     clearing its dynamic response, wherever response delivery remains
+     possible.
+   - If a required check can't run, no dynamic reply is said: an unavailable
+     check ordinarily yields the failure state, never an unchecked reply.
+     The only exception is the fixed, pre-approved response after a
+     disclosure has already been recognized. If the disclosure check itself
+     can't run, the ordinary failure state applies.
 
 ## Proposal
 
@@ -147,6 +153,10 @@ no sign-out in v1, so a mistap can't strand a kid at the sign-in gate on a
 shared device; access is revoked by removing the account from the allowlist
 (see Security).
 
+Starting over, or beginning a new turn, makes any unfinished earlier turn
+obsolete: its result must never later appear or be spoken. The plan pins how
+active work is cancelled or discarded.
+
 An interruption (see Key flows) isn't an error. If the OS discards the
 backgrounded page outright, the next visit is a fresh, empty conversation —
 a clean start, not a crash. The error state says what happened in one line
@@ -232,13 +242,15 @@ Talk screen — talking (cleared reply, rendering)
    bullied, unsafe) → a warm, non-generic, adult-pointing reply, shown in
    the transcript like any other, taking precedence over the redirect (see
    Product principles). That reply is cleared like anything else, but if it
-   fails the check — or anything downstream breaks — a fixed adult-pointing
-   response takes its place, never the generic redirect and never the error
-   state.
+   fails while being formed or cleared, a fixed, pre-approved adult-pointing
+   response takes its place wherever response delivery remains possible,
+   never the generic redirect. If the disclosure check itself can't run,
+   the ordinary failure state applies.
 7. **Interrupted:** A call, notification, or screen lock takes over →
-   playback stops, the transcript stays, the control returns to idle, and
-   the conversation continues with another tap. No error, because nothing
-   went wrong.
+   playback stops, any unfinished listening or thinking turn is discarded,
+   completed transcript entries stay, the control returns to idle, and the
+   conversation continues with another tap. No error, because nothing went
+   wrong.
 8. **Talking over it:** Tapping the control while a reply is still being
    spoken stops the playback and starts listening — the button means the
    same thing in every state, and often the reply has simply been read off
@@ -249,8 +261,9 @@ Talk screen — talking (cleared reply, rendering)
    check being unavailable or the spend ceiling being hit (see Security) →
    one clear "something went wrong, try again," plus the grown-up nudge if
    it persists. No half-finished, unchecked, or guessed replies. The single
-   exception is a recognized disclosure, which falls back to its own fixed
-   response instead of this one.
+   exception is a recognized disclosure whose response fails while being
+   formed or cleared, which falls back to its own fixed response instead of
+   this one wherever response delivery remains possible.
 
 ## Security, privacy, and authorization
 
@@ -305,16 +318,19 @@ Shipped when all of these hold, each with evidence:
    conversation, tested with a real one; an approved one stays signed in
    across a browser close and a device restart, and for whatever window the
    plan pins. Removing an account ends its access.
-2. **Nothing unchecked reaches the person.** No transcript line or audio
-   holds uncleared content, and a failed reply is never partly visible or
-   partly spoken. Tested against adversarial prompts.
+2. **Nothing unchecked reaches the person.** No assistant-generated
+   transcript line or audio holds uncleared content, and a failed reply is
+   never partly visible or partly spoken. The person's live transcription
+   isn't a cleared reply. Tested against adversarial prompts.
 3. **Disclosures land.** Real-sounding phrasings each produce the distinct
    adult-pointing response, not the generic redirect or an ordinary reply —
    including a case where the redirect could also have fired, to prove
-   precedence, and a forced clearing failure on the disclosure reply itself,
-   which must yield the fixed response rather than an error.
-4. **Failing closed works.** Safety check made unavailable → error state,
-   nothing spoken.
+   precedence, and a forced clearing failure after the disclosure has been
+   recognized, which must yield the fixed response wherever delivery remains
+   possible.
+4. **Failing closed works.** The disclosure check made unavailable → error
+   state, nothing spoken. The clearing check made unavailable for an
+   ordinary reply → the same.
 5. **It feels like a conversation.** Across a fixed ten-turn script, the
    first visible-and-audible response lands a median of under 2 seconds
    after the tap to stop, with at most one turn over 4. Measured on each of
@@ -331,8 +347,9 @@ Shipped when all of these hold, each with evidence:
    app alone; the providers retain per their own policies (see Security).
 8. **The awkward moments are gentle.** An empty or hesitant recording gets
    the nudge, never an error or safety message; an interruption returns to
-   idle with the transcript intact and no error shown; talking over a reply
-   stops it and starts listening, also with no error.
+   idle with completed transcript entries intact, any unfinished turn
+   discarded, and no error shown; talking over a reply stops it and starts
+   listening, also with no error.
 9. **It works on the real devices.** Mic permission, recording, and
    playback verified on a Safari-based phone browser and an Android/Chrome
    one — including denying permission and then granting it, and that rapid
@@ -342,13 +359,18 @@ Shipped when all of these hold, each with evidence:
 11. **It doesn't pretend to remember.** Asked what it recalls from last
     time, it says plainly that it doesn't, without inventing a past
     conversation or implying one. Checked as part of the register suite.
+12. **The spend ceiling holds.** Once an induced configured ceiling is
+    reached, no new provider work begins and the person sees the ordinary
+    failure state. The plan pins the ceiling's scope, values, window, and
+    concurrency semantics.
 
 Left for the plan to pin: the sign-in mechanism and the provider-terms
 confirmation gating it; the session window and how soon removal from the
 allowlist bites; the reply-length bound that keeps a whole-reply check
 inside the latency bar; the "little or no real speech" threshold; the
 wording of the fixed disclosure response; the spend ceiling's scope,
-values, and window; and how failure visibility is wired.
+values, window, and concurrency semantics; and how failure visibility is
+wired.
 
 ## Ownership
 
