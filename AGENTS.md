@@ -5,7 +5,7 @@ covers _how we work_ and the _durable principles_ behind our choices. Setup,
 current structure, and configuration live in `README.md`, the feature documents in
 `docs/feat/`, and the active plan in `docs/plan/` — do not duplicate them here.
 
-## Principles
+## Engineering principles
 
 Defaults for all new work. A Decision Log entry in the active plan may override a
 principle for a specific case with rationale — but the burden is on the exception.
