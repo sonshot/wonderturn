@@ -25,6 +25,7 @@ const validReport = {
     progressiveAudio: "failed",
     speechRecognition: "passed",
   },
+  speechSampleId: "everyday",
 };
 
 describe("diagnosticReportSubmissionSchema", () => {
@@ -39,6 +40,15 @@ describe("diagnosticReportSubmissionSchema", () => {
       diagnosticReportSubmissionSchema.parse({
         ...validReport,
         deviceLabel: "manually supplied",
+      }),
+    ).toThrow();
+  });
+
+  it("rejects an unknown speech sample", () => {
+    expect(() =>
+      diagnosticReportSubmissionSchema.parse({
+        ...validReport,
+        speechSampleId: "made-up-sentence",
       }),
     ).toThrow();
   });

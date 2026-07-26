@@ -28,7 +28,8 @@ Open the tunnel URL with `/diagnostics` appended on both target phones.
 On each phone:
 
 1. Capture the environment.
-2. Run speech recognition, including a long pause that forces a restart.
+2. Choose a test sentence and use that same sentence on both devices. Run
+   speech recognition, including a long pause that forces a restart.
 3. Reload, disconnect the phone from the network, and repeat recognition to
    observe whether processing requires the browser vendor.
 4. Run delayed audio unlock; the tone must play without a second tap.

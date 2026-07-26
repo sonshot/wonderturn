@@ -26,6 +26,8 @@ In scope:
 - Secure-context, connectivity, and Web Speech API availability.
 - English speech recognition, restart-after-silence behavior, transcripts, and
   an operator-recorded offline result.
+- A fixed set of short, child-readable speech samples so the expected and
+  recognized text can be compared across speakers, browsers, and devices.
 - Delayed audio unlock and progressive audio playback timing.
 - Free-form operator notes, an event timeline, and direct report submission.
 - Strict server-side validation before a report reaches its sink.
@@ -59,3 +61,5 @@ retention, and access-control decision before implementation.
 4. Malformed reports are rejected with a sanitized failure response and no
    submitted payload is logged.
 5. The page does not offer clipboard export or a manual device-name field.
+6. A tester can choose one of three fixed sentences, see it beside the
+   recognized transcript, and submit the selected sample with the report.

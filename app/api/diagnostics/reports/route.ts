@@ -1,4 +1,5 @@
 import { diagnosticReportSubmissionSchema } from "@/lib/diagnostics/report";
+import { getSpeechSample } from "@/lib/diagnostics/speech-samples";
 import { inferDevice } from "@/lib/diagnostics/user-agent";
 
 export async function POST(request: Request) {
@@ -14,6 +15,7 @@ export async function POST(request: Request) {
       device: inferDevice(userAgent),
       receivedAt: new Date().toISOString(),
       reportId,
+      speechSample: getSpeechSample(submission.speechSampleId),
     };
 
     // Temporary sink until diagnostic report storage is implemented.

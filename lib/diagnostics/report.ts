@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { SPEECH_SAMPLE_IDS } from "./speech-samples";
+
 const testResultSchema = z.enum(["not-run", "running", "passed", "failed"]);
 
 const diagnosticEventSchema = z
@@ -32,6 +34,7 @@ export const diagnosticReportSubmissionSchema = z
         speechRecognition: testResultSchema,
       })
       .strict(),
+    speechSampleId: z.enum(SPEECH_SAMPLE_IDS),
   })
   .strict();
 

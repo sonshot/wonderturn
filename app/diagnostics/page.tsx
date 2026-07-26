@@ -7,6 +7,11 @@ import {
   type DiagnosticReportSubmission,
 } from "@/lib/diagnostics/report";
 import {
+  getSpeechSample,
+  SPEECH_SAMPLES,
+  type SpeechSampleId,
+} from "@/lib/diagnostics/speech-samples";
+import {
   formatDevice,
   inferDevice,
   type DeviceInfo,
@@ -56,6 +61,8 @@ export default function DiagnosticsPage() {
   const [interimTranscript, setInterimTranscript] = useState("");
   const [finalTranscript, setFinalTranscript] = useState("");
   const [speechResult, setSpeechResult] = useState<TestResult>("not-run");
+  const [speechSampleId, setSpeechSampleId] =
+    useState<SpeechSampleId>("everyday");
   const [unlockResult, setUnlockResult] = useState<TestResult>("not-run");
   const [progressiveResult, setProgressiveResult] =
     useState<TestResult>("not-run");
@@ -97,6 +104,13 @@ export default function DiagnosticsPage() {
     ]);
   };
 
+  const selectSpeechSample = (id: SpeechSampleId) => {
+    setSpeechSampleId(id);
+    setFinalTranscript("");
+    setInterimTranscript("");
+    setSpeechResult("not-run");
+  };
+
   const stopSpeechTest = () => {
     keepListeningRef.current = false;
 
@@ -134,6 +148,7 @@ export default function DiagnosticsPage() {
     setFinalTranscript("");
     setInterimTranscript("");
     setSpeechResult("running");
+    appendEvent(`Speech sample selected: ${speechSampleId}`);
     keepListeningRef.current = true;
     recognitionDeadlineRef.current = performance.now() + MAX_RECORDING_MS;
 
@@ -349,6 +364,7 @@ export default function DiagnosticsPage() {
         progressiveAudio: progressiveResult,
         speechRecognition: speechResult,
       },
+      speechSampleId,
     };
 
     setSubmissionState("submitting");
@@ -403,6 +419,8 @@ export default function DiagnosticsPage() {
     };
   }, []);
 
+  const speechSample = getSpeechSample(speechSampleId);
+
   return (
     <main className="mx-auto max-w-3xl space-y-8 p-6">
       <header>
@@ -454,8 +472,30 @@ export default function DiagnosticsPage() {
       <section className="space-y-3">
         <h2 className="text-xl font-semibold">2. Web Speech API</h2>
         <p>
-          Start, speak several phrases, then pause long enough for recognition
-          to end and restart. The test stops automatically after 60 seconds.
+          Read the selected sentence, then pause long enough for recognition to
+          end and restart. Use the same sentence on each device for comparison.
+          The test stops automatically after 60 seconds.
+        </p>
+        <fieldset className="space-y-2">
+          <legend className="font-semibold">Test sentence</legend>
+          {SPEECH_SAMPLES.map((sample) => (
+            <label className="block" key={sample.id}>
+              <input
+                checked={speechSampleId === sample.id}
+                className="mr-2"
+                disabled={speechResult === "running"}
+                name="speech-sample"
+                onChange={() => selectSpeechSample(sample.id)}
+                type="radio"
+                value={sample.id}
+              />
+              {sample.label}
+            </label>
+          ))}
+        </fieldset>
+        <p className="border p-3 text-lg">
+          <span className="block text-sm font-semibold">Read aloud</span>
+          {speechSample.text}
         </p>
         <div className="flex gap-3">
           <button className="border px-3 py-2" onClick={startSpeechTest}>
@@ -467,6 +507,8 @@ export default function DiagnosticsPage() {
         </div>
         <p aria-live="polite">Result: {speechResult}</p>
         <dl>
+          <dt className="font-semibold">Expected sentence</dt>
+          <dd>{speechSample.text}</dd>
           <dt className="font-semibold">Interim transcript</dt>
           <dd>{interimTranscript || "—"}</dd>
           <dt className="font-semibold">Final transcript</dt>

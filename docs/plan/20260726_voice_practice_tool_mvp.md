@@ -971,3 +971,15 @@ Append-only. Stable IDs; reversals say what they supersede.
   This does not promote spike visuals into the product design system. The
   diagnostics are an operator surface and remain semantic and visually generic
   until there is evidence that they need dedicated design treatment.
+- **D47 (2026-07-26) — Speech accuracy uses fixed, comparable samples.** The
+  diagnostics offer three short sentences covering everyday language, a name
+  and number, and a natural question. A tester selects one, reads it aloud, and
+  sees the expected text beside the browser transcript; the report carries the
+  stable sample ID and the server attaches the canonical sentence.
+
+  This deliberately avoids an automated accuracy score for now. The available
+  word-error-rate package is unmaintained and untyped, and a home-grown metric
+  would give a precise-looking number without enough evidence that it reflects
+  the experience of a child speaking naturally. Fixed input and captured output
+  provide the comparison needed for the device gate without inventing a new
+  subsystem.
