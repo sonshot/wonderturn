@@ -17,9 +17,11 @@ not exit until its deployed-account checks pass.
 
 Phase 1's auth slice is code-complete locally: the stateless Better Auth
 configuration, production proxy callback, dynamic host boundary, and offline
-contracts pass `verify` and a production build. G3, G4, and the deployed
-approved/denied-account and Safari-persistence checks remain open, so the
-phase is not complete.
+contracts pass `verify` and a production build. G3 and G4 are resolved (D50):
+an approved account completes Google SSO on production and the branch preview
+in Safari, returns to the initiating host, and survives a reload on both.
+The deployed denied-account and Safari restart-persistence checks remain open,
+so the phase is not complete.
 
 ## Scope
 
@@ -75,8 +77,8 @@ outlived its evidence as a bug in this table, not as settled architecture.
 | --- | --- | --- | --- |
 | G1 | Provider legal and policy review | Son | Access beyond private family use; not this version (D12) |
 | G2 | Vercel account with AI Gateway enabled, credits funded, budget ceiling set | Son | Phase 2 |
-| G3 | Google OAuth web client ID and secret; production callback registered at `https://wonderturn.com/api/auth/callback/google`; dedicated proxy secret shared with previews | Son | Phase 1 |
-| G4 | `wonderturn.com` attached to production and project-scoped Vercel preview host pattern confirmed | Son | Phase 1, 4 |
+| G3 | Resolved (D50): Google OAuth web client ID and secret; production callback registered at `https://wonderturn.vercel.app/api/auth/callback/google`; dedicated proxy secret shared with previews | Son | Phase 1 |
+| G4 | Resolved (D50): `wonderturn.vercel.app` is production and `wonderturn-*-daohoangson.vercel.app` is the project-scoped preview pattern | Son | Phase 1, 4 |
 | G5 | Out-of-band alert channel (ntfy topic or Telegram bot) | Son | Phase 4 |
 | G6 | ElevenLabs account with a synthesis-scoped key, a plan cap set, and a chosen voice | Son | Phase 2 (D33) |
 
@@ -291,11 +293,11 @@ console; persistent report or audio storage remains out of scope.
 
 Better Auth runs Google's authorization-code flow and creates a stateless P11
 session without sliding refresh. Its OAuth Proxy sends every preview callback
-through `https://wonderturn.com/api/auth/callback/google`, then returns one
-short-lived encrypted result to the initiating preview. Dynamic base-URL
-resolution accepts only the production host, localhost, and the configured
-project-scoped Vercel preview pattern; a broad `*.vercel.app` trust boundary
-is rejected. The proxy secret is dedicated to this handoff and shared across
+through `https://wonderturn.vercel.app/api/auth/callback/google`, then returns
+one short-lived encrypted result to the initiating preview. Dynamic base-URL
+resolution accepts only the production host, localhost, and
+`wonderturn-*-daohoangson.vercel.app`; a broad `*.vercel.app` trust boundary is
+rejected. The proxy secret is dedicated to this handoff and shared across
 production and previews, while the Better Auth session secret may remain
 environment-specific.
 
@@ -1050,3 +1052,19 @@ Append-only. Stable IDs; reversals say what they supersede.
   authorized this Phase 1 slice before Phase 0b exits; that does not waive
   Phase 0b or make Phase 1 complete before the deployed approved/denied and
   Safari-persistence checks pass.
+- **D50 (2026-07-26) — The Vercel production domain is the OAuth anchor until
+  a custom domain is purchased.** Supersedes only D49's `wonderturn.com`
+  hostname assumption; its Better Auth, stateless-session, and OAuth Proxy
+  architecture remain unchanged. Production is
+  `https://wonderturn.vercel.app`, Google's sole redirect URI is
+  `https://wonderturn.vercel.app/api/auth/callback/google`, and dynamic hosts
+  allow that production host, localhost, and the project-scoped
+  `wonderturn-*-daohoangson.vercel.app` pattern.
+
+  A real approved account completed the full flow in Safari on production and
+  `wonderturn-git-feat-mvp-daohoangson.vercel.app`. Both requests sent Google
+  to the production callback, returned to the origin that initiated sign-in,
+  reached the authorized empty app, and retained the session across a reload.
+  Buying a custom domain later requires an explicit superseding decision plus
+  coordinated Google redirect URI and environment changes; no dormant
+  `wonderturn.com` compatibility is carried now.

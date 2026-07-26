@@ -6,15 +6,15 @@ import { createBetterAuthOptions } from "./options";
 
 const config: AuthConfig = {
   allowedHosts: [
-    "wonderturn.com",
-    "wonderturn-*-sonshot.vercel.app",
+    "wonderturn.vercel.app",
+    "wonderturn-*-daohoangson.vercel.app",
     "localhost:3000",
   ],
   betterAuthSecret: "s".repeat(32),
   googleClientId: "google-client-id",
   googleClientSecret: "google-client-secret",
   oauthProxySecret: "p".repeat(32),
-  productionURL: "https://wonderturn.com",
+  productionURL: "https://wonderturn.vercel.app",
 };
 
 describe("createBetterAuthOptions", () => {

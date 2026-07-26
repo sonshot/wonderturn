@@ -42,7 +42,7 @@ removing an entry revokes access on the next load.
 Google needs only this authorized redirect URI:
 
 ```text
-https://wonderturn.com/api/auth/callback/google
+https://wonderturn.vercel.app/api/auth/callback/google
 ```
 
 Better Auth's OAuth Proxy receives that callback on production and returns a
@@ -51,13 +51,13 @@ flow. Configure these variables in `.env.local` and in Vercel:
 
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` — credentials for the Google
   OAuth 2.0 web client.
-- `BETTER_AUTH_PRODUCTION_URL=https://wonderturn.com` — exact production
+- `BETTER_AUTH_PRODUCTION_URL=https://wonderturn.vercel.app` — exact production
   origin, with no trailing slash.
 - `BETTER_AUTH_ALLOWED_HOSTS` — comma-separated dynamic host allowlist. For
   this Vercel project:
-  `wonderturn.com,wonderturn-*-sonshot.vercel.app,localhost:3000`. Confirm the
-  final `sonshot` segment against an actual Vercel preview URL; never use the
-  cross-project `*.vercel.app` wildcard.
+  `wonderturn.vercel.app,wonderturn-*-daohoangson.vercel.app,localhost:3000`.
+  The `daohoangson` scope is verified against the project's branch and
+  deployment URLs; never use the cross-project `*.vercel.app` wildcard.
 - `BETTER_AUTH_SECRET` — at least 32 random characters for session and auth
   cookies. It may differ between production and preview environments.
 - `OAUTH_PROXY_SECRET` — a separate random value, at least 32 characters,
@@ -68,8 +68,8 @@ Generate each secret separately with `openssl rand -base64 32`. In Vercel,
 apply the proxy secret, Google credentials, host configuration, and allowlist
 to both Production and Preview so today's branch and future branch previews
 use the same callback contract. Localhost also participates in the proxy flow,
-so `wonderturn.com` must already be deployed and configured before local
-Google sign-in can complete.
+so `wonderturn.vercel.app` must already be deployed and configured before
+local Google sign-in can complete.
 
 ## Verification
 

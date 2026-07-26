@@ -12,24 +12,24 @@ const validEnvironment = {
   OAUTH_PROXY_SECRET: "p".repeat(32),
   GOOGLE_CLIENT_ID: "google-client-id",
   GOOGLE_CLIENT_SECRET: "google-client-secret",
-  BETTER_AUTH_PRODUCTION_URL: "https://wonderturn.com",
+  BETTER_AUTH_PRODUCTION_URL: "https://wonderturn.vercel.app",
   BETTER_AUTH_ALLOWED_HOSTS:
-    "wonderturn.com, wonderturn-*-sonshot.vercel.app, localhost:3000",
+    "wonderturn.vercel.app, wonderturn-*-daohoangson.vercel.app, localhost:3000",
 };
 
 describe("parseAuthConfig", () => {
   it("parses the production and project-scoped preview hosts", () => {
     expect(parseAuthConfig(validEnvironment)).toEqual({
       allowedHosts: [
-        "wonderturn.com",
-        "wonderturn-*-sonshot.vercel.app",
+        "wonderturn.vercel.app",
+        "wonderturn-*-daohoangson.vercel.app",
         "localhost:3000",
       ],
       betterAuthSecret: "s".repeat(32),
       googleClientId: "google-client-id",
       googleClientSecret: "google-client-secret",
       oauthProxySecret: "p".repeat(32),
-      productionURL: "https://wonderturn.com",
+      productionURL: "https://wonderturn.vercel.app",
     });
   });
 
@@ -37,26 +37,29 @@ describe("parseAuthConfig", () => {
     expect(() =>
       parseAuthConfig({
         ...validEnvironment,
-        BETTER_AUTH_ALLOWED_HOSTS: "wonderturn.com,*.vercel.app",
+        BETTER_AUTH_ALLOWED_HOSTS: "wonderturn.vercel.app,*.vercel.app",
       }),
     ).toThrow();
   });
 
   it("matches current and future branch previews without matching another project", () => {
-    const pattern = "wonderturn-*-sonshot.vercel.app";
+    const pattern = "wonderturn-*-daohoangson.vercel.app";
 
     expect(
-      matchesHostPattern("wonderturn-git-today-sonshot.vercel.app", pattern),
-    ).toBe(true);
-    expect(
       matchesHostPattern(
-        "wonderturn-git-future-branch-sonshot.vercel.app",
+        "wonderturn-git-today-daohoangson.vercel.app",
         pattern,
       ),
     ).toBe(true);
     expect(
       matchesHostPattern(
-        "another-project-git-today-sonshot.vercel.app",
+        "wonderturn-git-future-branch-daohoangson.vercel.app",
+        pattern,
+      ),
+    ).toBe(true);
+    expect(
+      matchesHostPattern(
+        "another-project-git-today-daohoangson.vercel.app",
         pattern,
       ),
     ).toBe(false);
@@ -66,7 +69,7 @@ describe("parseAuthConfig", () => {
     expect(() =>
       parseAuthConfig({
         ...validEnvironment,
-        BETTER_AUTH_ALLOWED_HOSTS: "wonderturn-*-sonshot.vercel.app",
+        BETTER_AUTH_ALLOWED_HOSTS: "wonderturn-*-daohoangson.vercel.app",
       }),
     ).toThrow("must include the production URL host");
   });
@@ -84,7 +87,7 @@ describe("parseAuthConfig", () => {
     expect(() =>
       parseAuthConfig({
         ...validEnvironment,
-        BETTER_AUTH_PRODUCTION_URL: "https://wonderturn.com/",
+        BETTER_AUTH_PRODUCTION_URL: "https://wonderturn.vercel.app/",
       }),
     ).toThrow("must be an HTTPS origin");
   });
