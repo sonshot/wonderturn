@@ -1,4 +1,4 @@
-# Voice Practice Tool MVP
+# Wonderturn — Voice Practice MVP
 
 ## Problem
 
@@ -56,10 +56,13 @@ guarantees are hard launch requirements (see Security).
 
 ## Proposal
 
-A voice tool for practicing conversation: tap to start talking, tap again
-to stop, hear a spoken reply — no typing, English both ways for v1. An
-adult wanting the same practice gets the same tool, with no separate mode
-and no per-person tuning.
+Wonderturn is a voice tool for practicing conversation: tap to start
+talking, tap again to stop, hear a spoken reply — no typing, English both
+ways for v1. An adult wanting the same practice gets the same tool, with no
+separate mode and no per-person tuning.
+
+Wonderturn is the public product name, never the AI speaker's identity. The
+transcript labels generated content plainly as `AI reply`.
 
 Replies are cleared in full before they're shown or spoken, and a genuine
 disclosure gets its own adult-pointing response instead (see Product
@@ -195,7 +198,7 @@ Sign-in gate
 ```
 Talk screen — idle                Talk screen — listening
 ┌───────────────────────────┐       ┌──────────────────────────┐
-│ Practice                ⎋ │       │ Practice               ⎋ │
+│ Wonderturn              ⎋ │       │ Wonderturn             ⎋ │
 │                           │       │                          │
 │                           │       │  You: why do stars       │
 │                           │       │       twinkle...         │
@@ -210,7 +213,7 @@ Talk screen — idle                Talk screen — listening
 ```
 Talk screen — talking (cleared reply, rendering)
 ┌───────────────────────────┐
-│ Practice                ⎋ │
+│ Wonderturn              ⎋ │
 │  You: why do stars        │
 │       twinkle?            │
 │  Reply: great question!   │
