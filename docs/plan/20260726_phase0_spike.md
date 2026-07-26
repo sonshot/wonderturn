@@ -5,9 +5,10 @@ Feature doc: [`../feat/20260725_voice_practice_tool_mvp.md`](../feat/20260725_vo
 
 ## Status
 
-Latency, model-selection, and register legs complete (2026-07-26). Android
-Chrome browser checks are partially complete; offline recognition, accuracy on
-the kids' voices, and iOS Safari remain open.
+Latency, model-selection, and register legs complete (2026-07-26). Basic Web
+Speech compatibility is now observed on Android Chrome and iOS Safari. Browser
+checks remain partially complete: accuracy on the kids' voices, offline
+recognition, and Safari audio playback still need real-device results.
 
 ## Android Chrome device result
 
@@ -28,10 +29,52 @@ tunnel on Chrome 150 / Android 10:
 This is a provisional Android pass for the two Phase 0b exit behaviors, not
 completion of the device leg.
 
-The findings below invalidate the plan's Phase 2 timeline, its reply-model
-and speech-out choices, and surface one safety issue that is not in the plan
-at all. Nothing has been changed in the plan yet; the decisions this forces
-are listed at the end and belong in that plan's Decision Log.
+## iOS Safari device result
+
+Observed through the Vercel branch preview on Safari 16.6 / iOS 16.7.10. The
+submitted diagnostic report is
+`c31c74f2-e312-4a8a-8600-96df08772bfe`.
+
+- Safari presented two permission approvals. The first speech attempt took
+  3.87s to start, emitted `service-not-allowed` 0.28s after microphone audio
+  began, and ended as failed.
+- After the approvals, the second attempt started in 38ms and recognized
+  speech normally. Later attempts started in 37–39ms. This is a separate
+  speech-service permission condition, not evidence that microphone capture
+  is unavailable. Product handling should ask for another explicit tap rather
+  than treating the first-run error as a permanent device failure.
+- Accuracy was visibly worse than the Android adult test. The everyday sample
+  changed “finished” to “finish”; the names-and-numbers sample began “Main
+  factory” instead of “Maya packed three”; and the question changed “shape” to
+  “chef.”
+- Delayed audio unlock, progressive playback, and offline recognition were not
+  run in this Safari report.
+
+This is a compatibility pass with first-run-permission and accuracy caveats,
+not completion of the Safari device leg.
+
+## Remote transcription comparison
+
+AI Gateway added transcription after the original catalog pass in this spike.
+The durable diagnostics now sends one bounded recording concurrently to
+`openai/gpt-4o-mini-transcribe` and `xai/grok-stt`; D48 in the main plan owns
+that implementation decision.
+
+A Vercel-side synthetic-speech check returned the expected sentence from both
+models in 1.50s and 1.41s respectively. Real-device testing found the completed
+recording/upload/response interaction noticeably slower than browser-managed
+Web Speech. Remote transcription therefore remains useful as an accuracy
+benchmark and fallback investigation, but not as the MVP conversation input
+path. The same audio reaches both remote models; Web Speech requires a separate
+reading because its API cannot accept the recorded blob.
+
+Fast browser response does not establish that recognition is local. Web Speech
+remains browser-managed and may use a vendor service; offline testing is still
+the observation that can clarify that boundary.
+
+The findings below drove the main plan's model, speech-out, safety, and
+diagnostic decisions. Its append-only Decision Log is authoritative for the
+implementation choices; this document preserves the evidence.
 
 ## Method, and two ways it went wrong
 
@@ -315,12 +358,25 @@ table above.
    withdrawn: the floor is set by per-call overhead, every measurement of
    which includes a laptop-to-Gateway round-trip. Overhead under ~0.56s per
    call clears the median. The 4s ceiling is comfortable either way.
+8. **Browser-managed Web Speech is the viable MVP input path.** Android Chrome
+   and iOS Safari both recognize speech, while the explicit remote comparison
+   feels too slow for conversational turn-taking. This is a latency conclusion,
+   not a claim that browser recognition is processed on the device.
+9. **Safari's first run is a permission flow, not a clean recognition run.**
+   `service-not-allowed` followed the first approval sequence; a second
+   user-initiated attempt started immediately. The product must distinguish
+   permission setup from an unsupported or broken device.
+10. **Safari accuracy is an open product risk.** Compatibility is established,
+    but two of the three adult fixed-sentence results contained meaningful
+    substitutions. Results from the kids' voices decide whether Web Speech is
+    good enough, and Chrome is currently the stronger observed browser.
 
 ## Still untested
 
-- Web Speech API on iOS Safari and Android Chrome: interim results,
-  restart-on-silence, and accuracy on the kids' actual voices.
-- Audio unlock: `play()` in the tap handler, `src` swapped ~1.5s later.
+- Web Speech accuracy on the kids' actual voices on both target browsers.
+- Offline Web Speech behavior on both target browsers; current observations do
+  not establish where browser-managed recognition is processed.
+- Safari audio unlock: `play()` in the tap handler, `src` swapped ~1.5s later.
 - **Progressive audio playback on iOS Safari** — now the highest-value
   unknown, because finding 3 is only usable if the browser can play a
   streamed response without a MediaSource path that breaks on iPhone.
@@ -338,10 +394,10 @@ table above.
 - **Register at length.** Eight prompts is a smoke test, not the Outcome 6
   suite.
 
-## Decisions this forces
+## Decisions carried into the main plan
 
-To be recorded in the main plan's Decision Log and reflected in its stack
-table, Phase 2 timeline, pinned semantics, and definition of done:
+Recorded in the main plan's Decision Log and reflected in its stack, phases,
+pinned semantics, and definition of done:
 
 1. **Speech out leaves the Gateway.** ElevenLabs direct, reversing D6. Spend
    splits across two dashboards and the ElevenLabs plan needs its own cap;
@@ -369,3 +425,7 @@ table, Phase 2 timeline, pinned semantics, and definition of done:
 6. **The classifier prompt is a safety artifact.** It needs definitions,
    an err-toward-disclosure instruction, worked examples, and version
    control alongside the disclosure suite — not an inline string tuned once.
+7. **Browser-managed Web Speech remains the conversation input path.** Remote
+   OpenAI and xAI transcription stays in `/diagnostics` for comparison, not in
+   the turn pipeline. Safari's first-run `service-not-allowed` needs an explicit
+   retry state, while the child-voice accuracy result remains an open gate.

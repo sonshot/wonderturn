@@ -249,11 +249,12 @@ Run the Vercel branch preview on the two phones the family uses. The browser
 harness begins here, then remains as the durable `/diagnostics` operator
 surface described by D46.
 
-The latency leg is **complete** — measurements, model selection, and the
-register comparison are recorded in
+The latency leg and basic browser compatibility are **complete** —
+measurements, model selection, the register comparison, and the Android/Safari
+observations are recorded in
 [`20260726_phase0_spike.md`](20260726_phase0_spike.md), with its harness
-committed under `spike/` and absorbed per D30. What remains is the browser
-behaviour, which no measurement from a laptop can answer.
+committed under `spike/` and absorbed per D30. What remains is child-voice
+accuracy, offline recognition, and Safari audio playback.
 
 1. Web Speech API: interim results, restart-on-silence behaviour, accuracy
    on the kids' actual voices, and the observed local-or-vendor processing
