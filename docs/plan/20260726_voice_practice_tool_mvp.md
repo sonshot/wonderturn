@@ -41,9 +41,12 @@ The bounded HTTP request, success, and content-free failure contracts now pass
 offline too, as does the direct ElevenLabs synthesis adapter. Talia, the fixed
 copy, `eleven_flash_v2_5`, and the provider cap are operator-approved; all five
 fixed MP3s are committed behind a text/voice/model/hash contract and their
-rendered delivery is operator-approved (D54, D55). The HTTP route and
-interactive voice screen have not started. Phase 0b, G2, and G6 no longer
-block that work (D55, D57, D58).
+rendered delivery is operator-approved (D54, D55). The authenticated
+`POST /api/turn` route is code-complete (D59): it re-checks the allowlist,
+parses the bounded request, calls the one text seam, pairs fixed outcomes with
+bundled audio, and fails closed into the content-free error contract. Its
+offline route tests and production build pass. The interactive voice screen
+has not started; Phase 0b, G2, and G6 no longer block it (D55, D57, D58).
 
 ## Scope
 
@@ -1175,3 +1178,15 @@ Append-only. Stable IDs; reversals say what they supersede.
   `$10` monthly budget. G2 no longer blocks Phase 2. The application still
   treats an exhausted budget or any Gateway failure as P7's single fail-closed
   error state.
+- **D59 (2026-07-26) — Fixed audio is embedded in the server route's build
+  artifact.** The source MP3s and their text/voice/model/hash manifest remain
+  the reviewable assets. `pnpm audio:fixed` also generates a base64 JSON bundle
+  that `POST /api/turn` imports and parses with Zod. This preserves D5's one
+  JSON response without assuming a serverless function can read Vercel's
+  separately deployed `public/` directory or fetching the app's own CDN.
+
+  The duplication is generated and verified, not a second source of truth:
+  `verify` decodes every bundled value and compares it byte-for-byte with its
+  committed MP3 and manifest hash. Authorization runs before request parsing,
+  the allowlist is read afresh, and all validation, provider, configuration,
+  and internal response failures return P7's sanitized category-only shape.

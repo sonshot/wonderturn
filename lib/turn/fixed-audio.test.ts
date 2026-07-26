@@ -3,36 +3,10 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
 
-import manifestJson from "../../public/audio/fixed/manifest.json";
+import bundledAudioJson from "./fixed-audio-base64.json";
+import { fixedAudioManifest, getFixedOutcomeAudio } from "./fixed-audio";
 import { ERROR_RESPONSES, FIXED_RESPONSES } from "./fixed-responses";
-
-const clipSchema = z
-  .object({
-    bytes: z.number().int().positive().max(2_000_000),
-    file: z.string().regex(/^[a-z-]+\.mp3$/),
-    sha256: z.string().regex(/^[a-f0-9]{64}$/),
-    text: z.string().min(1),
-  })
-  .strict();
-
-const manifestSchema = z
-  .object({
-    clips: z
-      .object({
-        disclosure: clipSchema,
-        "error-first": clipSchema,
-        "error-repeated": clipSchema,
-        nudge: clipSchema,
-        redirect: clipSchema,
-      })
-      .strict(),
-    modelId: z.literal("eleven_flash_v2_5"),
-    voiceId: z.literal("OZ0L6eISlOejga3XjDFt"),
-    voiceName: z.literal("Talia"),
-  })
-  .strict();
 
 const expectedTexts = {
   disclosure: FIXED_RESPONSES.disclosure,
@@ -41,15 +15,24 @@ const expectedTexts = {
   nudge: FIXED_RESPONSES.nudge,
   redirect: FIXED_RESPONSES.redirect,
 };
+const audioNames = [
+  "disclosure",
+  "error-first",
+  "error-repeated",
+  "nudge",
+  "redirect",
+] as const;
 
 describe("fixed audio", () => {
   it("matches every approved line to a hashed Talia MP3", async () => {
-    const manifest = manifestSchema.parse(manifestJson);
     const directory = join(process.cwd(), "public", "audio", "fixed");
 
     expect(
       Object.fromEntries(
-        Object.entries(manifest.clips).map(([name, clip]) => [name, clip.text]),
+        Object.entries(fixedAudioManifest.clips).map(([name, clip]) => [
+          name,
+          clip.text,
+        ]),
       ),
     ).toEqual(expectedTexts);
     await expect(
@@ -63,7 +46,8 @@ describe("fixed audio", () => {
       "redirect.mp3",
     ]);
 
-    for (const clip of Object.values(manifest.clips)) {
+    for (const name of audioNames) {
+      const clip = fixedAudioManifest.clips[name];
       const audio = await readFile(join(directory, clip.file));
 
       expect(audio.length).toBe(clip.bytes);
@@ -71,6 +55,15 @@ describe("fixed audio", () => {
         clip.sha256,
       );
       expect(audio.subarray(0, 3).toString("ascii")).toBe("ID3");
+      expect(Buffer.from(bundledAudioJson[name], "base64")).toEqual(audio);
     }
+  });
+
+  it("returns bundled server audio for every fixed outcome", () => {
+    expect(getFixedOutcomeAudio("disclosure")).toBe(
+      bundledAudioJson.disclosure,
+    );
+    expect(getFixedOutcomeAudio("nudge")).toBe(bundledAudioJson.nudge);
+    expect(getFixedOutcomeAudio("redirect")).toBe(bundledAudioJson.redirect);
   });
 });

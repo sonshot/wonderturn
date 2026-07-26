@@ -9,6 +9,7 @@
     "pnpm": "10.28.0"
   },
   "scripts": {
+    "audio:bundle": "node scripts/generate-fixed-audio.mjs --bundle-only",
     "audio:fixed": "node scripts/generate-fixed-audio.mjs",
     "dev": "next dev",
     "build": "next build",
