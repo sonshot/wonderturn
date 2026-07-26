@@ -68,7 +68,9 @@ shown at all — and where it deliberately isn't — is `DESIGN.md`'s call.
 Replies are cleared in full before they're shown or spoken, and a genuine
 disclosure gets its own adult-pointing response instead (see Product
 principles). Access is gated by sign-in against an approved family
-allowlist, with no memory, profile, or identity beyond that (see Scope).
+allowlist, with no conversation memory or application profile; the verified
+Google email is the only account attribute Wonderturn consumes, and only to
+enforce that gate (see Scope and Security).
 
 Reloading, or the start-over control, begins fresh — also how a second
 family member takes a turn. In short: sign in, talk, get a safe reply,
@@ -101,8 +103,10 @@ repeat.
   pinned in the plan.
 - The family-topics deferral (see Product principles), as a persona
   requirement with test coverage, not a separate response type.
-- Sign-in (mechanism TBD — see plan), gated to a short, approved family
-  allowlist; anyone else denied. Sessions use a fixed, long-lived window:
+- Google sign-in through the production domain, gated to a short, approved
+  family allowlist; anyone else denied. Preview deployments proxy the OAuth
+  callback through that same production domain rather than becoming separate
+  Google clients. Sessions use a fixed, long-lived window:
   expiry returns to the sign-in gate, but with a parent-account allowlist a
   kid can't re-authenticate alone, so re-prompting doesn't help — the tool is
   effectively offline until an adult is free (risk: see Security). The window
@@ -246,9 +250,14 @@ appear to disagree about appearance, `DESIGN.md` is right.
   family-only first version. This records an accepted external risk rather
   than a compliance claim; the review becomes a gate before access expands
   beyond the family.
-- Sign-in only checks list membership, never profile data. The allowlist is
-  a short list the user maintains directly, and removing an account revokes
-  access.
+- Sign-in uses the verified Google email only to check list membership. The
+  OAuth provider and auth library necessarily process the provider's basic
+  account response and tokens. Provider tokens live only in Better Auth's
+  short-lived encrypted proxy and account cookies; the long-lived encrypted
+  session retains the verified email and auth identifiers, with the provider
+  name and photo stripped. Wonderturn creates no account record or application
+  profile. The allowlist is a short list the user maintains directly, and
+  removing an account revokes access.
 - The account is not the speaker: the app doesn't know or care which family
   member is talking, which is what makes a parent-account allowlist
   workable.
@@ -335,8 +344,8 @@ Shipped when all of these hold, each with evidence:
     failure state. The plan pins the ceiling's scope, values, window, and
     concurrency semantics.
 
-Left for the plan to pin: the sign-in mechanism; the session window and how
-soon removal from the allowlist bites; the reply-length bound that keeps a
+Left for the plan to pin: the session window and how soon removal from the
+allowlist bites; the reply-length bound that keeps a
 whole-reply check inside the latency bar; the "little or no real speech"
 threshold; the wording of the fixed disclosure response; the spend ceiling's
 scope, values, window, and concurrency semantics; and how failure visibility

@@ -1,21 +1,21 @@
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 
 import { isAllowedEmail } from "@/lib/auth/allowlist";
-import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth/session";
+import { auth } from "@/lib/auth/server";
 import { DeniedState } from "@/components/denied-state";
 import { SignInGate } from "@/components/sign-in-gate";
 
 export default async function Home() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  const session = token ? await verifySessionToken(token) : null;
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
   if (!session) {
     return <SignInGate />;
   }
 
   // P6: re-checked on every request, not only at sign-in.
-  if (!isAllowedEmail(session.email)) {
+  if (!isAllowedEmail(session.user.email)) {
     return <DeniedState />;
   }
 

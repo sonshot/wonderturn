@@ -11,7 +11,15 @@ Phase 0b's browser checks remain open.
 
 Phase 0a establishes the durable repository foundation. Phase 0b is a
 throwaway device spike whose result can invalidate the application stack;
-nothing from Phase 1 onward should be built until it passes.
+the operator has explicitly started Phase 1's access-gate slice before that
+gate passes (D49). Phase 0b still blocks the voice pipeline and Phase 1 does
+not exit until its deployed-account checks pass.
+
+Phase 1's auth slice is code-complete locally: the stateless Better Auth
+configuration, production proxy callback, dynamic host boundary, and offline
+contracts pass `verify` and a production build. G3, G4, and the deployed
+approved/denied-account and Safari-persistence checks remain open, so the
+phase is not complete.
 
 ## Scope
 
@@ -34,8 +42,8 @@ under Pinned semantics.
 | Reply | `google/gemini-3.5-flash-lite` (D31) |
 | Input classification + clearing checks | `anthropic/claude-haiku-4.5` (D32) |
 | Speech out | ElevenLabs, called directly (D33) |
-| Auth | Google sign-in, verified once; fixed 180-day signed httpOnly cookie thereafter |
-| Storage | None — no database, no client persistence |
+| Auth | Better Auth Google OAuth, stateless encrypted 180-day session, production-domain OAuth proxy for previews |
+| Storage | No database or conversation persistence; auth state exists only in encrypted cookies |
 | Validation | Zod |
 | Spend ceiling | Two provider-native caps: AI Gateway budget and the ElevenLabs plan (D34) |
 | Package manager | pnpm, version pinned in `packageManager` |
@@ -67,8 +75,8 @@ outlived its evidence as a bug in this table, not as settled architecture.
 | --- | --- | --- | --- |
 | G1 | Provider legal and policy review | Son | Access beyond private family use; not this version (D12) |
 | G2 | Vercel account with AI Gateway enabled, credits funded, budget ceiling set | Son | Phase 2 |
-| G3 | Google OAuth client ID for the sign-in button | Son | Phase 1 |
-| G4 | Deployment URL — Vercel subdomain is sufficient for v1 | Son | Phase 4 |
+| G3 | Google OAuth web client ID and secret; production callback registered at `https://wonderturn.com/api/auth/callback/google`; dedicated proxy secret shared with previews | Son | Phase 1 |
+| G4 | `wonderturn.com` attached to production and project-scoped Vercel preview host pattern confirmed | Son | Phase 1, 4 |
 | G5 | Out-of-band alert channel (ntfy topic or Telegram bot) | Son | Phase 4 |
 | G6 | ElevenLabs account with a synthesis-scoped key, a plan cap set, and a chosen voice | Son | Phase 2 (D33) |
 
@@ -142,9 +150,11 @@ leave their numbers behind rather than causing a renumber (D24).
   history for conversational continuity only; it grants nothing. Authorization
   comes from the cookie and the allowlist alone.
 - **P11 — Session lifetime is fixed.** The signed cookie lasts 180 days from
-  issuance and is not extended by activity. One absolute deadline, no sliding
-  window. Expiry returns to sign-in; allowlist removal denies the next
-  protected request once the updated env configuration is deployed.
+  issuance and is not extended by activity. Better Auth stores it as an
+  encrypted, httpOnly JWE cookie with no database-backed session. One absolute
+  deadline, no sliding window. Expiry returns to sign-in; allowlist removal
+  denies the next protected request once the updated env configuration is
+  deployed.
 - **P12 — Spend is bounded by two provider caps.** The app uses a dedicated
   AI Gateway key with a $10 monthly budget and no automatic top-up. A request
   already accepted by the Gateway, including the request that crosses the
@@ -279,11 +289,20 @@ console; persistent report or audio storage remains out of scope.
 
 ### Phase 1 — Access gate
 
-Google sign-in, ID token verified server-side once for signature, issuer,
-audience, and expiry, with the sign-in CSRF value checked. A P11 cookie is
-then issued without sliding refresh. The allowlist is read from env and
-checked on every protected request (P6). Denied accounts get the plain
-refusal; nothing else exists yet.
+Better Auth runs Google's authorization-code flow and creates a stateless P11
+session without sliding refresh. Its OAuth Proxy sends every preview callback
+through `https://wonderturn.com/api/auth/callback/google`, then returns one
+short-lived encrypted result to the initiating preview. Dynamic base-URL
+resolution accepts only the production host, localhost, and the configured
+project-scoped Vercel preview pattern; a broad `*.vercel.app` trust boundary
+is rejected. The proxy secret is dedicated to this handoff and shared across
+production and previews, while the Better Auth session secret may remain
+environment-specific.
+
+The allowlist remains application authorization: it is read from env and
+checked on every protected request (P6), independently of Better Auth's
+identity session. Denied accounts get the plain refusal; nothing else exists
+yet. There is no auth database, application account, or profile.
 
 Cookie survival under Safari's ITP is observed here, on the deployment's own
 stable origin, rather than spiked in Phase 0b (D15).
@@ -1005,3 +1024,29 @@ Append-only. Stable IDs; reversals say what they supersede.
   The diagnostic page discloses that audio leaves the device and that the
   selected OpenAI route currently has no Gateway zero-data-retention support.
   The report may include the resulting text and timings, but never the audio.
+- **D49 (2026-07-26) — Better Auth replaces the bespoke Google ID-token
+  gate, with one production OAuth callback for every preview.** Supersedes
+  D3's no-auth-library choice and refines D11 without changing its fixed
+  180-day lifetime. Better Auth runs stateless, with no database: its
+  encrypted JWE session cookie is the session store, and the application
+  still checks `ALLOWED_EMAILS` on every protected request.
+
+  The OAuth Proxy registers only
+  `https://wonderturn.com/api/auth/callback/google` with Google. Production
+  exchanges the authorization code and sends a short-lived encrypted result
+  back to the initiating preview; a dedicated `OAUTH_PROXY_SECRET` is shared
+  across production and preview deployments. Dynamic base URLs allow
+  `wonderturn.com`, localhost, and an operator-configured, project-scoped
+  Vercel host pattern. Broad `*.vercel.app` trust is rejected so another
+  Vercel project cannot become a callback target.
+
+  This introduces a Google client secret and acknowledges the privacy boundary
+  the bespoke ID-token flow avoided: Better Auth temporarily processes and
+  encrypts Google's basic account response and provider tokens, including its
+  short-lived proxy payload and account cookie. The long-lived session retains
+  the verified email and auth identifiers, but the provider name and photo are
+  stripped before it is created. Wonderturn consumes only the email and creates
+  no user, account, profile, or session record. The operator explicitly
+  authorized this Phase 1 slice before Phase 0b exits; that does not waive
+  Phase 0b or make Phase 1 complete before the deployed approved/denied and
+  Safari-persistence checks pass.

@@ -700,11 +700,16 @@ explanation in a narrow column:
 - Product/category line: `AI voice practice`.
 - Heading: `Ready to practice?`
 - Body: `Sign in with your family's approved Google account to continue.`
-- Provider-rendered Google sign-in action.
+- Google-branded action labelled `Continue with Google`.
 
-Production uses the provider-rendered action and its required branding.
-Self-contained design prototypes may use a static representative button
-labelled `Continue with Google`; that stand-in is not production UI.
+The application owns the action that starts Better Auth's redirect flow, while
+its icon, colors, spacing, and treatment follow Google's branding guidance.
+Self-contained design prototypes may use a static representative version of
+the same action.
+
+While the redirect starts, its label becomes `Opening Google…` and the action
+cannot be pressed again. If that initiation fails, show `Something went wrong.
+Try again.` beneath it; never expose an OAuth or configuration detail.
 
 No hero illustration, mascot, testimonials, feature grid, or marketing
 navigation belongs here.

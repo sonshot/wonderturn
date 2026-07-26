@@ -34,19 +34,42 @@ needs either a current `VERCEL_OIDC_TOKEN` from the linked project or an
 
 ### Access gate
 
-Sign-in uses Google Identity Services' redirect flow: the button posts an ID
-token straight to `/api/auth/callback/google`, which is verified server-side
-(signature, issuer, audience, expiry, and the CSRF cookie) with no OAuth
-client secret involved. `.env.local` needs:
+Sign-in uses Better Auth's stateless Google OAuth flow. It stores the fixed
+180-day session in an encrypted httpOnly cookie, not a database. The
+application still checks `ALLOWED_EMAILS` on every protected request, so
+removing an entry revokes access on the next load.
 
-- `GOOGLE_CLIENT_ID` — the OAuth 2.0 web client ID. Its "Authorized
-  JavaScript origins" must include the app's origin, and its "Authorized
-  redirect URIs" must include `<origin>/api/auth/callback/google`.
+Google needs only this authorized redirect URI:
+
+```text
+https://wonderturn.com/api/auth/callback/google
+```
+
+Better Auth's OAuth Proxy receives that callback on production and returns a
+30-second encrypted result to the preview or local origin that started the
+flow. Configure these variables in `.env.local` and in Vercel:
+
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` — credentials for the Google
+  OAuth 2.0 web client.
+- `BETTER_AUTH_PRODUCTION_URL=https://wonderturn.com` — exact production
+  origin, with no trailing slash.
+- `BETTER_AUTH_ALLOWED_HOSTS` — comma-separated dynamic host allowlist. For
+  this Vercel project:
+  `wonderturn.com,wonderturn-*-sonshot.vercel.app,localhost:3000`. Confirm the
+  final `sonshot` segment against an actual Vercel preview URL; never use the
+  cross-project `*.vercel.app` wildcard.
+- `BETTER_AUTH_SECRET` — at least 32 random characters for session and auth
+  cookies. It may differ between production and preview environments.
+- `OAUTH_PROXY_SECRET` — a separate random value, at least 32 characters,
+  with the same value in production, preview, and local environments.
 - `ALLOWED_EMAILS` — comma-separated Google account emails allowed in.
-  Checked on every request, so removing an entry revokes access on next
-  load.
-- `SESSION_SECRET` — random value signing the 180-day session cookie
-  (`openssl rand -base64 32`).
+
+Generate each secret separately with `openssl rand -base64 32`. In Vercel,
+apply the proxy secret, Google credentials, host configuration, and allowlist
+to both Production and Preview so today's branch and future branch previews
+use the same callback contract. Localhost also participates in the proxy flow,
+so `wonderturn.com` must already be deployed and configured before local
+Google sign-in can complete.
 
 ## Verification
 

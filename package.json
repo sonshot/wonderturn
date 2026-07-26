@@ -23,8 +23,8 @@
   "dependencies": {
     "@ai-sdk/gateway": "^4.0.28",
     "ai": "^7.0.37",
+    "better-auth": "1.6.25",
     "bowser": "^2.14.1",
-    "jose": "6.2.4",
     "next": "16.2.12",
     "react": "19.2.4",
     "react-dom": "19.2.4",

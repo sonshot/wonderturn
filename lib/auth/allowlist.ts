@@ -1,12 +1,19 @@
+import { z } from "zod";
+
+const allowedEmailsSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .transform((raw) =>
+    raw
+      .split(",")
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
+  )
+  .pipe(z.array(z.email()).min(1));
+
 function readAllowlist(): string[] {
-  const raw = process.env.ALLOWED_EMAILS;
-  if (!raw) {
-    throw new Error("ALLOWED_EMAILS is not configured");
-  }
-  return raw
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
+  return allowedEmailsSchema.parse(process.env.ALLOWED_EMAILS);
 }
 
 /** Checked per request (never cached), so removing an account ends its access. */
