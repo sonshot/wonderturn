@@ -4,7 +4,9 @@ Feature doc: [`docs/feat/20260725_voice_practice_tool_mvp.md`](../feat/20260725_
 
 ## Status
 
-Draft. No durable application code is committed yet.
+Phase 0a is complete. Its frozen install, deterministic verification lane,
+production build, and local root-route smoke check pass on Node.js 24.
+Phase 0b's browser checks remain open.
 
 Phase 0a establishes the durable repository foundation. Phase 0b is a
 throwaway device spike whose result can invalidate the application stack;
@@ -22,7 +24,10 @@ under Pinned semantics.
 | Layer | Choice |
 | --- | --- |
 | App | Next.js (App Router), TypeScript |
+| Runtime | Node.js 24 LTS |
 | Host | Vercel |
+| Styling | Tailwind CSS 4; CSS Modules only where utilities are insufficient |
+| React optimization | React Compiler |
 | Speech in | Web Speech API, browser-managed; processing may be local or use the platform vendor |
 | Models | Vercel AI Gateway via AI SDK |
 | Reply | `google/gemini-3.5-flash-lite` (D31) |
@@ -33,6 +38,7 @@ under Pinned semantics.
 | Validation | Zod |
 | Spend ceiling | Two provider-native caps: AI Gateway budget and the ElevenLabs plan (D34) |
 | Package manager | pnpm, version pinned in `packageManager` |
+| Lint | ESLint with the Next.js, React Hooks, and React Compiler rules |
 | Format | Prettier |
 | Git hooks | Husky |
 | CI | GitHub Actions |
@@ -196,29 +202,45 @@ leave their numbers behind rather than causing a renumber (D24).
 
 Scaffold the durable project before feature code:
 
-- Next.js App Router and strict TypeScript, installed with the pinned pnpm
-  version and committed lockfile.
-- Prettier, Vitest, and Husky. No ESLint: with strict TypeScript on, its
-  marginal defect-catching here is close to zero and its marginal cost is a
-  blocked commit over an unused import (D22).
+- Node.js 24 LTS and Next.js App Router with strict TypeScript, installed with
+  the pinned pnpm version and committed lockfile. Follow the current
+  `create-next-app` structure: root `app/`, the default `@/*` alias, and
+  Turbopack. There is no `src/` directory (D44).
+- Tailwind CSS 4 installed as the styling primitive, with CSS Modules available
+  where utilities are insufficient. Phase 0a stays visually generic; the
+  design system is implemented only when a user-visible phase begins. Do not
+  install a component library until a concrete component needs one (D44).
+- React Compiler enabled through Next.js. Use focused ESLint coverage for
+  Next.js, React Hooks, and compiler correctness; do not add cosmetic rules
+  whose only effect is churn (D44).
+- Prettier, Vitest, and Husky.
 - Package scripts:
   - `format` — Prettier write.
   - `format:check` — Prettier check.
+  - `lint` — ESLint.
+  - `lint:fix` — ESLint write.
   - `typecheck` — `tsc --noEmit`.
   - `test` — Vitest in non-watch mode, offline tests only.
-  - `verify` — the three deterministic checks above.
+  - `verify` — `format:check`, `lint`, `typecheck`, and `test`, in that order.
   - `test:live` — the model-backed outcome fixtures, added in Phase 3. Never
     part of `verify`, never run by a hook or by CI.
   - `register` — the register asks, dumped for reading, added in Phase 3.
     Same exclusions.
-- A Husky pre-commit hook that runs `pnpm typecheck` and `pnpm test`. Both
-  are offline and fast enough to survive daily use, and the offline set
-  includes the fail-closed contracts, which have to be a gate rather than a
-  habit to mean anything (D29). Formatting stays out of the hook.
+- A Husky pre-commit hook that runs `pnpm lint`, `pnpm typecheck`, and
+  `pnpm test`. All three are offline and fast enough to survive daily use,
+  and the offline set includes the fail-closed contracts, which have to be a
+  gate rather than a habit to mean anything (D29, D44). Formatting stays out
+  of the hook.
 - A GitHub Actions workflow on push to any branch running `pnpm install
   --frozen-lockfile` then `pnpm verify`. No required status checks and no
   pull-request gating: there is no second contributor whose bad commit needs
   stopping, and Vercel already fails the build on a type error.
+- `README.md` updated with the runtime, install, development, build, and
+  verification instructions that now exist.
+
+**Exit:** a clean `pnpm install --frozen-lockfile`, `pnpm verify`, and
+`pnpm build` pass on Node.js 24, and the local development server returns the
+root route successfully.
 
 ### Phase 0b — De-risk on real devices
 
@@ -748,3 +770,30 @@ Append-only. Stable IDs; reversals say what they supersede.
   restraint. The cue now makes exactly one discrete change — `Thinking` →
   `Still thinking` at ~4s — and still never loops, so the ban on breathing
   orbs, typing indicators, and indefinite pulses is untouched.
+- **D44 (2026-07-26) — The foundation follows the current Next.js defaults,
+  with React Compiler deliberately enabled. Supersedes D22's no-ESLint
+  choice; extends D29.** The application uses Node.js 24 LTS, the root `app/`
+  directory, the default `@/*` alias, Turbopack, and Tailwind CSS 4. These are
+  the current Next.js foundation defaults except for React Compiler, which is
+  stable but still opt-in because it adds build time. This app enables it:
+  automatic memoization removes application code and the build-time cost is
+  negligible at this size.
+
+  pnpm 10.28.0 is pinned rather than the newer pnpm 11 line because 10 is the
+  newest major Vercel currently supports without an experimental Corepack
+  deployment path. Node.js 24 is both the current LTS and Vercel's default.
+
+  Tailwind is installed as the future reuse layer for the Wonderturn design
+  system, but the foundation deliberately carries no visual interpretation of
+  the still-active design work. A component library is not installed
+  speculatively: the MVP has native buttons, a semantic transcript, and simple
+  status/notice primitives, so a library would add an abstraction before there
+  is a component to buy. CSS Modules remain available for the rare rule
+  utilities cannot express clearly.
+
+  React Compiler relies on the Rules of React, which strict TypeScript does
+  not enforce. ESLint therefore returns, narrowly justified by the Next.js,
+  React Hooks, and compiler rules; cosmetic unused-code policy is not the
+  reason it exists. The pre-commit hook from D29 now runs `lint`, `typecheck`,
+  and the offline tests. Formatting remains outside the hook, while `verify`
+  names all four deterministic checks explicitly.

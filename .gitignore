@@ -1,5 +1,9 @@
 node_modules/
 .next/
+.turbo/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
 .vercel/
 .env
 .env.*

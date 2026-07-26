@@ -1,0 +1,9 @@
+.next/
+.husky/_/
+coverage/
+docs/
+node_modules/
+spike/
+pnpm-lock.yaml
+*.md
+.env*

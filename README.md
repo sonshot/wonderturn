@@ -5,8 +5,37 @@ conversation. Tap to talk, see the transcript, and hear a short AI reply.
 It is designed as a practice instrument—not a friend, companion, game, or
 engagement product.
 
-The MVP is currently in planning and device-spike work; there is no durable
-application to run yet.
+The MVP is currently in foundation and device-spike work. The durable Next.js
+application scaffold exists; feature work begins after the remaining device
+checks pass.
+
+## Local development
+
+Prerequisites:
+
+- Node.js 24 LTS (the exact local version is recorded in `.nvmrc`).
+- pnpm 10.28.0, as pinned by `packageManager`.
+
+Install and start the application:
+
+```sh
+nvm use
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+Then open `http://localhost:3000`.
+
+## Verification
+
+```sh
+pnpm verify
+pnpm build
+```
+
+`verify` runs formatting, linting, strict TypeScript, and offline Vitest
+checks. Model-backed checks are deliberately separate and will be added in
+Phase 3.
 
 ## Project documents
 
@@ -19,6 +48,3 @@ application to run yet.
   stack, phases, pinned semantics, verification, and decision log.
 - [Phase 0 spike](docs/plan/20260726_phase0_spike.md) — current measurement
   findings and open device checks.
-
-Repository setup and run instructions will be added here when the durable
-application foundation lands.
