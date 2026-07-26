@@ -1,0 +1,37 @@
+{
+  "clips": {
+    "disclosure": {
+      "bytes": 101190,
+      "file": "disclosure.mp3",
+      "sha256": "d72526221d8ac5879a8d27984cdc5396f3661085b6890040002d166717115b29",
+      "text": "That sounds important. Please tell a grown-up you trust, like a parent, teacher, or another family member, so they can help you."
+    },
+    "nudge": {
+      "bytes": 35152,
+      "file": "nudge.mp3",
+      "sha256": "3041df34387ad887505b72a9b870b36f0adfb4f2b583e00119168c03227f2eb4",
+      "text": "I didn't quite catch that — want to try again?"
+    },
+    "redirect": {
+      "bytes": 50199,
+      "file": "redirect.mp3",
+      "sha256": "a07a52c4577d66b25d093b8557e14b980e267cf96d9643b6c340792f0316e293",
+      "text": "Let's talk about something else — what else are you curious about?"
+    },
+    "error-first": {
+      "bytes": 33898,
+      "file": "error-first.mp3",
+      "sha256": "9619b3852b117cc35299f4fc00b7989655d394c5d9fe2623b9ec49bd94a1219d",
+      "text": "Something went wrong. Let's try that again."
+    },
+    "error-repeated": {
+      "bytes": 54378,
+      "file": "error-repeated.mp3",
+      "sha256": "c77a6fd9f75c5f12fc0e9fe8499032759cc24f6a02b14cae0635da06f6fda1aa",
+      "text": "It's still not working — maybe tell a grown-up so they can help."
+    }
+  },
+  "modelId": "eleven_flash_v2_5",
+  "voiceId": "OZ0L6eISlOejga3XjDFt",
+  "voiceName": "Talia"
+}

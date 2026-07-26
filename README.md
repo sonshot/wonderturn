@@ -78,12 +78,15 @@ locally and in Vercel:
 
 - `ELEVENLABS_API_KEY` — a synthesis-scoped key.
 - `ELEVENLABS_VOICE_ID=OZ0L6eISlOejga3XjDFt` — Talia, the selected voice.
-- `ELEVENLABS_MODEL_ID` — either `eleven_flash_v2_5` for an atomic,
-  low-latency response or `eleven_v3` when progressive playback is enabled
-  after the iOS Safari device check.
+- `ELEVENLABS_MODEL_ID=eleven_flash_v2_5` — the selected atomic,
+  low-latency model.
 
 Set an ElevenLabs plan cap before enabling the route. Provider or response
 validation failures fail closed; audio and provider payloads are not logged.
+The committed fixed clips use the same voice, model, and pinned request
+settings as ordinary replies. If approved copy or the voice changes, regenerate
+the clips with `pnpm audio:fixed`; this consumes ElevenLabs credits and updates
+their checked manifest.
 
 ## Verification
 

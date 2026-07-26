@@ -52,8 +52,18 @@ describe("ElevenLabs", () => {
       "xi-api-key": "test-api-key",
     });
     expect(JSON.parse(String(requestInit?.body))).toEqual({
+      apply_text_normalization: "auto",
+      language_code: "en",
       model_id: "eleven_flash_v2_5",
+      seed: 20_260_726,
       text: "A complete reply.",
+      voice_settings: {
+        similarity_boost: 0.75,
+        speed: 1,
+        stability: 0.5,
+        style: 0,
+        use_speaker_boost: true,
+      },
     });
   });
 

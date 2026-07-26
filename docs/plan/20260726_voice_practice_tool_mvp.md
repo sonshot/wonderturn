@@ -35,11 +35,12 @@ preparation, fail-closed checks, and immutable normalization/truncation. The
 classifier prompt is absorbed from the spike, model output is parsed at each
 adapter boundary, and the offline concurrency and failure contracts pass.
 The bounded HTTP request, success, and content-free failure contracts now pass
-offline too, as does the direct ElevenLabs synthesis adapter for either model
-allowed by D33. The HTTP route, fixed audio, and interactive voice screen have
-not started. The fixed copy and Talia voice are operator-approved (D54);
-Phase 0b's model choice and G6's provider-cap confirmation still gate that
-speech work.
+offline too, as does the direct ElevenLabs synthesis adapter. Talia, the fixed
+copy, `eleven_flash_v2_5`, and the provider cap are operator-approved; all five
+fixed MP3s are committed behind a text/voice/model/hash contract and their
+rendered delivery is operator-approved (D54, D55). The HTTP route and
+interactive voice screen have not started. Phase 0b's remaining device checks
+still gate that work.
 
 ## Scope
 
@@ -98,7 +99,7 @@ outlived its evidence as a bug in this table, not as settled architecture.
 | G3 | Resolved (D50): Google OAuth web client ID and secret; production callback registered at `https://wonderturn.vercel.app/api/auth/callback/google`; dedicated proxy secret shared with previews | Son | Phase 1 |
 | G4 | Resolved (D50): `wonderturn.vercel.app` is production and `wonderturn-*-daohoangson.vercel.app` is the project-scoped preview pattern | Son | Phase 1, 4 |
 | G5 | Out-of-band alert channel (ntfy topic or Telegram bot) | Son | Phase 4 |
-| G6 | Partially resolved (D54): ElevenLabs synthesis-scoped key and Talia voice selected; plan cap confirmation remains open | Son | Phase 2 (D33) |
+| G6 | Resolved (D54, D55): ElevenLabs synthesis-scoped key, plan cap, Talia voice, and `eleven_flash_v2_5` selected | Son | Phase 2 |
 
 G1 is deliberately deferred for the private, family-only first version. It
 does not block implementation or internal use, but it must be resolved before
@@ -147,7 +148,9 @@ leave their numbers behind rather than causing a renumber (D24).
   a kid who looked away waiting for a reply would otherwise get silence.
 
   The operator approved all five lines on 2026-07-26 (D54). Any wording change
-  now requires regenerating and re-approving its bundled clip.
+  now requires regenerating and re-approving its bundled clip. The committed
+  manifest binds every line to its voice, model, byte length, and SHA-256 hash.
+  The operator listened to and approved all five rendered clips on 2026-07-26.
 
   Microphone permission copy is deliberately *not* pinned here. It is
   screen-only, never spoken, and has no clip behind it, so `DESIGN.md` owns it
@@ -1121,3 +1124,19 @@ Append-only. Stable IDs; reversals say what they supersede.
   the same voice/model pairing so a safety redirect or disclosure does not
   sound like a different persona. This resolves G6's copy and voice choices,
   not its plan-cap confirmation or the model gate.
+- **D55 (2026-07-26) — Flash v2.5 is the one atomic speech model. Supersedes
+  D33's conditional `eleven_v3` model branch and D54's wait to generate fixed
+  clips; retains D33's direct ElevenLabs provider choice.** The operator
+  selected `eleven_flash_v2_5` and confirmed the provider cap. Progressive
+  synthesis is no longer part of the MVP, restoring D5's one atomic response
+  while retaining the speculative clearing-check/TTS concurrency inside the
+  server.
+
+  Talia (`OZ0L6eISlOejga3XjDFt`) now generates ordinary replies and all five
+  committed fixed MP3s. Requests pin English, automatic text normalization,
+  stability `0.5`, similarity `0.75`, style `0`, speaker boost on, speed `1`,
+  and seed `20260726`; provider defaults cannot drift the delivery silently.
+  The manifest binds each approved text to the model, voice, byte length, and
+  SHA-256 hash, and `verify` checks those values against the committed files.
+  The operator listened to and approved the five generated deliveries before
+  they were committed.
