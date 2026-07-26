@@ -6,56 +6,60 @@ colors:
   primary: "#0B6B5E"
   primary-active: "#07564C"
   on-primary: "#FFFFFF"
-  canvas: "#F7F8F5"
+  canvas: "#F6F3EC"
+  plinth: "#F0EBE1"
   surface: "#FFFFFF"
   ink: "#17211F"
   ink-muted: "#4E5F5B"
-  line-soft: "#DCE4E1"
-  line-strong: "#72837E"
+  line-soft: "#E5DFD3"
+  line-strong: "#7D776B"
   focus: "#1457D9"
   thinking-bg: "#FFF2C7"
   thinking-ink: "#6B4E00"
-  speaking-bg: "#EEF2FF"
-  speaking-ink: "#344E91"
+  speaking-bg: "#E9EEF7"
+  speaking-ink: "#33497F"
   error-bg: "#FDEEEE"
   error-ink: "#973B3B"
+fontFamilies:
+  reading: 'Literata, ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif'
+  ui: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 typography:
   screen-title:
-    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-    fontSize: 28px
-    fontWeight: 700
-    lineHeight: 34px
-    letterSpacing: -0.3px
-  section-title:
-    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-    fontSize: 22px
+    fontFamily: "{fontFamilies.reading}"
+    fontSize: 34px
     fontWeight: 600
-    lineHeight: 28px
+    lineHeight: 40px
+    letterSpacing: -0.4px
+  section-title:
+    fontFamily: "{fontFamilies.reading}"
+    fontSize: 19px
+    fontWeight: 600
+    lineHeight: 24px
     letterSpacing: -0.1px
   transcript:
-    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-    fontSize: 18px
+    fontFamily: "{fontFamilies.reading}"
+    fontSize: 21px
     fontWeight: 400
-    lineHeight: 28px
+    lineHeight: 32px
     letterSpacing: 0
   body:
-    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-    fontSize: 17px
+    fontFamily: "{fontFamilies.ui}"
+    fontSize: 16px
     fontWeight: 400
     lineHeight: 26px
     letterSpacing: 0
   button:
-    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    fontFamily: "{fontFamilies.ui}"
     fontSize: 16px
     fontWeight: 650
     lineHeight: 20px
     letterSpacing: 0
   meta:
-    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    fontFamily: "{fontFamilies.ui}"
     fontSize: 14px
     fontWeight: 600
     lineHeight: 20px
-    letterSpacing: 0.1px
+    letterSpacing: 0.4px
 spacing:
   xxs: 4px
   xs: 8px
@@ -84,18 +88,32 @@ components:
   focus-ring:
     backgroundColor: "{colors.focus}"
     size: 3px
+    offset: 2px
+  glyph:
+    size: 24px
+    controlSize: 28px
+    strokeWidth: 1.5px
+  level-meter:
+    barColor: "{colors.ink-muted}"
+    barWidth: 3px
+    barGap: 2px
+    barCount: 5
+    minBarHeight: 4px
+    maxBarHeight: 20px
   talk-control:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.on-primary}"
     typography: "{typography.button}"
     rounded: "{rounded.full}"
-    size: 104px
-  talk-control-active:
+    minSize: 104px
+    innerRim: 1.5px solid {colors.primary-active}
+    innerRimInset: 6px
+  talk-control-pressed:
     backgroundColor: "{colors.primary-active}"
     textColor: "{colors.on-primary}"
     typography: "{typography.button}"
     rounded: "{rounded.full}"
-    size: 104px
+    minSize: 104px
   start-over:
     backgroundColor: "{colors.canvas}"
     textColor: "{colors.ink}"
@@ -103,7 +121,7 @@ components:
     rounded: "{rounded.control}"
     border: 1px solid {colors.line-strong}
     padding: 14px 16px
-    height: 48px
+    minHeight: 48px
   status-thinking:
     backgroundColor: "{colors.thinking-bg}"
     textColor: "{colors.thinking-ink}"
@@ -136,7 +154,7 @@ components:
     rounded: "{rounded.control}"
     border: 1px solid {colors.line-strong}
     padding: 14px 20px
-    height: 48px
+    minHeight: 48px
 ---
 
 # Wonderturn
@@ -181,6 +199,24 @@ the plan and must be quoted exactly.
 New work adds a dated feature doc and edits this file. It does not add a
 second design document.
 
+**Names and rules here; values in code.** This file owns what the pieces are
+called, what they are for, how they relate, and what is forbidden. It does not
+own hex codes and pixel counts — those live in Tailwind's `@theme` and in
+component code, where a build, a typecheck, and a rendered screen can catch a
+wrong one. Two value defects got through review while they lived here: a
+control pinned to an exact height that clipped its own label at 200% zoom, and
+a canvas whose highest channel was green while this very sentence promised warm
+paper. A browser finds both in seconds; no amount of reading does.
+
+Numbers that carry an *argument* still belong here — the contrast ratios under
+Colors, the ~360px at which the control zone stops being sticky, "48px is a
+floor, not a fixed value." Those are reasoning, not configuration.
+
+The frontmatter below is a holding place, not the destination. It is deleted in
+Phase 1 (D45) when the theme lands, after which every token in this document is
+cited by its real custom property — `--color-canvas`, `--text-transcript` — and
+an offline test asserts that each one it cites actually exists.
+
 ### Design principles
 
 1. **Practice, not relationship.** No face, name, avatar, mood, backstory,
@@ -201,14 +237,56 @@ second design document.
 8. **No engagement pressure.** No streaks, scores, praise bursts, goals,
    hook questions, usage counters, or prompts to return.
 
+## Aesthetic intent
+
+Everything else in this document says what to avoid. This section says what to
+aim for, and it exists because the alternative was tested: an earlier draft was
+handed to four independent implementers, and all four produced screens that
+satisfied every prohibition and still looked like unstyled forms. A fence is not
+a target. Calm is the goal; blandness is what you get when calm is specified
+only as the absence of loudness.
+
+Reference points, in order of usefulness:
+
+- A **hardback children's novel.** Warm paper, serif text with air around it, no
+  ornament, and total confidence that the words are enough.
+- A **field recorder or a good mechanical metronome.** One substantial control,
+  unmistakable state, nothing that lights up asking for attention.
+- A **hand-bound notebook.** Material warmth, with the craft visible in
+  proportion, tone, and edge rather than in graphics.
+
+Explicitly not: a chat app, a smart-speaker companion, a learning game, a
+dashboard, a meditation app, or anything with a hero gradient.
+
+Five commitments, each of them checkable on a screenshot:
+
+1. **The transcript is the largest text on the screen.** Wherever a transcript
+   exists, nothing outranks it — including the header title. If anything
+   competes with it, the hierarchy is wrong.
+2. **The canvas is warm.** Held beside pure white it must read as paper.
+3. **The talk control reads as an object** — it has an edge and a rim, and it
+   looks like it could be pressed.
+4. **There are two planes, not one flat field:** canvas and plinth.
+5. **Exactly one element is alive, and only while recording** — the level
+   meter, driven by the person's own voice.
+
+A screen that honours every prohibition here and still looks like an unstyled
+form has failed this section. This is the section to fix it against.
+
 ## Colors
 
 The atmosphere is warm mineral paper with dark green-black ink. Deep teal is
 the sole primary action color. Supporting state colors are pale and
 functional; they never replace a text label or icon.
 
-- **Canvas (`{colors.canvas}`).** The full-page background. Do not substitute
-  pure white or a cool blue-gray.
+- **Canvas (`{colors.canvas}`).** The full-page background, and genuinely warm:
+  red ≥ green > blue, the temperature of uncoated paper. Do not substitute pure
+  white, a cool blue-gray, or a neutral off-white — a neutral canvas is the
+  single fastest way to make this system look unfinished rather than calm.
+- **Plinth (`{colors.plinth}`).** One step deeper than the canvas, used for the
+  control zone only. It gives the screen two planes so the instrument reads as
+  sitting *on* something. It is a tone, not a card: no border, no radius, no
+  shadow of its own.
 - **Surface (`{colors.surface}`).** Notices and the sign-in action. Most
   transcript content sits directly on the canvas rather than inside cards.
 - **Ink (`{colors.ink}`).** Primary text, icons, and strong boundaries.
@@ -225,9 +303,12 @@ functional; they never replace a text label or icon.
   words and glyphs still carry the state.
 - **Error colors.** Reserved for actual failure. Listening is never red.
 
-The declared foreground/background pairs target WCAG 2.2 AA. Browser-level
-contrast checks remain required because rendering, opacity, and compositing
-can change the result.
+The declared foreground/background pairs target WCAG 2.2 AA and were computed
+against the warm canvas, not the old neutral one: ink 14.9:1, muted ink 6.1:1
+on canvas and 5.7:1 on the plinth, white on primary 6.4:1, thinking 6.9:1,
+speaking 7.5:1, error 6.2:1, strong line 4.0:1. Browser-level contrast checks
+remain required because rendering, opacity, and compositing can change the
+result.
 
 Do not add gradients, rainbow accents, neon “AI” colors, or dark cinematic
 surfaces. A dark theme is deferred until every state can be tested as a
@@ -235,20 +316,51 @@ complete system.
 
 ## Typography
 
-Use the native UI stack. It is fast, familiar on family phones, and avoids a
-font download becoming part of the critical path.
+Two families, and the split carries meaning: **the serif is the conversation,
+the sans is the application.**
 
-- **Screen title.** Used sparingly on sign-in or denial screens.
-- **Section title.** Header title and short empty-state headings.
-- **Transcript.** The main reading voice. Keep its generous line height and
-  never shrink it to fit more history.
-- **Body.** Explanations, notices, and status sentences.
-- **Button.** Action labels. Use sentence case.
-- **Meta.** Speaker labels and compact state labels. Never use all caps.
+- **Reading (`{fontFamilies.reading}`).** Literata, a serif designed for screen
+  reading. It sets the transcript and the titles — everything that is content or
+  greeting. Serif is also what children's books are set in, which serves
+  age-neutral competence better than a friendly sans ever could: it reads as a
+  real book rather than as software being nice to a kid.
+- **UI (`{fontFamilies.ui}`).** The native stack. It sets buttons, status,
+  notices, and labels — everything that is machinery.
+
+Literata is self-hosted through `next/font` with `font-display: optional` and
+the system-serif fallback declared above. That combination is what makes a
+webfont acceptable here: `optional` means it never blocks first paint and never
+reflows — a first visit may render in the fallback serif and every later one
+gets Literata from cache. If it never loads at all, the design degrades to
+Georgia or Iowan Old Style and still reads as intended. Load one variable
+weight range, latin subset only, and nothing else; do not add a second face, an
+icon font, or a display face for headings.
+
+- **Screen title.** Sign-in and denial screens. Reading family.
+- **Section title.** Header title and short empty-state headings. Reading, and
+  deliberately *smaller* than the transcript: the header is chrome, not content,
+  and a one-word title does not need to outrank the conversation to be found.
+- **Transcript.** The main reading voice, and deliberately the largest text on
+  the screen — this is the content, and the hierarchy should be obvious at a
+  glance rather than inferred. Keep its generous line height and never shrink it
+  to fit more history.
+- **Body.** Explanations, notices, and status sentences. UI family, and a step
+  smaller than the transcript so it stays subordinate to it.
+- **Button.** Action labels. UI family, sentence case.
+- **Meta.** Speaker labels and compact state labels. UI family, with tracking,
+  because a small label earns its authority from letterspacing rather than from
+  size. Never use all caps.
+
+**On any screen showing a transcript, nothing is set larger than the
+transcript.** That is why `section-title` sits below it and why `screen-title`
+appears only on the sign-in and denied screens, which have no transcript to
+outrank. If a ruler on a screenshot finds bigger text than the conversation,
+the hierarchy is wrong no matter which token produced it.
 
 Avoid thin weights, novelty fonts, monospaced UI copy, faux-handwriting,
-overly rounded “kids” type, and text below 14px. Do not encode speakers with
-typeface changes.
+overly rounded “kids” type, and text below 14px. Do not encode *speakers* with
+typeface changes — `You` and `AI reply` are both the reading family; the only
+typeface distinction in this system is conversation versus machinery.
 
 ## Layout
 
@@ -276,9 +388,11 @@ area. It has one centered content column with a maximum width of 42rem.
 └──────────────────────────────┘ ← calc(16px + safe-area inset bottom)
 ```
 
-The skeleton names regions and their order; it is not a mockup. Deliberately
-absent: any string a person would read, and any per-state variant of this
-diagram. Both are traps. Copy drifts the moment it exists in two files — the
+The skeleton names regions and their order; it is not a mockup. Its horizontal
+rules mark where one region ends and the next begins — they are not painted
+lines, and only the control-zone boundary ever becomes a visible one.
+Deliberately absent: any string a person would read, and any per-state variant
+of this diagram. Both are traps. Copy drifts the moment it exists in two files — the
 feature doc's deleted mockups had a stale header title, a stale speaker label,
 and a stale control label — and a set of one-box-per-state drawings would
 duplicate the talk-control table while conveying less, since the whole point
@@ -296,20 +410,31 @@ of these five states is that the boxes never move.
 - A fresh transcript shows a quiet empty state: `Ready when you are` and
   `Tap Talk and say what you'd like to practice.` Once a completed turn
   exists, idle retains the transcript instead of restoring the empty state.
-- Control zone: 16px top padding and
-  `calc(16px + env(safe-area-inset-bottom))` bottom padding.
+- A notice replaces the empty state rather than joining it. Once a microphone
+  or error notice is present, `Tap Talk…` is gone — leaving it there tells the
+  person to do the thing that just didn't work.
+- Control zone: filled with `{colors.plinth}`, 16px top padding and
+  `calc(16px + env(safe-area-inset-bottom))` bottom padding. The tone change is
+  what marks the region — it takes no border, radius, or shadow of its own.
 - The control zone may be sticky, but it must never overlay transcript text.
 - Landscape remains usable; do not lock orientation.
 
 ### Whitespace
 
-Whitespace communicates calm and separates turns. Prefer empty canvas and
-one-pixel dividers over wrapping each item in a card. The empty state may
-occupy the transcript region without adding illustration.
+Whitespace communicates calm and separates turns. Prefer empty canvas over
+wrapping each item in a card.
+
+The empty state occupies the transcript region without illustration, and its
+composition is what keeps it from reading as an unfinished screen: set the two
+lines optically centred in the region — slightly above true centre — with
+`{spacing.xs}` between them, left-aligned to the same gutter as transcript
+text rather than centred horizontally. It should look like the first page of a
+notebook, not like a placeholder waiting for content.
 
 ## Elevation & Depth
 
-The system is almost flat.
+Depth comes from tone, not shadow. `canvas` → `plinth` → `surface` is the
+entire z-language, and it is enough.
 
 - Canvas and transcript: no shadow.
 - Notices: tonal surface plus a one-pixel line where needed.
@@ -349,8 +474,12 @@ The visible header title is the plain word `Practice`. `Wonderturn` is the
 product's name, not this screen's label: on a single-screen tool a brand line
 does no wayfinding — the title bar and home-screen icon already carry it — and
 the header's job is to stay quiet. It is never a speaker name either (see Copy
-and Content). A small secondary line may say `AI voice practice` where an AI
-disclosure is needed.
+and Content).
+
+The header carries no secondary line, subtitle, or AI-disclosure text. The
+transcript labels every generated turn `AI reply`, which is a continuous
+disclosure a header line cannot improve on, and the sign-in gate's category
+line is the one place that text belongs.
 
 `Start over` is text plus an optional reset glyph, never an unlabeled icon.
 Its target is at least 48 by 48 CSS pixels. It clears immediately without a
@@ -358,15 +487,21 @@ confirmation dialog.
 
 ### Transcript log
 
-Use an ordered semantic log with open vertical rhythm and restrained
-dividers. Do not use chat bubbles, portraits, timestamps, delivery marks, or
-typing indicators.
+Use an ordered semantic log with open vertical rhythm. Do not use chat
+bubbles, portraits, timestamps, delivery marks, or typing indicators.
 
 Each turn contains:
 
-- A compact label: `You` or `AI reply`.
-- Transcript text underneath in `{typography.transcript}`.
+- A compact label in `{typography.meta}` and `{colors.ink-muted}`: `You` or
+  `AI reply`.
+- Transcript text underneath in `{typography.transcript}` and `{colors.ink}`,
+  `{spacing.xxs}` below its label.
 - At least `{spacing.lg}` between speakers.
+
+Whitespace is the only separator. Do not draw a rule between turns, between
+speakers, or under the header. `{components.divider-soft}` has exactly one use
+in this system: parting the control zone from scrolling content, and only while
+content is actually scrolled.
 
 Interim speech recognition updates the current `You` turn in place. Do not
 announce every interim word to assistive technology. A cleared AI reply is
@@ -391,12 +526,20 @@ The status describes what the system is doing. It is separate from the talk
 control label, which describes the next action. Use a polite live region for
 status changes; errors are announced once.
 
-Ready and Listening are unfilled inline status rows using muted ink.
-Thinking and Speaking use their declared tonal status chips. Error uses the
-error colors. Use simple one-color line glyphs: open circle or check for
-Ready, microphone for permission, level bars for Listening, ellipsis for
-Thinking, speaker for Speaking, and exclamation for Error. A glyph is always
-paired with its visible text.
+Only `Thinking` and `Speaking` are filled, using their declared tonal status
+chips. Every other status is an unfilled inline row: `Ready` and `Listening` in
+muted ink, the two microphone rows in ink, `Something went wrong` in error ink.
+There is deliberately **no error status chip**, and its absence from the tokens
+is the rule, not an omission — the error notice below already carries a tonal
+error fill, and a second one directly above it turns one calm failure into the
+red spectacle this system forbids.
+
+Glyphs are `{components.glyph}`, always paired with visible text: open circle
+for Ready, microphone for both permission rows, ellipsis for Thinking, speaker
+for Speaking, exclamation for Error. Listening is the exception — its bars are
+a live level meter rather than an icon (see Listening cue).
+
+The gap between the status row and the talk control is `{spacing.md}`.
 
 A fresh screen opens on `Ready` with the `Talk` label. One activation both
 requests the microphone and starts listening, so an untouched screen must
@@ -411,19 +554,50 @@ is always the correct opening status.
 Use a native button, 104 by 104 CSS pixels, with a simple microphone,
 stop/listening, or speaker glyph and a short visible action label.
 
-| Current state | Status | Visible action label |
-| --- | --- | --- |
-| Idle | Ready | Talk |
-| Microphone prompt dismissed | Microphone needed | Allow |
-| Microphone blocked | Microphone blocked | Try again |
-| Listening | Listening | Done |
-| Thinking | Thinking | Talk |
-| Speaking | Speaking | Talk |
-| Error | Something went wrong | Try again |
+| Current state | Status | Glyph | Visible action label |
+| --- | --- | --- | --- |
+| Idle | Ready | microphone | Talk |
+| Microphone prompt dismissed | Microphone needed | microphone | Allow |
+| Microphone blocked | Microphone blocked | microphone | Try again |
+| Listening | Listening | stop square | Done |
+| Thinking | Thinking | microphone | Talk |
+| Speaking | Speaking | microphone | Talk |
+| Error | Something went wrong | microphone | Try again |
 
 What each activation *does* belongs to the feature document's key flows and
 the plan's P1. This table exists for one purpose: to show that the status and
 the action can never be read as the same claim.
+
+The glyph always describes the action, never the state, which is why it is a
+microphone in six rows out of seven: every one of those activations ends in
+listening. Only `Listening` differs, where a stop square matches `Done`. Do
+not put the speaker glyph on this control while the reply is playing — the
+status row already carries a speaker there, and repeating it on a button whose
+label says `Talk` is exactly the status/action collision this table exists to
+prevent. Glyphs are `{components.glyph}`: single-color line art at 24px with a
+1.5px stroke, `{spacing.xxs}` above the label.
+
+The control is `{rounded.full}` at a **minimum** of 104 by 104 CSS pixels, not
+a fixed 104. Under large text it grows; the label never clips and never
+overflows the circle. `Try again` at 200% is the case that proves it.
+
+Give it the quality of a real object, because it is the only one on the screen.
+The disc is a flat `{colors.primary}` fill with a hairline inner rim —
+`{components.talk-control.innerRim}`, inset `{components.talk-control.innerRimInset}`
+— which reads as a machined edge rather than as decoration. The glyph is
+`{components.glyph.controlSize}`, larger than a status glyph, with the label
+`{spacing.xxs}` beneath it. While Listening, add one static concentric ring in
+`{colors.primary}` 2px wide, 6px outside the disc. A ring is a form; it does not
+breathe, pulse, or glow, and it disappears the instant recording stops. That
+distinction is the whole line between an instrument and an orb: an instrument
+shows its state by holding a shape, a companion shows it by moving.
+
+The rim is the entire effect. Do not add directional shading, an inner
+highlight, a soft inner shadow, or any other simulation of light falling on the
+disc — that is a gradient wearing a different name, and it is the first thing a
+capable implementer reaches for when asked to make a flat circle feel physical.
+The object quality comes from an honest edge and generous size, not from faked
+material.
 
 Keep the visible label inside the 104px circle to two short words at most.
 The permission button's accessible name is `Allow microphone`; its visible
@@ -436,6 +610,14 @@ The state name is never conveyed by color alone. The control activates on
 release, not pointer-down. Do not use press-and-hold, swipe, hidden
 cancellation, or a call/hang-up metaphor.
 
+`{components.talk-control-pressed}` is the pressed fill and nothing else: it
+applies while a pointer or key is held down, alongside the press-feedback
+transform under Motion, and it reverts on release. It is not the Listening
+state's fill. No voice state changes this control's color — the status row, the
+glyph, and the label carry state, and a state-colored button would put a
+fourth signal on the one element that must stay recognisable as a single
+instrument.
+
 Set `touch-action: manipulation` on the control so a fast second tap cannot
 trigger double-tap zoom. Never reach for `user-scalable=no` to get that: the
 200% zoom requirement outranks a gesture nuisance, and disabling scaling
@@ -443,9 +625,23 @@ breaks this document's own accessibility floor.
 
 ### Listening cue
 
-A small waveform may react to microphone input inside the talk control, but
-it is supplementary. It must stop immediately when recording stops and must
-never glow or move while the microphone is inactive.
+The Listening status glyph *is* the level meter — the "level bars" named under
+State status are live, not an icon of bars. Build it as
+`{components.level-meter}`: five bars, 3px wide with a 2px gap, muted ink,
+each between 4px and 20px tall, driven by real microphone amplitude at display
+refresh rate.
+
+Make this good rather than tolerable. It is the one genuinely alive moment the
+design permits, and it earns that permission by being honest: it reflects the
+person's own voice back to them instead of performing a personality. It is also
+the fastest possible answer to the only question that matters while recording —
+*is it hearing me?*
+
+It never appears inside the talk control, which carries the stop glyph and
+`Done` at that moment. It stops on the same frame recording stops, rests at
+`{components.level-meter.minBarHeight}`, and never moves while the microphone is
+inactive. Under `prefers-reduced-motion: reduce`, hold the bars at rest and let
+the `Listening` text carry the state alone.
 
 ### Thinking cue
 
@@ -515,9 +711,15 @@ navigation belongs here.
 
 ### Denied state
 
-Show a plain heading and one sentence: the tool is not available to this
-account. Do not reveal the allowlist or offer signup, invitation, or support
-flows.
+Screen-only copy, never spoken, and pinned here for the same reason as the
+microphone notices — no clip, no plan entry, and until it is written down
+nobody owns the first screen a stranger sees:
+
+- Heading: `Not available to this account`
+- Body: `You're signed in, but this account can't use Wonderturn.`
+
+That is the whole screen. Do not reveal the allowlist or hint at its size, name
+who administers it, or offer signup, invitation, appeal, or support flows.
 
 ## Do's and Don'ts
 
@@ -582,6 +784,9 @@ Motion is functional and brief:
 - Thinking dots: one 900ms sequence, then at rest.
 - Thinking text advances once, at ~4s: `Thinking` → `Still thinking`.
 
+The level meter is not on this list. It is not an animation with a duration —
+it is a live readout of microphone amplitude, and it stops when the input does.
+
 With `prefers-reduced-motion: reduce`, remove transforms and animation.
 Change status text instantly. Never auto-scroll in a way that steals the
 person’s reading position; follow the newest turn only when they were already
@@ -592,8 +797,12 @@ motion timings are transitions, not timers for mocked thinking or speaking.
 
 Target WCAG 2.2 AA.
 
-- Regular controls are at least 48 by 48 CSS pixels; the talk control is
-  104 by 104.
+- Regular controls are at least 48 by 48 CSS pixels; the talk control at least
+  104 by 104. Every size and height in this document is a **minimum**, never a
+  fixed value. A control pinned to an exact height clips its own label at 200%
+  text zoom, which contradicts the zoom requirement three bullets down — so the
+  tokens say `minHeight` and `minSize`, and an implementation that writes
+  `height` has introduced a defect.
 - Every control works with Tab, Enter, and Space and has a persistent
   three-pixel focus ring.
 - Support 200% text zoom and reflow at 320 CSS pixels without clipping or
@@ -611,7 +820,9 @@ Target WCAG 2.2 AA.
   during playback.
 - Final AI replies enter both the visual tree and accessibility tree
   atomically.
-- Essential icons have accessible names; decorative waveforms are hidden
+- The level meter is hidden from assistive technology; the `Listening` text
+  carries that state on its own, and a bar-height readout announces nothing.
+- Essential icons have accessible names; decorative graphics are hidden
   from assistive technology.
 - Support portrait and landscape.
 - Test zoom, bold text, reduced motion, high contrast, keyboard, denied
@@ -632,7 +843,12 @@ a phone.
 - **Short landscape viewports:** reduce vertical whitespace before reducing
   type or target sizes. Keep at least 120px for the transcript region; below
   that threshold, let the page scroll rather than shrinking or covering
-  controls and text.
+  controls and text. The arithmetic is worth stating, because it decides a real
+  case rather than an edge one: a 64px header, a control zone of roughly 176px
+  (16 + status 32 + 16 + control 104 + 16), and the 120px transcript floor need
+  about 360px of height. Small phones in landscape are shorter than that, so
+  there the control zone stops being sticky and the whole page scrolls. Nothing
+  shrinks, and nothing is covered.
 
 ## Copy and Content
 
@@ -661,7 +877,13 @@ still uses `AI reply`.
 Before considering a screen consistent with Wonderturn, verify:
 
 - The hierarchy is transcript first, talk control second, everything else
-  quiet.
+  quiet — and the transcript is literally the largest text present.
+- The canvas reads as warm paper beside white, and the control zone sits on the
+  plinth tone.
+- The talk control has its inner rim, and its Listening ring is a static shape.
+- The level meter is live only while recording, and rests otherwise.
+- The reading family sets the transcript and titles; the UI family sets
+  everything else.
 - The canvas, ink, and primary action use the declared tokens.
 - All five visual states preserve one layout.
 - State and next action are both visible and cannot be confused.

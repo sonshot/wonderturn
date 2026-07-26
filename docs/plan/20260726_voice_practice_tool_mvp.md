@@ -274,8 +274,41 @@ refusal; nothing else exists yet.
 Cookie survival under Safari's ITP is observed here, on the deployment's own
 stable origin, rather than spiked in Phase 0b (D15).
 
+**The design system moves into code here** (D45), because this phase already
+renders three surfaces `DESIGN.md` fully specifies — the sign-in gate, the
+denied state, and the empty talk screen — and because Literata has to be
+configured for the gate's heading regardless.
+
+- Primitives into Tailwind's `@theme`: colors, both font families, the type
+  scale, spacing, radii. Names are the real custom properties (`--color-canvas`,
+  `--font-reading`, `--text-transcript`), which is what makes a citation in
+  `DESIGN.md` greppable rather than decorative.
+- Literata self-hosted through `next/font`, latin subset, one variable weight
+  range, `font-display: optional`, with the declared system-serif fallback.
+- The component tokens become real components rather than theme entries. A
+  value consumed by exactly one component was never a token, and that block is
+  where the `height`-instead-of-`minHeight` defect lived.
+- Only what this phase renders. `status-thinking`, `status-speaking`,
+  `talk-control-pressed`, `level-meter`, `error-notice`, and `glyph.controlSize`
+  wait for Phase 2 and land beside the states that consume them. A token with no
+  consumer cannot be told right from wrong.
+- `DESIGN.md`'s frontmatter is deleted in the same change, not left behind as a
+  comment. The same argument as D30: the copy nobody runs is the one that looks
+  authoritative later.
+- One offline Vitest asserts every `--token` cited in `DESIGN.md` prose exists
+  in the theme. Deterministic and free, so it runs in `verify` and the hook. It
+  replaces no value comparison — after this change there are no duplicated
+  values to compare — and instead catches the one coupling that remains, a
+  document citing a token somebody renamed.
+
+The talk control is rendered to spec but inert in this phase, so Phase 2's work
+on it is purely behavioural. A disabled-looking control is not a state
+`DESIGN.md` has.
+
 **Exit:** approved account reaches an empty talk screen; a real non-approved
-account cannot, verified against the deployed app.
+account cannot, verified against the deployed app. The three rendered surfaces
+match `DESIGN.md`, `DESIGN.md` declares no values of its own, and the token
+citation test passes in `verify`.
 
 ### Phase 2 — Turn pipeline and talk screen
 
@@ -770,6 +803,88 @@ Append-only. Stable IDs; reversals say what they supersede.
   restraint. The cue now makes exactly one discrete change — `Thinking` →
   `Still thinking` at ~4s — and still never loops, so the ban on breathing
   orbs, typing indicators, and indefinite pulses is untouched.
+- **D41 (2026-07-26) — Design-system gaps closed by building it four times.**
+  Four fresh implementers were given `DESIGN.md` alone — two on the same brief,
+  so that divergence between them measured ambiguity rather than taste — and
+  told to report every point the document failed to determine. Divergence is a
+  better spec test than review: all four read the document as careful
+  implementers and still produced different screens.
+
+  Two findings were real defects, not preferences. `start-over` and
+  `sign-in-action` pinned an exact `height: 48px` against `padding: 14px` and a
+  20px line-height, which exactly fills the box at 1× and clips the label at
+  200% text zoom — contradicting the document's own zoom requirement, and
+  contradicting an accessibility section that calls 48px a floor. Two of the
+  four builds reproduced the clipping; one silently corrected it to
+  `min-height`. Every size and height is now a minimum (`minHeight`,
+  `minSize`), including the talk control, which grows rather than clipping
+  `Try again`. Separately, `talk-control-active` named no trigger and drew four
+  different readings — a Listening fill, a `:active` press fill, an unexplained
+  state class, and a declared-but-unused dead token. It is now
+  `talk-control-pressed`, is the pressed fill and nothing else, and no voice
+  state changes the control's color.
+
+  Nine pins were added where the document was merely silent: the error status
+  is an unfilled row with no chip, and the absence of that token is now stated
+  as the rule (the notice already carries the tonal fill, and stacking two
+  makes the red spectacle the design forbids); a glyph column covering all
+  seven control rows, plus a `glyph` token, since the prose offered three
+  glyphs for seven rows; the status-to-control gap; the transcript turn label's
+  type and color; whitespace as the transcript's only separator, with
+  `divider-soft` reduced to its single real use; the header's secondary line
+  deleted, because `AI reply` on every turn is a better disclosure than a
+  subtitle; a notice replacing the empty state rather than joining it, so the
+  screen never says `Tap Talk` about the tap that just failed; the
+  denied-state copy, previously owned by nobody (same hole as D39, found the
+  same way); and the short-landscape arithmetic, which shows the sticky control
+  zone cannot hold below ~360px of height and says what gives way instead.
+
+  Worth repeating before any surface is called done. Accepted cost: four
+  throwaway HTML builds, none of which is kept.
+- **D42 (2026-07-26) — One self-hosted serif enters the design system.
+  Supersedes the native-stack-only rule.** `DESIGN.md` required the native UI
+  stack specifically so a font download could never join the critical path. That
+  reasoning is sound and the conclusion no longer follows from it: Literata is
+  self-hosted via `next/font` with `font-display: optional`, which neither blocks
+  first paint nor reflows — a first visit renders in the system serif fallback and
+  every later one is cached. The type system is now two-tier and the split
+  carries meaning: the serif is the conversation, the native sans is the
+  application. Children's books are set in serif, which serves age-neutral
+  competence better than a friendly sans, and if the face never loads the design
+  degrades to Georgia and still reads as intended. Bounded deliberately: one
+  variable face, latin subset, no icon font and no display face. Accepted cost: a
+  font asset in the repository, and a first paint that can differ from every
+  subsequent one.
+- **D43 (2026-07-26) — The design system gets a positive target, not just a
+  fence.** Review found the four independent builds "functional but boring," and
+  the cause was structural rather than a matter of taste: the document carried
+  roughly thirty specific prohibitions against a single sentence of positive
+  aesthetic direction, so four careful implementers all avoided everything
+  forbidden and committed to nothing. Two of its own claims were also unmet —
+  `canvas` was `#F7F8F5`, whose highest channel is green, while the prose
+  promised "warm mineral paper" and forbade a cool neutral; and `transcript` at
+  18px sat one pixel above `body` at 17px, so the screen's primary content led
+  nothing.
+
+  What changed: a new **Aesthetic intent** section with reference points and
+  five screenshot-checkable commitments; warm neutrals throughout, with a new
+  `plinth` tone giving the screen two planes so depth comes from tone rather
+  than shadow; a widened scale where the transcript is unambiguously the largest
+  text (21px against 16px body) and `meta` earns authority from tracking instead
+  of size; the talk control given object quality through a hairline inner rim and
+  a static Listening ring, with the ring-versus-glow line drawn explicitly — an
+  instrument holds a shape, a companion moves; and the listening waveform
+  promoted from an optional flourish inside the control to the Listening status
+  glyph itself, as a real amplitude meter. That last one resolves a collision the
+  old text created, where a waveform and a stop glyph competed inside one 104px
+  circle, and it is the design's one permitted living element precisely because
+  it reflects the person's own voice rather than performing a personality.
+
+  All contrast pairs were recomputed against the warm canvas and are recorded in
+  Colors; every one still clears AA. Accepted cost: the neutrals now differ from
+  anything already built, and the palette is warm enough that a cool-screened
+  phone may render it more yellow than intended — worth checking on the two
+  target devices.
 - **D44 (2026-07-26) — The foundation follows the current Next.js defaults,
   with React Compiler deliberately enabled. Supersedes D22's no-ESLint
   choice; extends D29.** The application uses Node.js 24 LTS, the root `app/`
@@ -782,6 +897,37 @@ Append-only. Stable IDs; reversals say what they supersede.
   pnpm 10.28.0 is pinned rather than the newer pnpm 11 line because 10 is the
   newest major Vercel currently supports without an experimental Corepack
   deployment path. Node.js 24 is both the current LTS and Vercel's default.
+- **D45 (2026-07-26) — Token values live in code; `DESIGN.md` keeps names,
+  roles, and rules. Refines D36.** D36 made `DESIGN.md` canonical for the design
+  system, which was read as canonical for everything in it, values included.
+  Sharpened: it is canonical for **names, roles, relationships, and rules**, and
+  code is canonical for **values**. That is not a reversal — nothing about
+  one-design-system-one-document changes — but it has to be stated, or the next
+  reader sees a contradiction.
+
+  The reason is that a value in markdown is inert and a value in code is
+  executable. Both value defects this project has shipped were invisible in
+  prose and would have been obvious in a browser in five seconds: `start-over`
+  pinned `height: 48px` with padding and line-height summing to exactly 48, so
+  the label clipped at 200% zoom (D41), and `canvas` was `#F7F8F5`, whose
+  highest channel is green, while the prose beside it promised warm paper and
+  forbade a cool neutral (D43). No document review catches either. A typecheck,
+  a build, and one look at a rendered screen catch both. `AGENTS.md` already
+  bans this species of duplication — file trees, dependency versions, env
+  inventories — and a token table belongs to it.
+
+  Three kinds of number, and only two move. Primitives become `@theme` custom
+  properties. Component tokens become component code, because a value used by
+  one component was never a token. **Numbers that carry an argument stay in
+  prose** — the 14.9:1 ink contrast, the 5.8:1 focus ring against canvas, the
+  ~360px at which the control zone stops being sticky, `48px is a floor, not a
+  fixed height`. Those are the reasoning, not the configuration, and stripping
+  them would gut the document while technically satisfying this entry.
+
+  Accepted cost: `DESIGN.md` stops being a standalone brief. The fresh-eye
+  exercise from D41 becomes "read `DESIGN.md` and `app/globals.css`" — a
+  slightly larger input, and a more honest one, since a real implementer reads
+  both. That exercise is worth keeping; it has now paid for itself twice.
 
   Tailwind is installed as the future reuse layer for the Wonderturn design
   system, but the foundation deliberately carries no visual interpretation of
