@@ -384,6 +384,11 @@ citation test passes in `verify`.
 
 Built together, because the pipeline cannot be meaningfully exercised without
 the screen and the screen has nothing to show without the pipeline (D23).
+The operator-facing checks and exact spoken lines live in the
+[`Phase 2 Voice Turn — Manual Test Script`](20260726_phase2_voice_test.md).
+That script keeps real-device voice evidence separate from the forced
+clearing, delay, and provider-failure cases that require controlled
+instrumentation.
 
 `POST /api/turn` accepts `{ history, said }` — Zod-parsed with P20's bounds —
 and returns `{ kind, text, audio }`, with generated or bundled audio returned
