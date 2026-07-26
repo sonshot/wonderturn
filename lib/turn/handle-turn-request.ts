@@ -9,6 +9,7 @@ import type { FixedOutcomeKind } from "./fixed-responses";
 import { runTextTurn, type TextTurnDependencies } from "./run-text-turn";
 
 const ENDPOINT = "/api/turn";
+const SERVER_TURN_TIMEOUT_MS = 14_000;
 
 type FailureCategory = "authorization" | "upstream" | "validation";
 
@@ -60,9 +61,13 @@ export async function handleTurnRequest(
   }
 
   try {
+    const signal = AbortSignal.any([
+      request.signal,
+      AbortSignal.timeout(SERVER_TURN_TIMEOUT_MS),
+    ]);
     const outcome = await runTextTurn(input, dependencies.text, {
       prepareCandidate: dependencies.synthesizeSpeech,
-      signal: request.signal,
+      signal,
     });
     const audio =
       outcome.kind === "reply"

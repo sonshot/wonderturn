@@ -45,8 +45,13 @@ rendered delivery is operator-approved (D54, D55). The authenticated
 `POST /api/turn` route is code-complete (D59): it re-checks the allowlist,
 parses the bounded request, calls the one text seam, pairs fixed outcomes with
 bundled audio, and fails closed into the content-free error contract. Its
-offline route tests and production build pass. The interactive voice screen
-has not started; Phase 0b, G2, and G6 no longer block it (D55, D57, D58).
+offline route tests and production build pass. The interactive voice screen is
+code-complete locally: its explicit lifecycle reducer, browser recognition,
+level meter, atomic playback, barge-in, bounded sitting, stale-turn rejection,
+permission states, and client-side fixed failure audio pass offline
+verification and a 320px layout check. Direct localhost Google SSO reaches
+this screen and survives a Safari reload (D61). Phase 2 still needs its manual
+phone outcome and delayed-stale-result checks before exit.
 
 ## Scope
 
@@ -1190,3 +1195,17 @@ Append-only. Stable IDs; reversals say what they supersede.
   committed MP3 and manifest hash. Authorization runs before request parsing,
   the allowlist is read afresh, and all validation, provider, configuration,
   and internal response failures return P7's sanitized category-only shape.
+- **D60 (2026-07-26) — The server expires first at 14 seconds. Extends P20.**
+  P20's client timeout remains 15 seconds. `POST /api/turn` combines the
+  request signal with its own 14-second signal before calling `runTextTurn`,
+  giving the route one second to turn an upstream timeout into P7's sanitized
+  failure response before the browser stops waiting. Provider adapters still
+  own prompt network cancellation; stale-turn rejection remains the client
+  correctness boundary.
+- **D61 (2026-07-26) — Localhost uses direct Google OAuth. Supersedes D49's
+  localhost proxy choice only.** Production and Vercel previews retain D50's
+  production-domain proxy. Local development uses a separate Google web client
+  registered for `http://localhost:3000` and configures that same origin as
+  Better Auth's production URL, which makes the plugin skip proxying. Safari
+  completed the direct callback with the approved account and retained the
+  stateless session across reload on 2026-07-26.

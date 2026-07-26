@@ -39,15 +39,15 @@ Sign-in uses Better Auth's stateless Google OAuth flow. It stores the fixed
 application still checks `ALLOWED_EMAILS` on every protected request, so
 removing an entry revokes access on the next load.
 
-Google needs only this authorized redirect URI:
+Production and previews share this authorized redirect URI:
 
 ```text
 https://wonderturn.vercel.app/api/auth/callback/google
 ```
 
 Better Auth's OAuth Proxy receives that callback on production and returns a
-30-second encrypted result to the preview or local origin that started the
-flow. Configure these variables in `.env.local` and in Vercel:
+30-second encrypted result to the preview origin that started the flow.
+Configure these variables in Vercel:
 
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` — credentials for the Google
   OAuth 2.0 web client.
@@ -67,9 +67,22 @@ flow. Configure these variables in `.env.local` and in Vercel:
 Generate each secret separately with `openssl rand -base64 32`. In Vercel,
 apply the proxy secret, Google credentials, host configuration, and allowlist
 to both Production and Preview so today's branch and future branch previews
-use the same callback contract. Localhost also participates in the proxy flow,
-so `wonderturn.vercel.app` must already be deployed and configured before
-local Google sign-in can complete.
+use the same callback contract.
+
+Local development uses its own Google OAuth web client and completes the
+callback directly, without production:
+
+```text
+Authorized JavaScript origin: http://localhost:3000
+Authorized redirect URI:      http://localhost:3000/api/auth/callback/google
+```
+
+Put that client's `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in
+`.env.local`, set `BETTER_AUTH_PRODUCTION_URL=http://localhost:3000`, and set
+`BETTER_AUTH_ALLOWED_HOSTS=localhost:3000`. Better Auth skips its OAuth Proxy
+when the configured production origin and current request origin match.
+`BETTER_AUTH_SECRET` and `OAUTH_PROXY_SECRET` remain required locally and must
+each contain at least 32 characters.
 
 ### Speech synthesis
 
