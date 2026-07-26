@@ -32,6 +32,22 @@ deployments authenticate with the project's OIDC identity; local development
 needs either a current `VERCEL_OIDC_TOKEN` from the linked project or an
 `AI_GATEWAY_API_KEY` in `.env.local`.
 
+### Access gate
+
+Sign-in uses Google Identity Services' redirect flow: the button posts an ID
+token straight to `/api/auth/callback/google`, which is verified server-side
+(signature, issuer, audience, expiry, and the CSRF cookie) with no OAuth
+client secret involved. `.env.local` needs:
+
+- `GOOGLE_CLIENT_ID` — the OAuth 2.0 web client ID. Its "Authorized
+  JavaScript origins" must include the app's origin, and its "Authorized
+  redirect URIs" must include `<origin>/api/auth/callback/google`.
+- `ALLOWED_EMAILS` — comma-separated Google account emails allowed in.
+  Checked on every request, so removing an entry revokes access on next
+  load.
+- `SESSION_SECRET` — random value signing the 180-day session cookie
+  (`openssl rand -base64 32`).
+
 ## Verification
 
 ```sh
