@@ -34,7 +34,9 @@ classification/generation concurrency, outcome precedence, speculative
 preparation, fail-closed checks, and immutable normalization/truncation. The
 classifier prompt is absorbed from the spike, model output is parsed at each
 adapter boundary, and the offline concurrency and failure contracts pass.
-The HTTP route, fixed audio, ordinary TTS, and interactive voice screen have
+The bounded HTTP request, success, and content-free failure contracts now pass
+offline too, as does the direct ElevenLabs synthesis adapter for either model
+allowed by D33. The HTTP route, fixed audio, and interactive voice screen have
 not started; Phase 0b and G6 still gate that speech work.
 
 ## Scope
@@ -216,12 +218,13 @@ leave their numbers behind rather than causing a renumber (D24).
 - **P20 — The turn and the sitting are bounded.** A single recording stops
   itself after 60 seconds, routed through the ordinary stop path so it never
   reads as a failure. The request schema caps history at 20 turns and each
-  entry at 1,000 characters, with the oldest turns dropped client-side. This
-  is a cost bound as much as a latency one: stateless re-send makes token
-  cost quadratic in turn count, so one long happy session is the realistic
-  way P12's ceiling gets hit. The wait is bounded too: the client fetch
-  carries `AbortSignal.timeout(15_000)`, and the timeout resolves to P7's
-  one failure shape, so the thinking cue cannot run forever.
+  entry and the current `said` value at 1,000 characters, with the oldest
+  turns dropped client-side. This is a cost bound as much as a latency one:
+  stateless re-send makes token cost quadratic in turn count, so one long
+  happy session is the realistic way P12's ceiling gets hit. The wait is
+  bounded too: the client fetch carries `AbortSignal.timeout(15_000)`, and
+  the timeout resolves to P7's one failure shape, so the thinking cue cannot
+  run forever.
 
 ## Phases
 
@@ -1099,3 +1102,10 @@ Append-only. Stable IDs; reversals say what they supersede.
   on microphone or playback behavior. This does not waive Phase 0b, G2, or G6:
   the HTTP/audio path and interactive voice screen remain gated until their
   browser, funded-provider, voice, and cap prerequisites are resolved.
+- **D53 (2026-07-26) — The current transcript shares the history-entry
+  character bound.** Clarifies P20. `said` becomes the next user history entry,
+  so the server caps it at the same 1,000 characters as every submitted
+  history entry. A modified client cannot bypass the sitting's cost bound by
+  sending one oversized current transcript. The boundary rejects the request
+  rather than truncating speech invisibly; the route will map that rejection
+  to P7's validation failure.

@@ -71,6 +71,20 @@ use the same callback contract. Localhost also participates in the proxy flow,
 so `wonderturn.vercel.app` must already be deployed and configured before
 local Google sign-in can complete.
 
+### Speech synthesis
+
+The Phase 2 speech adapter calls ElevenLabs directly. Configure these variables
+locally and in Vercel:
+
+- `ELEVENLABS_API_KEY` — a synthesis-scoped key.
+- `ELEVENLABS_VOICE_ID` — the chosen voice's ElevenLabs ID.
+- `ELEVENLABS_MODEL_ID` — either `eleven_flash_v2_5` for an atomic,
+  low-latency response or `eleven_v3` when progressive playback is enabled
+  after the iOS Safari device check.
+
+Set an ElevenLabs plan cap before enabling the route. Provider or response
+validation failures fail closed; audio and provider payloads are not logged.
+
 ## Verification
 
 ```sh
