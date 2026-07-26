@@ -12,8 +12,9 @@ application to run yet.
 
 - [Feature definition](docs/feat/20260725_voice_practice_tool_mvp.md) —
   product intent, scope, flows, and acceptance outcomes.
-- [Design system](DESIGN.md) — Wonderturn's visual language and interaction
-  presentation.
+- [Design system](DESIGN.md) — the visual language, screen composition,
+  states, controls, and on-screen copy. One design system, one document:
+  canonical, undated, and shared by every feature.
 - [Implementation plan](docs/plan/20260726_voice_practice_tool_mvp.md) —
   stack, phases, pinned semantics, verification, and decision log.
 - [Phase 0 spike](docs/plan/20260726_phase0_spike.md) — current measurement

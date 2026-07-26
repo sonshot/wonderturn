@@ -114,6 +114,11 @@ leave their numbers behind rather than causing a renumber (D24).
   The redirect, nudge, and error wording is a first draft and needs operator
   sign-off before the clips are generated; unlike a prompt, a bundled clip is
   expensive to change your mind about.
+
+  Microphone permission copy is deliberately *not* pinned here. It is
+  screen-only, never spoken, and has no clip behind it, so `DESIGN.md` owns it
+  (D39). Anything with an audio clip is this plan's; anything read but never
+  heard is the design system's.
 - **P4 — "Little or no real speech".** No recognized final speech produces
   `nudge` without a model call. Every non-empty transcript goes through the
   input classifier, which returns `disclosure`, `nudge`, or `ordinary`.
@@ -281,12 +286,13 @@ one-line prompt silently routing real disclosures to `ordinary` or `nudge`.
 It is production code and versioned as such, not a fixture.
 
 The screen is one layout with **five** states: idle, listening, thinking,
-talking, error. The others named in the feature doc are not states — `nudge`,
-`redirect`, and `disclosure` are three strings arriving through the `talking`
-path, `interrupted` is `idle` after `pause()`, and the microphone prompt is
-`idle` with a different label. Transcript above, control anchored low, header
-start-over. Barge-in stops playback and starts listening. A client turn
-identifier enforces P1; request cancellation only saves work.
+speaking, error (D38). The others named in the feature doc are not states —
+`nudge`, `redirect`, and `disclosure` are three strings arriving through the
+`speaking` path, `interrupted` is `idle` after `pause()`, and the microphone
+prompt is `idle` with a different label. Composition, state presentation, and
+on-screen copy come from `DESIGN.md` and are not restated here (D36). Barge-in
+stops playback and starts listening. A client turn identifier enforces P1;
+request cancellation only saves work.
 
 Target timeline, to be checked against Phase 0b measurements:
 
@@ -431,6 +437,11 @@ provider legal and policy review is deferred for the private family version;
 the session window is fixed; and disclosures use bundled text and audio.
 The superseding Decision Log entries below preserve the earlier choices they
 replace.
+
+Its `UI/UX` section is also gone, replaced by `Interaction promises` that
+delegate every question of form to `DESIGN.md` (D36). Layout, mockups, and
+component copy now live in one place, so this plan's phases describe behaviour
+and stop restating the screen.
 
 ## Decision Log
 
@@ -696,3 +707,44 @@ Append-only. Stable IDs; reversals say what they supersede.
   Settled by a timing endpoint deployed to Vercel, which also yields the
   cold-start figures no local run can produce. Until then, Outcome 5 stands
   as written.
+- **D36 (2026-07-26) — One design system, one document; feature docs stop
+  owning form.** `DESIGN.md` at the repository root is canonical and
+  deliberately undated, and owns the visual language, screen composition,
+  states, controls, and pinned on-screen copy across every feature — features
+  are many and dated, the design system is one and current. The feature doc's
+  `UI/UX` section becomes `Interaction promises`: what the interface must make
+  true, with form delegated. Its three ASCII mockups are deleted rather than
+  migrated, because they had already drifted — a product name in the header, a
+  `Reply:` speaker label, a `TAP to talk` control label, none of which matched
+  the design — which is precisely what a second home for the same content
+  produces. A plan may plan a change to `DESIGN.md`, and the change lands
+  there; no dated document supersedes it. `AGENTS.md` records the arrangement
+  under How work flows and Source of truth. Accepted cost: appearance review
+  now needs two files open instead of one.
+- **D37 (2026-07-26) — The visible header title is `Practice`; `Wonderturn`
+  lives in the document title and home-screen name.** The deleted mockups put
+  the product name in the header, which was never argued. On a single-screen
+  tool a brand line does no wayfinding — the title bar and installed icon
+  already carry it — and it spends the header's quiet on decoration.
+  `Wonderturn` remains the public product name and is still never a speaker
+  name.
+- **D38 (2026-07-26) — The fourth voice state is `speaking`, not `talking`.**
+  `talking` collided with `Talk`, the action label on the same control, in the
+  two most-read strings on the screen — and keeping status and action from
+  reading as one claim is a stated design requirement. The old name came from
+  feature-doc prose rather than from a decision, so the rename costs nothing.
+- **D39 (2026-07-26) — Microphone permission copy belongs to `DESIGN.md`.**
+  P3's four fixed responses are pinned in this plan because each is frozen
+  into a committed audio clip. The permission and blocked-permission strings
+  have no clip and are never spoken, so they are screen copy and are pinned in
+  the design system instead. Before this entry neither document owned them,
+  which left the first-run screen — the one every new user meets — with no
+  approved wording at all.
+- **D40 (2026-07-26) — The thinking cue advances once instead of freezing.**
+  `DESIGN.md` capped the cue at a single 900ms dot sequence and then static,
+  while P20 lets the wait run to a 15-second timeout. Thirteen seconds of one
+  frozen word reads as a hung app to an eight-year-old, and the feature doc
+  requires the cue to carry the whole wait, so the cap was a defect rather than
+  restraint. The cue now makes exactly one discrete change — `Thinking` →
+  `Still thinking` at ~4s — and still never loops, so the ban on breathing
+  orbs, typing indicators, and indefinite pulses is untouched.

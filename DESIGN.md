@@ -69,7 +69,6 @@ spacing:
 rounded:
   control: 8px
   notice: 12px
-  panel: 16px
   full: 9999px
 components:
   secondary-copy:
@@ -102,7 +101,8 @@ components:
     textColor: "{colors.ink}"
     typography: "{typography.button}"
     rounded: "{rounded.control}"
-    padding: 12px 16px
+    border: 1px solid {colors.line-strong}
+    padding: 14px 16px
     height: 48px
   status-thinking:
     backgroundColor: "{colors.thinking-bg}"
@@ -121,6 +121,7 @@ components:
     textColor: "{colors.ink}"
     typography: "{typography.body}"
     rounded: "{rounded.notice}"
+    border: 1px solid {colors.line-soft}
     padding: 16px
   error-notice:
     backgroundColor: "{colors.error-bg}"
@@ -133,6 +134,7 @@ components:
     textColor: "{colors.ink}"
     typography: "{typography.button}"
     rounded: "{rounded.control}"
+    border: 1px solid {colors.line-strong}
     padding: 14px 20px
     height: 48px
 ---
@@ -150,12 +152,34 @@ operate, not a character waiting for attention. Trust comes from visible
 state, predictable controls, legible text, and the absence of engagement
 pressure.
 
-This document owns the visual language. The
-[feature document](docs/feat/20260725_voice_practice_tool_mvp.md) owns
-promised product behaviour, and the
-[active implementation plan](docs/plan/20260726_voice_practice_tool_mvp.md)
-owns pinned semantics and verification. If this document appears to change
-either, follow those documents and correct this one.
+### Ownership
+
+There is one design system, so there is one design document: this file. It is
+canonical and deliberately undated, and it covers every feature rather than
+belonging to any of them — the visual language, screen composition, states,
+controls, and the on-screen copy it pins. Features are many and dated; the
+design system is one and current.
+
+That fixes the direction of every reference:
+
+- **Feature documents** (`docs/feat/YYYYMMDD_<slug>.md`) own product promises,
+  safety guarantees, and scope — what an interface has to make true, never how
+  it looks. A feature doc describes the surfaces it needs and delegates their
+  form here; it does not carry mockups, layout rules, or component copy. The
+  first is
+  [voice practice MVP](docs/feat/20260725_voice_practice_tool_mvp.md).
+- **Implementation plans** (`docs/plan/YYYYMMDD_<slug>.md`) own pinned
+  correctness semantics, timing bounds, verification, and any string with a
+  committed audio clip behind it. A plan may *plan* a change to this file —
+  that is the normal way this file changes — but the change lands here, and a
+  dated document never supersedes it.
+
+Where this file and a neighbour genuinely conflict: form is this file's call,
+promises belong to the feature doc, and a string with bundled audio belongs to
+the plan and must be quoted exactly.
+
+New work adds a dated feature doc and edits this file. It does not add a
+second design document.
 
 ### Design principles
 
@@ -231,11 +255,40 @@ typeface changes.
 The application fills the dynamic viewport and respects every device safe
 area. It has one centered content column with a maximum width of 42rem.
 
+### Region skeleton
+
+```
+┌──────────────────────────────┐ ← safe-area inset top
+│ header title      start over │   ≥ 64px, does not scroll
+├──────────────────────────────┤
+│ ▲ older turns move upward    │
+│                              │
+│   transcript log             │   flexible; scrolls on its own
+│                              │
+│   newest turn                │
+│   inline / error notice      │   newest item, bottom of region
+├──────────────────────────────┤ ← 1px + optional shadow, only when scrolled
+│         state status         │   above the control, never beside it
+│        ┌────────────┐        │
+│        │    talk    │        │   104 × 104, circular
+│        │  control   │        │
+│        └────────────┘        │
+└──────────────────────────────┘ ← calc(16px + safe-area inset bottom)
+```
+
+The skeleton names regions and their order; it is not a mockup. Deliberately
+absent: any string a person would read, and any per-state variant of this
+diagram. Both are traps. Copy drifts the moment it exists in two files — the
+feature doc's deleted mockups had a stale header title, a stale speaker label,
+and a stale control label — and a set of one-box-per-state drawings would
+duplicate the talk-control table while conveying less, since the whole point
+of these five states is that the boxes never move.
+
 ### Phone layout
 
 - Default horizontal gutter: `{spacing.lg}` (24px).
 - At widths below 360px: reduce the gutter to `{spacing.md}` (16px).
-- Header: at least 64px high, with `Wonderturn` on the left and the full
+- Header: at least 64px high, with `Practice` on the left and the full
   `Start over` label on the right.
 - Transcript: consumes the flexible middle space and scrolls independently
   when necessary. New turns land nearest the control while older turns move
@@ -263,17 +316,18 @@ The system is almost flat.
 - Control zone: at most one restrained shadow,
   `0 -4px 18px rgb(23 33 31 / 6%)`, when scrolling content must be separated
   from it.
-- Focus ring: three pixels with a two-pixel canvas-colored offset so it
-  remains visible against both teal and white.
+- Focus ring: three pixels with a two-pixel canvas-colored offset. The offset
+  is what does the work — the ring never abuts the teal fill, so its only
+  adjacency is the canvas, which it clears at 5.8:1.
 
 Do not use glass, blur, floating chat cards, stacked panels, glossy buttons,
 or multiple competing shadows.
 
 ## Shapes
 
-Most controls use `{rounded.control}`. Notices use `{rounded.notice}` and
-larger structural panels use `{rounded.panel}`. The talk control and compact
-status chips are fully round.
+Most controls use `{rounded.control}` and notices use `{rounded.notice}`. The
+talk control and compact status chips are fully round. There is no
+structural-panel radius, because there are no structural panels.
 
 Roundness is hierarchical, not decorative. Do not make every surface a pill
 or turn the transcript into bubbles. The talk control is circular because it
@@ -285,12 +339,18 @@ character or orb.
 ### App shell
 
 A full-height, safe-area-aware column. It owns the canvas, maximum content
-width, and the stable regions for header, transcript, and talk control.
+width, and the stable regions for header, transcript, and talk control. The
+document title and the installed/home-screen name are `Wonderturn`, which is
+where the product name does its wayfinding work.
 
 ### Practice header
 
-Use the public product name `Wonderturn`. A small secondary line may say
-`AI voice practice` where an AI disclosure is needed.
+The visible header title is the plain word `Practice`. `Wonderturn` is the
+product's name, not this screen's label: on a single-screen tool a brand line
+does no wayfinding — the title bar and home-screen icon already carry it — and
+the header's job is to stay quiet. It is never a speaker name either (see Copy
+and Content). A small secondary line may say `AI voice practice` where an AI
+disclosure is needed.
 
 `Start over` is text plus an optional reset glyph, never an unlabeled icon.
 Its target is at least 48 by 48 CSS pixels. It clears immediately without a
@@ -338,32 +398,48 @@ Ready, microphone for permission, level bars for Listening, ellipsis for
 Thinking, speaker for Speaking, and exclamation for Error. A glyph is always
 paired with its visible text.
 
+A fresh screen opens on `Ready` with the `Talk` label. One activation both
+requests the microphone and starts listening, so an untouched screen must
+never open on `Microphone needed` — that would contradict the empty state's
+own `Tap Talk` instruction. `Microphone needed` is the state *after* a prompt
+was dismissed without a decision; `Microphone blocked` is a denial the page
+cannot re-prompt. Where a browser reports no permission state at all, `Ready`
+is always the correct opening status.
+
 ### Talk control
 
 Use a native button, 104 by 104 CSS pixels, with a simple microphone,
 stop/listening, or speaker glyph and a short visible action label.
 
-| Current state | Status | Visible action label | Result of activation |
-| --- | --- | --- | --- |
-| Idle | Ready | Talk | Start listening |
-| Microphone permission needed | Microphone needed | Allow | Request access, then start listening |
-| Microphone blocked | Microphone blocked | Try again | Retry access or show recovery guidance |
-| Listening | Listening | Done | Stop and submit |
-| Thinking | Thinking | Talk | Abandon obsolete work and listen |
-| Speaking | Speaking | Talk | Stop playback and listen |
-| Error | Something went wrong | Try again | Begin a fresh attempt |
+| Current state | Status | Visible action label |
+| --- | --- | --- |
+| Idle | Ready | Talk |
+| Microphone prompt dismissed | Microphone needed | Allow |
+| Microphone blocked | Microphone blocked | Try again |
+| Listening | Listening | Done |
+| Thinking | Thinking | Talk |
+| Speaking | Speaking | Talk |
+| Error | Something went wrong | Try again |
+
+What each activation *does* belongs to the feature document's key flows and
+the plan's P1. This table exists for one purpose: to show that the status and
+the action can never be read as the same claim.
 
 Keep the visible label inside the 104px circle to two short words at most.
 The permission button's accessible name is `Allow microphone`; its visible
 label is `Allow`. One activation requests permission and, when granted,
-immediately begins listening. Do not make the person tap twice. When the
-browser reports a blocked or permanently denied permission, use the
-`Microphone blocked` row and an inline notice; the exact recovery directions
-may be platform-specific.
+immediately begins listening. Do not make the person tap twice. A blocked or
+permanently denied permission uses the `Microphone blocked` row plus the
+pinned notice under Inline notice.
 
 The state name is never conveyed by color alone. The control activates on
 release, not pointer-down. Do not use press-and-hold, swipe, hidden
 cancellation, or a call/hang-up metaphor.
+
+Set `touch-action: manipulation` on the control so a fast second tap cannot
+trigger double-tap zoom. Never reach for `user-scalable=no` to get that: the
+200% zoom requirement outranks a gesture nuisance, and disabling scaling
+breaks this document's own accessibility floor.
 
 ### Listening cue
 
@@ -373,17 +449,35 @@ never glow or move while the microphone is inactive.
 
 ### Thinking cue
 
-Use the text `Thinking` and, optionally, one short three-dot sequence before
-the cue becomes static. Do not use a breathing orb, character animation,
-typing indicator, or indefinite pulse.
+Use the text `Thinking` with one short three-dot sequence, then let the dots
+come to rest. The wait is bounded but not always short — it can run to the
+plan's request timeout — and a cue frozen at one word for that long reads as a
+hung app to the person least equipped to diagnose it. Carry the rest of the
+wait with one discrete, countable change: at roughly four seconds the text
+becomes `Still thinking`. That is the entire progression. There is no third
+step, and nothing loops.
+
+Do not use a breathing orb, character animation, typing indicator, indefinite
+pulse, progress bar, or elapsed-time counter.
 
 ### Inline notice
 
 Permission guidance and calm contextual explanations use the same layout
-width as the transcript. One short paragraph is preferred. If the
-microphone is blocked, tell the person exactly what needs to happen without
-blame. Place the notice as the newest item at the bottom of the transcript
-region, immediately above the stable control zone.
+width as the transcript. One short paragraph is preferred. Place the notice
+as the newest item at the bottom of the transcript region, immediately above
+the stable control zone.
+
+This file owns the microphone copy, because it is screen-only: unlike the four
+fixed responses, it has no bundled audio and is never spoken.
+
+- `Microphone needed`: `I need to hear you to practice. Tap Allow, then choose
+  Allow again when your phone asks.`
+- `Microphone blocked`: `This page can't use the microphone yet. A grown-up can
+  switch it back on in your browser's settings for this site.`
+
+Tell the person what has to happen next, without blame and without naming a
+permission API. Exact settings paths differ by platform — do not invent
+step-by-step directions this document has not verified on the target phones.
 
 ### Error notice
 
@@ -391,6 +485,11 @@ Keep the layout stable and show the error copy pinned by the active plan,
 including its repeated-error variant. Do not expose provider, budget,
 safety-check, or network detail. Do not add a red screen, warning triangle
 spectacle, or dead-end retry page.
+
+The error is spoken as well as shown, from its bundled clip — a kid who looked
+away waiting for a reply must not get silence. The `Something went wrong`
+status and the `Try again` label both hold while that clip plays: failure does
+not borrow the speaking presentation, and the audio changes nothing visually.
 
 Preserve every completed transcript turn. Do not insert a fabricated or
 empty `AI reply` for the failed attempt. Show the error notice as the newest
@@ -464,6 +563,10 @@ An interruption returns calmly to idle. It does not produce a warning,
 completion badge, or celebratory cue. Starting over clears the transcript
 immediately and preserves the signed-in shell.
 
+A recording that reaches the plan's length limit stops itself through the
+ordinary `Done` path: listening ends, thinking begins, and no notice, warning,
+or explanation appears. It is not a state and it is not an error.
+
 Status and action must not contradict each other. For example, while the
 system is speaking, `Speaking` describes the state and `Talk` describes what
 the control will do.
@@ -476,7 +579,8 @@ Motion is functional and brief:
 - State crossfade: 160ms.
 - Complete transcript-turn reveal: 200–240ms opacity transition.
 - Standard easing: `cubic-bezier(.2,.8,.2,1)`.
-- Thinking dots: one 900ms sequence at most, then static.
+- Thinking dots: one 900ms sequence, then at rest.
+- Thinking text advances once, at ~4s: `Thinking` → `Still thinking`.
 
 With `prefers-reduced-motion: reduce`, remove transforms and animation.
 Change status text instantly. Never auto-scroll in a way that steals the
@@ -536,15 +640,21 @@ Use plain English, contractions, and short sentences. Prefer the next
 concrete action over technical explanation.
 
 - Say `Talk`, not `Begin voice interaction`.
-- Say `I didn't quite catch that`, not `No speech input detected`.
-- Say `Something went wrong. Let's try that again`, not a provider or status
-  code.
+- Say `I need to hear you to practice`, not `Microphone permission was not
+  granted`.
 - Say `AI reply`, not a human name or relational role.
 - Do not add generic praise such as `Great question!` to every response.
 - Do not add a hook question merely to prolong use.
 
-The product name is not a speaker name. Wherever `Wonderturn` appears in the
-header or sign-in screen, the transcript still uses `AI reply`.
+The four spoken fixed responses — disclosure, redirect, nudge, and error — are
+pinned in the plan with a committed audio clip behind each. Quote them exactly.
+Tightening one here would leave the visible text saying less than the audio
+says, which is the one place this system's transcript-equals-audio promise
+would visibly break.
+
+The product name is not a speaker name. Wherever `Wonderturn` appears — the
+document title, the home-screen name, the sign-in screen — the transcript
+still uses `AI reply`.
 
 ## Agent Implementation Checklist
 

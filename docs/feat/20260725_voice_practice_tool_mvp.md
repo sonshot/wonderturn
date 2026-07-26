@@ -62,7 +62,8 @@ ways for v1. An adult wanting the same practice gets the same tool, with no
 separate mode and no per-person tuning.
 
 Wonderturn is the public product name, never the AI speaker's identity. The
-transcript labels generated content plainly as `AI reply`.
+transcript labels generated content plainly as `AI reply`. Where the name is
+shown at all — and where it deliberately isn't — is `DESIGN.md`'s call.
 
 Replies are cleared in full before they're shown or spoken, and a genuine
 disclosure gets its own adult-pointing response instead (see Product
@@ -133,98 +134,47 @@ repeat.
   promise. Others belong to the later multi-profile plan.
 - Analytics or usage tracking beyond the operator knowing something broke.
 
-## UI/UX
+## Interaction promises
 
-Phone-first, single-screen, minimal chrome, since family testing happens
-mostly on phones; laptop and tablet only need to stay usable.
+Form belongs to [`DESIGN.md`](../../DESIGN.md) — the single design system
+document, which owns the visual language, screen composition, states,
+controls, and on-screen copy across every feature. What follows is what this
+interface has to make true, deliberately not what it looks like: no layout
+rules, no mockups, no component copy. Where this section and `DESIGN.md`
+appear to disagree about appearance, `DESIGN.md` is right.
 
-One big tappable control (tap to start, tap again to stop — no
-press-and-hold), anchored low for one-handed thumb reach, with a transcript
-panel above it and a "thinking" cue instead of silence while a reply is
-worked out — a cue that has to carry the whole wait, though not an unbounded
-one: a turn that hasn't landed by the deadline the plan pins becomes the
-ordinary failure state, so the cue can never run forever. Every state — idle,
-listening, thinking, talking, the microphone prompt, the empty-input nudge,
-the safety redirect, the disclosure response, an interruption, an error —
-reuses this layout, changing only the label and the transcript.
-
-The transcript sits above the control so new lines grow upward toward eye
-level, the latest landing closest to the button, and scrolling text stays
-clear of the phone's bottom-edge gesture zones (home-indicator swipe,
-Android's back-swipe). It shows both sides — the person's words as they're
-recognized, the reply once cleared — visible as well as audible, though
-nobody has to read it, and it doesn't change the no-storage stance (see
-Security).
-
-The only other control, in the header, starts over: it clears the
-conversation and stays signed in — the in-app equivalent of a reload, with
-no confirmation step, since a conversation is disposable by design. There is
-no sign-out in v1, so a mistap can't strand a kid at the sign-in gate on a
-shared device; access is revoked by removing the account from the allowlist
-(see Security).
-
-Starting over, or beginning a new turn, makes any unfinished earlier turn
-obsolete: its result must never later appear or be spoken. The plan pins how
-active work is cancelled or discarded.
-
-An interruption (see Key flows) isn't an error. If the OS discards the
-backgrounded page outright, the next visit is a fresh, empty conversation —
-a clean start, not a crash. The error state says what happened in one line
-and, if it persists, suggests telling a grown-up — the operator's only path
-when a failure never reaches them. It is spoken as well as shown, like every
-other fixed response: a kid who looked away waiting for a reply shouldn't
-just get silence.
-
-Screens (illustrative, not final visual design):
-
-```
-Sign-in gate
-┌───────────────────────────┐
-│                           │
-│            (o)            │
-│                           │
-│    Ready to practice?     │
-│   A voice conversation    │
-│    tool for our family.   │
-│                           │
-│    [ Continue with... ]   │
-│                           │
-│   Only approved family    │
-│     accounts can join.    │
-│                           │
-└───────────────────────────┘
-```
-
-```
-Talk screen — idle                Talk screen — listening
-┌───────────────────────────┐       ┌──────────────────────────┐
-│ Wonderturn              ⎋ │       │ Wonderturn             ⎋ │
-│                           │       │                          │
-│                           │       │  You: why do stars       │
-│                           │       │       twinkle...         │
-│  ──────────────────────   │       │  ─────────────────────   │
-│        ┌────────┐         │       │        ┌────────┐        │
-│        │  TAP   │         │       │        │  ● ●●  │        │
-│        │to talk │         │       │        │ listen │        │
-│        └────────┘         │       │        └────────┘        │
-└───────────────────────────┘       └──────────────────────────┘
-```
-
-```
-Talk screen — talking (cleared reply, rendering)
-┌───────────────────────────┐
-│ Wonderturn              ⎋ │
-│  You: why do stars        │
-│       twinkle?            │
-│  Reply: great question!   │
-│   Stars twinkle because...│
-│  ──────────────────────   │
-│        ┌────────┐         │
-│        │  )))   │         │
-│        │talking │         │
-│        └────────┘         │
-└───────────────────────────┘
-```
+- **Voice carries the whole interaction.** Talking to it and being talked
+  back to requires no typing and no reading, on a phone, one-handed. Family
+  testing happens mostly on phones; laptop and tablet only need to stay
+  usable.
+- **The wait is never silent and never unbounded.** While a reply is formed
+  and cleared, something on screen accounts for the delay, and it has to
+  carry the whole wait rather than the first moment of it. A turn that hasn't
+  landed by the deadline the plan pins becomes the ordinary failure state, so
+  the wait cannot run forever.
+- **One layout, every moment.** Idle, listening, thinking, speaking, the
+  microphone prompt, the empty-input nudge, the safety redirect, the
+  disclosure response, an interruption, and an error all reuse one screen.
+  None of them is a special occasion and none is dramatized.
+- **Both sides are visible as well as audible.** The person's words as
+  they're recognized, and the reply once cleared — though nobody has to read
+  either. This doesn't change the no-storage stance (see Security).
+- **Starting over is one tap and no questions.** It clears the conversation
+  and stays signed in: the in-app equivalent of a reload, since a
+  conversation is disposable by design. There is no sign-out in v1, so a
+  mistap can't strand a kid at the sign-in gate on a shared device; access is
+  revoked by removing the account from the allowlist (see Security).
+- **Obsolete work never surfaces.** Starting over, or beginning a new turn,
+  makes any unfinished earlier turn obsolete: its result must never later
+  appear or be spoken. The plan pins how active work is cancelled or
+  discarded.
+- **An interruption isn't a failure** (see Key flows). If the OS discards the
+  backgrounded page outright, the next visit is a fresh, empty conversation —
+  a clean start, not a crash.
+- **The error is spoken, not only shown.** One line on what happened, plus
+  the grown-up nudge if it persists — the operator's only path when a failure
+  never reaches them. Like every other fixed response it has bundled audio: a
+  kid who looked away waiting for a reply shouldn't just get silence.
 
 ## Key flows
 

@@ -2,8 +2,9 @@
 
 Instructions for AI agents and contributors working in this repository. This file
 covers _how we work_ and the _durable principles_ behind our choices. Setup,
-current structure, and configuration live in `README.md`, the feature documents in
-`docs/feat/`, and the active plan in `docs/plan/` — do not duplicate them here.
+current structure, and configuration live in `README.md`, the design system in
+`DESIGN.md`, the feature documents in `docs/feat/`, and the active plan in
+`docs/plan/` — do not duplicate them here.
 
 ## Engineering principles
 
@@ -47,8 +48,19 @@ different things.
 ## How work flows
 
 Non-trivial work goes: **feature document → implementation plan →
-implement/verify/review loop → commit coherent slices.**
+implement/verify/review loop → commit coherent slices.** Work with a user-visible
+surface also touches the design system, which is a standing document rather than a
+step in that line.
 
+- **Design system** (`DESIGN.md`) — one design system, so one document: at the
+  repository root, canonical, and deliberately undated. It owns the visual language,
+  screen composition, states, controls, and the on-screen copy it pins, for _every_
+  feature. Features are many and dated; the design system is one and current. A
+  feature doc therefore names the surfaces it needs and delegates their form here
+  instead of carrying mockups, layout rules, or component copy. A plan may _plan_ a
+  change to it — that is the normal way it changes — but the change lands in
+  `DESIGN.md`, and no dated document supersedes it. Don't add a second design
+  document.
 - **Feature document** (`docs/feat/YYYYMMDD_<slug>.md`) — write it first for any new
   feature, architecture change, or POC. Capture the problem, the proposal, scope and
   fences, key flows, security/privacy/authorization implications, ownership, and
@@ -92,8 +104,10 @@ a prior decision.
 Keep this file about _how we work_, not how the code currently happens to be built.
 
 - `README.md` owns setup and operator configuration.
+- `DESIGN.md` owns the design system across all features: visual language, screen
+  composition, states, controls, and the on-screen copy it pins.
 - Feature docs own durable intent, product/architecture boundaries, and any product
-  principles specific to a feature.
+  principles specific to a feature. They don't own appearance — that is `DESIGN.md`'s.
 - The active plan and its Decision Log own current scope, gates, and semantics.
 - Code, tests, package scripts, and CI own executable behavior and verification
   commands.
