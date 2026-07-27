@@ -7,10 +7,11 @@ Diagnostics feature doc: [`docs/feat/20260726_device_diagnostics.md`](../feat/20
 
 Phase 0a is complete. Its frozen install, deterministic verification lane,
 production build, and local root-route smoke check pass on Node.js 24.
-Phase 0b is complete (D57). Safari delayed atomic playback passes, offline
-recognition fails as expected for the observed network-dependent browser
-service, and the operator accepts the low child-voice accuracy for this private
-MVP.
+Phase 0b is complete as historical device evidence. Safari delayed atomic
+playback passes, offline Web Speech fails as expected, and later Android
+testing exposed transcript corruption that made the browser recognizer
+unacceptable. D66 replaces that production path with OpenAI live
+transcription through AI Gateway.
 
 Phase 0a establishes the durable repository foundation. Phase 0b is a
 throwaway device spike whose result can invalidate the application stack;
@@ -45,13 +46,15 @@ rendered delivery is operator-approved (D54, D55). The authenticated
 `POST /api/turn` route is code-complete (D59): it re-checks the allowlist,
 parses the bounded request, calls the one text seam, pairs fixed outcomes with
 bundled audio, and fails closed into the content-free error contract. Its
-offline route tests and production build pass. The interactive voice screen is
-code-complete locally: its explicit lifecycle reducer, browser recognition,
-speech-activity cue, atomic playback, barge-in, bounded sitting, stale-turn rejection,
-permission states, and client-side fixed failure audio pass offline
-verification and a 320px layout check. Direct localhost Google SSO reaches
-this screen and survives a Safari reload (D61). Phase 2 still needs its manual
-phone outcome and delayed-stale-result checks before exit.
+offline route tests and production build pass. The interactive voice screen now
+uses one microphone stream for OpenAI live transcription and honest amplitude
+bars. Its authenticated, model-scoped token route, 24 kHz PCM capture,
+streaming transcript, manual finalization, explicit lifecycle reducer, atomic
+playback, barge-in, bounded sitting, stale-turn rejection, permission states,
+and client-side fixed failure audio are code-complete locally. Direct localhost
+Google SSO reaches this screen and survives a Safari reload (D61). Phase 2
+still needs its manual phone outcome and delayed-stale-result checks before
+exit.
 
 ## Scope
 
@@ -69,7 +72,7 @@ under Pinned semantics.
 | Host | Vercel |
 | Styling | Tailwind CSS 4; CSS Modules only where utilities are insufficient |
 | React optimization | React Compiler |
-| Speech in | Web Speech API, browser-managed; processing may be local or use the platform vendor |
+| Speech in | OpenAI `gpt-realtime-whisper`, streamed as 24 kHz mono PCM through Vercel AI Gateway |
 | Models | Vercel AI Gateway via AI SDK |
 | Reply | `google/gemini-3.5-flash-lite` (D31) |
 | Input classification + clearing checks | `anthropic/claude-haiku-4.5` (D32) |
@@ -132,7 +135,7 @@ leave their numbers behind rather than causing a renumber (D24).
   stays in the client's history, because it was shown whole before a word was
   spoken.
 - **P2 — Four outcome kinds.** `reply`, `redirect`, `disclosure`, `nudge`.
-  Genuinely empty recognition produces `nudge` before the pipeline. For
+  A genuinely empty final transcript produces `nudge` before the pipeline. For
   non-empty speech, precedence is `disclosure` → `nudge` → `redirect` →
   `reply`. Anything else is a non-200.
 - **P3 — Every fixed response is pinned, with bundled audio.** Each is
@@ -189,21 +192,17 @@ leave their numbers behind rather than causing a renumber (D24).
   denies the next protected request once the updated env configuration is
   deployed.
 - **P12 — Spend is bounded by two provider caps.** The app uses a dedicated
-  AI Gateway key with a $10 monthly budget and no automatic top-up. A request
-  already accepted by the Gateway, including the request that crosses the
-  budget, may finish; later requests fail. Concurrently accepted work may
-  also finish. `test:live` and `register` draw on this same key: D21 deleted
-  the eval-only key along with the harness that justified it, so test spend
-  and family spend share one ceiling.
+  AI Gateway key with a $10 monthly budget and no automatic top-up. Live
+  transcription, language-model work, `test:live`, and `register` share that
+  ceiling. A request already accepted by the Gateway, including the request
+  that crosses the budget, may finish; later requests fail. Concurrently
+  accepted work may also finish.
 
-  Now sized, from spike measurements (D34). Language-model work is about
-  $0.0005 per turn on the chosen models, so $10 buys roughly 20,000 turns —
-  far more than this family will use, and not the binding constraint.
-  **Speech is 80–90% of per-turn cost**, at roughly $0.002–0.003 for 250
-  characters, and it sits outside the Gateway entirely (D33). The real
-  ceiling is therefore the ElevenLabs plan, which needs its own cap set to
-  fail closed the same way. Two ceilings, both provider-native, still no app
-  code.
+  Speech synthesis remains outside Gateway (D33), so the ElevenLabs plan needs
+  its own cap set to fail closed the same way. Two provider-native ceilings
+  cover the whole voice turn without app quota code. D34's earlier estimate
+  covered text and synthesis but not live transcription; production
+  observability must establish the new per-turn mix before any capacity claim.
 - **P13 — Text behaviour has one execution seam.** `runTextTurn` owns input
   classification, candidate generation, precedence, and clearing. Two
   optional injection points keep production and tests on the same code path:
@@ -390,12 +389,21 @@ That script keeps real-device voice evidence separate from the forced
 clearing, delay, and provider-failure cases that require controlled
 instrumentation.
 
+The browser obtains an authenticated 60-second token from
+`POST /api/transcriptions/token`, scoped to
+`openai/gpt-realtime-whisper`. It sends the sole microphone stream directly to
+AI Gateway as 24 kHz mono PCM, uses the same samples for the level cue, and
+updates the visible `You` turn from streaming transcript parts. Tapping `Done`
+closes the audio stream; only the final transcript enters the turn pipeline.
+Any token, stream, provider-contract, or finalization failure uses P7's single
+failure state. The long-lived Gateway credential remains server-only (D66).
+
 `POST /api/turn` accepts `{ history, said }` — Zod-parsed with P20's bounds —
 and returns `{ kind, text, audio }`, with generated or bundled audio returned
 base64. The route calls P13's `runTextTurn`; there is no second text pipeline
 hidden inside the HTTP handler.
 
-- Genuinely empty recognition short-circuits to `nudge` before any model
+- A genuinely empty final transcript short-circuits to `nudge` before any model
   call (P4).
 - For non-empty speech, input classification and candidate reply generation
   start together. A `disclosure` or `nudge` classification discards the
@@ -445,7 +453,7 @@ text and audio from appearing.
 ### Phase 3 — Safety verification
 
 One Vitest file of model-backed outcome fixtures calling `runTextTurn`
-directly through P13, with no browser, microphone, speech recognition, TTS,
+directly through P13, with no browser, microphone, transcription, TTS,
 or HTTP route. Roughly 25 fixtures, asserting on `kind` only and never on
 prose — a discrete assertion that survives a model change, where a graded
 rubric would not (D21).
@@ -561,10 +569,11 @@ G1 is a future gate on expanding access, not an MVP gate.
 
 ## Resolved doc alignment
 
-The feature doc is updated alongside this plan: browser-managed speech may
-involve the platform vendor; credentialed and paid calls remain server-side;
-provider legal and policy review is deferred for the private family version;
-the session window is fixed; and disclosures use bundled text and audio.
+The feature doc is updated alongside this plan: live speech uses an
+authenticated short-lived Gateway token and a direct browser-to-provider
+stream while long-lived credentials remain server-side; provider legal and
+policy review is deferred for the private family version; the session window
+is fixed; and disclosures use bundled text and audio.
 The superseding Decision Log entries below preserve the earlier choices they
 replace.
 
@@ -1255,3 +1264,27 @@ Append-only. Stable IDs; reversals say what they supersede.
   result event, matching the specification's continuous-recognition example.
   Only when the browser ends and the client explicitly restarts recognition
   does the latest intelligible text become a completed-session prefix.
+- **D66 (2026-07-27) — OpenAI live transcription replaces Web Speech.
+  Supersedes D1, D9's Web Speech candidate, D57's accuracy acceptance, and
+  D62–D65's browser-result semantics.** Real Android testing continued to
+  produce duplicated cumulative hypotheses after the implementation matched
+  the Web Speech indexed-list contract. The operator also rejected the low
+  local-STT accuracy accepted in D57. Provider-managed streaming is now the
+  smaller and more reliable product path than accumulating more
+  browser-specific recognition behavior.
+
+  The production screen streams one microphone source as 24 kHz mono PCM to
+  `openai/gpt-realtime-whisper` through AI Gateway, with language `en`,
+  `medium` transcription delay, and manual finalization when the person taps
+  `Done`. Streaming parts update the visible transcript; the provider's final
+  text alone enters `POST /api/turn`. The same PCM source drives honest RMS
+  level bars, preserving D63's single-owner finding while superseding its
+  recognizer-event cue.
+
+  An allowlisted Better Auth session may mint a 60-second Gateway client secret
+  scoped to that model. The browser connects directly to Gateway/OpenAI with
+  the short-lived token; no long-lived provider credential reaches the device,
+  and Wonderturn does not proxy, log, or store microphone audio. AI Gateway's
+  existing budget now covers transcription as well as text work. Any token,
+  socket, provider, or finalization failure fails closed into the ordinary
+  content-free error state.

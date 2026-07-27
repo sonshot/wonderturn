@@ -134,8 +134,9 @@ repeat.
 - Languages other than English for v1: it listens for English and replies in
   English. Speech in another language is recognized poorly or not at all, and
   lands on the empty-input nudge rather than a translated reply — the
-  recognizer is locale-bound, so there is no graceful multilingual input to
-  promise. Others belong to the later multi-profile plan.
+  cloud transcription session is explicitly language-hinted to English, so
+  there is no graceful multilingual input to promise. Others belong to the
+  later multi-profile plan.
 - Analytics or usage tracking beyond the operator knowing something broke.
 
 ## Interaction promises
@@ -269,12 +270,13 @@ appear to disagree about appearance, `DESIGN.md` is right.
   could leave the page open for hours — so an operator-side hard spend
   ceiling covers that. Exceeding it fails loudly, with only the ordinary
   error shown.
-- Credentialed and paid provider calls go through this app's own server:
-  the spend ceiling has to be enforced somewhere the person can't reach,
-  and provider credentials never belong on a family device. Browser-managed
-  speech recognition is the exception; its processing location depends on
-  the browser and platform, and the app treats that vendor as another
-  processor without giving it app credentials.
+- Long-lived provider credentials stay on this app's server. For live speech,
+  an authenticated app route mints a short-lived, model-scoped AI Gateway
+  token; the browser then sends microphone audio directly to AI Gateway and
+  OpenAI for transcription. The token cannot authorize another model and the
+  long-lived Gateway credential never reaches a family device. The Gateway
+  budget remains the spend boundary. This direct streaming path is still a
+  third-party processor boundary, not on-device speech.
 - Failures reach the operator out-of-band, carrying category and endpoint
   only and never content, so a tool that breaks during unsupervised use
   doesn't stay broken unnoticed.

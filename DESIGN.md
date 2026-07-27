@@ -359,7 +359,7 @@ speakers, or under the header. The soft divider has exactly one use in this
 system: parting the control zone from scrolling content, and only while content
 is actually scrolled.
 
-Interim speech recognition updates the current `You` turn in place. Do not
+Streaming transcription updates the current `You` turn in place. Do not
 announce every interim word to assistive technology. A cleared AI reply is
 inserted once, in full.
 
@@ -481,8 +481,9 @@ breaks this document's own accessibility floor.
 
 The Listening status glyph *is* the speech-activity cue — the "activity bars"
 named under State status are live, not an icon of bars. Its muted-ink bars move
-between rest, audio, sound, and speech levels reported by the browser
-recognizer. They do not claim to show raw microphone amplitude.
+with the raw microphone amplitude measured from the same stream sent for
+transcription. They are an honest level cue, not a speech-confidence meter or
+an animation on a timer.
 
 Make this good rather than tolerable. It is the one genuinely alive moment the
 design permits, and it earns that permission by being honest: it reflects the
@@ -491,8 +492,8 @@ the fastest possible answer to the only question that matters while recording �
 *is it hearing me?*
 
 It never appears inside the talk control, which carries the stop glyph and
-`Done` at that moment. It stops on the same frame recognition stops, rests at
-its minimum height, and never moves while the microphone is inactive. Under
+`Done` at that moment. It stops on the same frame audio capture stops, rests
+at its minimum height, and never moves while the microphone is inactive. Under
 `prefers-reduced-motion: reduce`, hold the bars at rest and let the `Listening`
 text carry the state alone.
 
@@ -642,8 +643,8 @@ Motion is functional and brief:
 - Thinking dots: one 900ms sequence, then at rest.
 - Thinking text advances once, at ~4s: `Thinking` → `Still thinking`.
 
-The speech-activity cue is not on this list. It follows recognizer lifecycle
-events and stops when recognition does.
+The speech-activity cue is not on this list. It follows live microphone
+amplitude and stops when capture does.
 
 With `prefers-reduced-motion: reduce`, remove transforms and animation.
 Change status text instantly. Never auto-scroll in a way that steals the
@@ -670,7 +671,7 @@ Target WCAG 2.2 AA.
 - Never rely on color, motion, sound, position, or an icon alone.
 - The full transcript is visible text as well as audio.
 - Put status text in a polite, atomic live region. Use an ordered semantic
-  log for transcript turns, but exclude interim recognition text from its
+  log for transcript turns, but exclude interim transcription text from its
   live announcements. Insert each final `AI reply` once and atomically.
 - Avoid double-speaking the final reply through TTS and a screen reader.
   Test the chosen transcript announcement behavior with VoiceOver/Safari

@@ -5,9 +5,9 @@ conversation. Tap to talk, see the transcript, and hear a short AI reply.
 It is designed as a practice instrument—not a friend, companion, game, or
 engagement product.
 
-The MVP is currently in foundation and device-spike work. The durable Next.js
-application scaffold exists; feature work begins after the remaining device
-checks pass.
+The MVP has its access gate, live OpenAI transcription, turn pipeline, and
+voice screen in place. Real-device outcome checks and later safety verification
+remain before the MVP is complete.
 
 ## Local development
 
@@ -100,6 +100,21 @@ The committed fixed clips use the same voice, model, and pinned request
 settings as ordinary replies. If approved copy or the voice changes, regenerate
 the clips with `pnpm audio:fixed`; this consumes ElevenLabs credits and updates
 their checked manifest.
+
+### Speech transcription
+
+The practice screen streams one microphone source as 24 kHz mono PCM to
+OpenAI `gpt-realtime-whisper` through Vercel AI Gateway. The same source drives
+the visible input-level bars. English is pinned as the language hint and the
+stream uses the model's `medium` delay setting; tapping `Done` closes the audio
+stream and the resulting final transcript enters the existing turn pipeline.
+
+The browser never receives the project's Gateway credential. An authenticated
+`POST /api/transcriptions/token` mints a 60-second token scoped only to the
+transcription model, then the browser connects directly to Gateway. No extra
+environment variable is required beyond the Gateway OIDC or API-key setup
+described above. Microphone audio leaves the device for Vercel/OpenAI processing
+but is not sent through, logged, or stored by the Wonderturn application.
 
 ## Verification
 

@@ -12,9 +12,9 @@ import {
   type VoiceLifecycle,
 } from "@/lib/turn/practice-machine";
 import {
-  assembleRecognitionResults,
-  type RecognitionSegment,
-} from "@/lib/turn/recognition-transcript";
+  startRealtimeTranscription,
+  type RealtimeTranscriptionSession,
+} from "@/lib/turn/realtime-transcription";
 
 const TURN_TIMEOUT_MS = 15_000;
 const RECORDING_LIMIT_MS = 60_000;
@@ -26,12 +26,8 @@ export function PracticeScreen() {
   const stateRef = useRef(state);
   const turnCounterRef = useRef(0);
   const requestControllerRef = useRef<AbortController | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const recognitionTurnRef = useRef(0);
-  const shouldListenRef = useRef(false);
-  const submitOnEndRef = useRef(false);
-  const completedTranscriptRef = useRef("");
-  const latestTranscriptRef = useRef("");
+  const transcriptionRef = useRef<RealtimeTranscriptionSession | null>(null);
+  const pendingTranscriptionTurnRef = useRef<number | null>(null);
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playbackRef = useRef<HTMLAudioElement | null>(null);
 
@@ -60,10 +56,9 @@ export function PracticeScreen() {
       const turnId = ++turnCounterRef.current;
       requestControllerRef.current?.abort();
       requestControllerRef.current = null;
-      shouldListenRef.current = false;
-      submitOnEndRef.current = false;
-      recognitionRef.current?.abort();
-      recognitionRef.current = null;
+      pendingTranscriptionTurnRef.current = null;
+      transcriptionRef.current?.abort();
+      transcriptionRef.current = null;
       playbackRef.current?.pause();
       stopListeningCue(recordingTimerRef, setLevel);
       dispatch({ turnId, type: "interrupt" });
@@ -73,9 +68,8 @@ export function PracticeScreen() {
     return () => {
       document.removeEventListener("visibilitychange", interruptWhenHidden);
       requestControllerRef.current?.abort();
-      shouldListenRef.current = false;
-      submitOnEndRef.current = false;
-      recognitionRef.current?.abort();
+      pendingTranscriptionTurnRef.current = null;
+      transcriptionRef.current?.abort();
       playback?.pause();
       stopListeningCue(recordingTimerRef, setLevel);
     };
@@ -84,10 +78,9 @@ export function PracticeScreen() {
   function stopActiveWork(turnId: number) {
     requestControllerRef.current?.abort();
     requestControllerRef.current = null;
-    shouldListenRef.current = false;
-    submitOnEndRef.current = false;
-    recognitionRef.current?.abort();
-    recognitionRef.current = null;
+    pendingTranscriptionTurnRef.current = null;
+    transcriptionRef.current?.abort();
+    transcriptionRef.current = null;
     playbackRef.current?.pause();
     stopListeningCue(recordingTimerRef, setLevel);
     dispatch({ turnId, type: "interrupt" });
@@ -190,160 +183,90 @@ export function PracticeScreen() {
     }
   }
 
-  function completeListening(turnId: number) {
+  async function completeListening(turnId: number) {
     if (turnCounterRef.current !== turnId) {
       return;
     }
 
-    shouldListenRef.current = false;
-    submitOnEndRef.current = true;
     stopListeningCue(recordingTimerRef, setLevel);
+    const transcription = transcriptionRef.current;
+    transcriptionRef.current = null;
 
-    if (recognitionRef.current === null) {
-      submitOnEndRef.current = false;
-      void submitTurn(turnId, latestTranscriptRef.current);
+    if (transcription === null) {
+      if (pendingTranscriptionTurnRef.current === turnId) {
+        pendingTranscriptionTurnRef.current = null;
+        const interruptTurnId = ++turnCounterRef.current;
+        dispatch({ turnId: interruptTurnId, type: "interrupt" });
+      }
       return;
     }
 
     try {
-      recognitionRef.current.stop();
+      const transcript = await transcription.stop();
+
+      if (turnCounterRef.current === turnId) {
+        await submitTurn(turnId, transcript);
+      }
     } catch {
-      recognitionRef.current = null;
-      submitOnEndRef.current = false;
-      void submitTurn(turnId, latestTranscriptRef.current);
+      await playError(turnId);
     }
   }
 
   async function startListening() {
+    if (pendingTranscriptionTurnRef.current !== null) {
+      return;
+    }
+
     const turnId = ++turnCounterRef.current;
     stopActiveWork(turnId);
     unlockPlayback();
-    completedTranscriptRef.current = "";
-    latestTranscriptRef.current = "";
+    pendingTranscriptionTurnRef.current = turnId;
+    dispatch({ turnId, type: "listen" });
 
     try {
-      const Recognition =
-        window.SpeechRecognition ?? window.webkitSpeechRecognition;
+      const transcription = await startRealtimeTranscription({
+        onError: () => {
+          if (
+            turnCounterRef.current !== turnId ||
+            transcriptionRef.current === null
+          ) {
+            return;
+          }
 
-      if (Recognition === undefined) {
-        await playError(turnId);
+          transcriptionRef.current.abort();
+          transcriptionRef.current = null;
+          stopListeningCue(recordingTimerRef, setLevel);
+          void playError(turnId);
+        },
+        onLevel: (nextLevel) => {
+          if (
+            turnCounterRef.current === turnId &&
+            transcriptionRef.current !== null
+          ) {
+            setLevel(nextLevel);
+          }
+        },
+        onTranscript: (text) => {
+          if (
+            turnCounterRef.current !== turnId ||
+            transcriptionRef.current === null
+          ) {
+            return;
+          }
+
+          dispatch({ text, turnId, type: "interim" });
+        },
+      });
+
+      if (turnCounterRef.current !== turnId) {
+        transcription.abort();
         return;
       }
 
-      dispatch({ turnId, type: "listen" });
-      shouldListenRef.current = true;
-      submitOnEndRef.current = false;
-
-      const recognition = new Recognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = "en-US";
-      recognitionTurnRef.current = turnId;
-      recognitionRef.current = recognition;
-
-      const showActivity = (nextLevel: number) => {
-        if (
-          recognitionRef.current === recognition &&
-          turnCounterRef.current === turnId &&
-          shouldListenRef.current
-        ) {
-          setLevel(nextLevel);
-        }
-      };
-
-      recognition.onaudiostart = () => showActivity(0.2);
-      recognition.onsoundstart = () => showActivity(0.55);
-      recognition.onspeechstart = () => showActivity(1);
-      recognition.onspeechend = () => showActivity(0.55);
-      recognition.onsoundend = () => showActivity(0.2);
-      recognition.onaudioend = () => showActivity(0);
-
-      recognition.onresult = (event) => {
-        if (
-          recognitionRef.current !== recognition ||
-          turnCounterRef.current !== turnId
-        ) {
-          return;
-        }
-
-        showActivity(1);
-        const segments: RecognitionSegment[] = [];
-
-        for (let index = 0; index < event.results.length; index += 1) {
-          const result = event.results[index];
-          const transcript = result?.[0]?.transcript ?? "";
-
-          if (result !== undefined) {
-            segments.push({ isFinal: result.isFinal, transcript });
-          }
-        }
-
-        const currentSession = assembleRecognitionResults(segments);
-        latestTranscriptRef.current =
-          `${completedTranscriptRef.current} ${currentSession.latestTranscript}`.trim();
-        dispatch({
-          text: latestTranscriptRef.current,
-          turnId,
-          type: "interim",
-        });
-      };
-
-      recognition.onerror = (event) => {
-        if (event.error === "aborted" || event.error === "no-speech") {
-          return;
-        }
-
-        shouldListenRef.current = false;
-        submitOnEndRef.current = false;
-        stopListeningCue(recordingTimerRef, setLevel);
-
-        if (
-          event.error === "not-allowed" ||
-          event.error === "service-not-allowed"
-        ) {
-          void permissionAfterDenial().then((microphone) => {
-            if (turnCounterRef.current === turnId) {
-              dispatch({ microphone, turnId, type: "permission" });
-            }
-          });
-          return;
-        }
-
-        void playError(turnId);
-      };
-
-      recognition.onend = () => {
-        if (
-          recognitionTurnRef.current !== turnId ||
-          turnCounterRef.current !== turnId
-        ) {
-          return;
-        }
-
-        if (shouldListenRef.current) {
-          setLevel(0);
-          completedTranscriptRef.current = latestTranscriptRef.current;
-          try {
-            recognition.start();
-          } catch {
-            shouldListenRef.current = false;
-            stopListeningCue(recordingTimerRef, setLevel);
-            void playError(turnId);
-          }
-          return;
-        }
-
-        recognitionRef.current = null;
-
-        if (submitOnEndRef.current) {
-          submitOnEndRef.current = false;
-          void submitTurn(turnId, latestTranscriptRef.current);
-        }
-      };
-
-      recognition.start();
+      pendingTranscriptionTurnRef.current = null;
+      transcriptionRef.current = transcription;
       recordingTimerRef.current = setTimeout(
-        () => completeListening(turnId),
+        () => void completeListening(turnId),
         RECORDING_LIMIT_MS,
       );
     } catch (error) {
@@ -351,9 +274,8 @@ export function PracticeScreen() {
         return;
       }
 
-      shouldListenRef.current = false;
-      submitOnEndRef.current = false;
-      recognitionRef.current = null;
+      pendingTranscriptionTurnRef.current = null;
+      transcriptionRef.current = null;
       stopListeningCue(recordingTimerRef, setLevel);
 
       if (
@@ -380,7 +302,7 @@ export function PracticeScreen() {
 
   function activateTalkControl() {
     if (state.lifecycle === "listening") {
-      completeListening(state.activeTurnId);
+      void completeListening(state.activeTurnId);
       return;
     }
 

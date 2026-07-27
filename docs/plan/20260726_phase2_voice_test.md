@@ -17,7 +17,7 @@ branch preview unless the row explicitly says localhost.
 | Speaker volume |  |
 
 Mark each check **Pass**, **Fail**, or **Blocked**, and add a short note when
-the recognized text differs from what you said.
+the transcribed text differs from what you said.
 
 ## A. First voice turn
 
@@ -27,30 +27,30 @@ the recognized text differs from what you said.
 3. Tap `Talk`.
 4. If the browser asks for microphone access, choose **Allow**.
 5. Say: **“Why do stars twinkle?”**
-6. Confirm the activity bars rise when the recognizer detects speech and rest
-   when speech ends. With Reduce Motion enabled, they remain at rest.
+6. Confirm the activity bars track microphone loudness while you speak and
+   rest after you tap `Done`. With Reduce Motion enabled, they remain at rest.
 7. Tap `Done`.
 8. Confirm the visible sequence is `Listening` → `Thinking` → `Speaking` →
    `Ready`. If the request takes more than about four seconds, `Thinking` may
    advance once to `Still thinking`.
-9. Confirm your recognized speech appears under `You`, one reply appears under
+9. Confirm your transcribed speech appears under `You`, one reply appears under
    `AI reply`, and Talia reads that same complete reply aloud.
 10. Start another turn, say **“Hello hello”**, and tap `Done` as soon as the
     words appear. Confirm both words remain under `You` and the result is an
     ordinary reply, not **“I didn't quite catch that — want to try again?”**
-11. On Chrome Android, say **“Tell me something funny about elephants.”**
-    Confirm the visible and submitted transcript contains the sentence once,
-    without accumulating shorter partial versions of it.
+11. Say **“Tell me something funny about elephants.”** Confirm OpenAI's
+    streaming text updates in place while you speak and the submitted
+    transcript contains the sentence once.
 
 | Check | Result | Notes |
 | --- | --- | --- |
 | Permission accepted and retained |  |  |
-| Recognition usable |  | Recognized: |
+| OpenAI transcription usable |  | Transcribed: |
 | State sequence correct |  |  |
 | Reply text appeared once |  |  |
 | Talia played once and matched the text |  |  |
-| Short repeated greeting was retained and answered |  | Recognized: |
-| Android cumulative hypotheses were collapsed |  | Recognized: |
+| Short repeated greeting was retained and answered |  | Transcribed: |
+| Streaming text finalized once |  | Transcribed: |
 
 ## B. Barge in during playback
 
