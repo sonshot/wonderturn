@@ -29,9 +29,6 @@ export function PracticeScreen() {
   const finalTranscriptRef = useRef("");
   const latestTranscriptRef = useRef("");
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const meterFrameRef = useRef<number | null>(null);
   const playbackRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -64,13 +61,7 @@ export function PracticeScreen() {
       recognitionRef.current?.abort();
       recognitionRef.current = null;
       playbackRef.current?.pause();
-      stopMedia(
-        mediaStreamRef,
-        audioContextRef,
-        meterFrameRef,
-        recordingTimerRef,
-        setLevel,
-      );
+      stopListeningCue(recordingTimerRef, setLevel);
       dispatch({ turnId, type: "interrupt" });
     }
 
@@ -82,13 +73,7 @@ export function PracticeScreen() {
       submitOnEndRef.current = false;
       recognitionRef.current?.abort();
       playback?.pause();
-      stopMedia(
-        mediaStreamRef,
-        audioContextRef,
-        meterFrameRef,
-        recordingTimerRef,
-        setLevel,
-      );
+      stopListeningCue(recordingTimerRef, setLevel);
     };
   }, []);
 
@@ -100,13 +85,7 @@ export function PracticeScreen() {
     recognitionRef.current?.abort();
     recognitionRef.current = null;
     playbackRef.current?.pause();
-    stopMedia(
-      mediaStreamRef,
-      audioContextRef,
-      meterFrameRef,
-      recordingTimerRef,
-      setLevel,
-    );
+    stopListeningCue(recordingTimerRef, setLevel);
     dispatch({ turnId, type: "interrupt" });
   }
 
@@ -163,6 +142,7 @@ export function PracticeScreen() {
     const history = stateRef.current.history;
     dispatch({ said, turnId, type: "think" });
     const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), TURN_TIMEOUT_MS);
     requestControllerRef.current = controller;
 
     try {
@@ -170,10 +150,7 @@ export function PracticeScreen() {
         body: JSON.stringify({ history, said }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
-        signal: AbortSignal.any([
-          controller.signal,
-          AbortSignal.timeout(TURN_TIMEOUT_MS),
-        ]),
+        signal: controller.signal,
       });
       const body: unknown = await response.json();
 
@@ -202,6 +179,7 @@ export function PracticeScreen() {
     } catch {
       await playError(turnId);
     } finally {
+      clearTimeout(timeout);
       if (requestControllerRef.current === controller) {
         requestControllerRef.current = null;
       }
@@ -215,13 +193,7 @@ export function PracticeScreen() {
 
     shouldListenRef.current = false;
     submitOnEndRef.current = true;
-    stopMedia(
-      mediaStreamRef,
-      audioContextRef,
-      meterFrameRef,
-      recordingTimerRef,
-      setLevel,
-    );
+    stopListeningCue(recordingTimerRef, setLevel);
 
     if (recognitionRef.current === null) {
       submitOnEndRef.current = false;
@@ -246,24 +218,14 @@ export function PracticeScreen() {
     latestTranscriptRef.current = "";
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      if (turnCounterRef.current !== turnId) {
-        stream.getTracks().forEach((track) => track.stop());
-        return;
-      }
-
       const Recognition =
         window.SpeechRecognition ?? window.webkitSpeechRecognition;
 
       if (Recognition === undefined) {
-        stream.getTracks().forEach((track) => track.stop());
         await playError(turnId);
         return;
       }
 
-      mediaStreamRef.current = stream;
-      startMeter(stream, audioContextRef, meterFrameRef, setLevel);
       dispatch({ turnId, type: "listen" });
       shouldListenRef.current = true;
       submitOnEndRef.current = false;
@@ -275,7 +237,32 @@ export function PracticeScreen() {
       recognitionTurnRef.current = turnId;
       recognitionRef.current = recognition;
 
+      const showActivity = (nextLevel: number) => {
+        if (
+          recognitionRef.current === recognition &&
+          turnCounterRef.current === turnId &&
+          shouldListenRef.current
+        ) {
+          setLevel(nextLevel);
+        }
+      };
+
+      recognition.onaudiostart = () => showActivity(0.2);
+      recognition.onsoundstart = () => showActivity(0.55);
+      recognition.onspeechstart = () => showActivity(1);
+      recognition.onspeechend = () => showActivity(0.55);
+      recognition.onsoundend = () => showActivity(0.2);
+      recognition.onaudioend = () => showActivity(0);
+
       recognition.onresult = (event) => {
+        if (
+          recognitionRef.current !== recognition ||
+          turnCounterRef.current !== turnId
+        ) {
+          return;
+        }
+
+        showActivity(1);
         let interim = "";
 
         for (
@@ -310,13 +297,7 @@ export function PracticeScreen() {
 
         shouldListenRef.current = false;
         submitOnEndRef.current = false;
-        stopMedia(
-          mediaStreamRef,
-          audioContextRef,
-          meterFrameRef,
-          recordingTimerRef,
-          setLevel,
-        );
+        stopListeningCue(recordingTimerRef, setLevel);
 
         if (
           event.error === "not-allowed" ||
@@ -342,17 +323,12 @@ export function PracticeScreen() {
         }
 
         if (shouldListenRef.current) {
+          setLevel(0);
           try {
             recognition.start();
           } catch {
             shouldListenRef.current = false;
-            stopMedia(
-              mediaStreamRef,
-              audioContextRef,
-              meterFrameRef,
-              recordingTimerRef,
-              setLevel,
-            );
+            stopListeningCue(recordingTimerRef, setLevel);
             void playError(turnId);
           }
           return;
@@ -379,13 +355,7 @@ export function PracticeScreen() {
       shouldListenRef.current = false;
       submitOnEndRef.current = false;
       recognitionRef.current = null;
-      stopMedia(
-        mediaStreamRef,
-        audioContextRef,
-        meterFrameRef,
-        recordingTimerRef,
-        setLevel,
-      );
+      stopListeningCue(recordingTimerRef, setLevel);
 
       if (
         error instanceof DOMException &&
@@ -448,10 +418,7 @@ export function PracticeScreen() {
   );
 }
 
-function stopMedia(
-  mediaStreamRef: RefObject<MediaStream | null>,
-  audioContextRef: RefObject<AudioContext | null>,
-  meterFrameRef: RefObject<number | null>,
+function stopListeningCue(
   recordingTimerRef: RefObject<ReturnType<typeof setTimeout> | null>,
   setLevel: (value: number) => void,
 ) {
@@ -459,50 +426,7 @@ function stopMedia(
     clearTimeout(recordingTimerRef.current);
     recordingTimerRef.current = null;
   }
-  if (meterFrameRef.current !== null) {
-    cancelAnimationFrame(meterFrameRef.current);
-    meterFrameRef.current = null;
-  }
-  mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
-  mediaStreamRef.current = null;
-  if (audioContextRef.current !== null) {
-    void audioContextRef.current.close();
-    audioContextRef.current = null;
-  }
   setLevel(0);
-}
-
-function startMeter(
-  stream: MediaStream,
-  audioContextRef: RefObject<AudioContext | null>,
-  meterFrameRef: RefObject<number | null>,
-  setLevel: (value: number) => void,
-) {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    return;
-  }
-
-  const context = new AudioContext();
-  const source = context.createMediaStreamSource(stream);
-  const analyser = context.createAnalyser();
-  analyser.fftSize = 256;
-  source.connect(analyser);
-  audioContextRef.current = context;
-  const samples = new Uint8Array(analyser.frequencyBinCount);
-
-  const update = () => {
-    analyser.getByteTimeDomainData(samples);
-    let peak = 0;
-
-    for (const sample of samples) {
-      peak = Math.max(peak, Math.abs(sample - 128) / 128);
-    }
-
-    setLevel(Math.min(1, peak * 3));
-    meterFrameRef.current = requestAnimationFrame(update);
-  };
-
-  update();
 }
 
 function PracticeHeader({ onStartOver }: { onStartOver: () => void }) {
@@ -730,7 +654,7 @@ function LevelMeter({ level }: { level: number }) {
       {heights.map((weight, index) => (
         <span
           key={index}
-          className="bg-ink-muted w-0.5 rounded-full motion-reduce:h-1!"
+          className="bg-ink-muted w-0.5 rounded-full transition-[height] duration-100 motion-reduce:h-1! motion-reduce:transition-none"
           style={{ height: `${4 + level * weight * 20}px` }}
         />
       ))}

@@ -393,7 +393,7 @@ red spectacle this system forbids.
 Status glyphs are always paired with visible text: open circle for Ready,
 microphone for both permission rows, ellipsis for Thinking, speaker for
 Speaking, exclamation for Error. Listening is the exception — its bars are a
-live level meter rather than an icon (see Listening cue).
+live speech-activity cue rather than an icon (see Listening cue).
 
 The gap between the status row and the talk control is `--spacing-md`.
 
@@ -479,9 +479,10 @@ breaks this document's own accessibility floor.
 
 ### Listening cue
 
-The Listening status glyph *is* the level meter — the "level bars" named under
-State status are live, not an icon of bars. Its muted-ink bars are driven by
-real microphone amplitude at display refresh rate.
+The Listening status glyph *is* the speech-activity cue — the "activity bars"
+named under State status are live, not an icon of bars. Its muted-ink bars move
+between rest, audio, sound, and speech levels reported by the browser
+recognizer. They do not claim to show raw microphone amplitude.
 
 Make this good rather than tolerable. It is the one genuinely alive moment the
 design permits, and it earns that permission by being honest: it reflects the
@@ -490,8 +491,8 @@ the fastest possible answer to the only question that matters while recording �
 *is it hearing me?*
 
 It never appears inside the talk control, which carries the stop glyph and
-`Done` at that moment. It stops on the same frame recording stops, rests at its
-minimum height, and never moves while the microphone is inactive. Under
+`Done` at that moment. It stops on the same frame recognition stops, rests at
+its minimum height, and never moves while the microphone is inactive. Under
 `prefers-reduced-motion: reduce`, hold the bars at rest and let the `Listening`
 text carry the state alone.
 
@@ -641,8 +642,8 @@ Motion is functional and brief:
 - Thinking dots: one 900ms sequence, then at rest.
 - Thinking text advances once, at ~4s: `Thinking` → `Still thinking`.
 
-The level meter is not on this list. It is not an animation with a duration —
-it is a live readout of microphone amplitude, and it stops when the input does.
+The speech-activity cue is not on this list. It follows recognizer lifecycle
+events and stops when recognition does.
 
 With `prefers-reduced-motion: reduce`, remove transforms and animation.
 Change status text instantly. Never auto-scroll in a way that steals the
@@ -677,8 +678,9 @@ Target WCAG 2.2 AA.
   during playback.
 - Final AI replies enter both the visual tree and accessibility tree
   atomically.
-- The level meter is hidden from assistive technology; the `Listening` text
-  carries that state on its own, and a bar-height readout announces nothing.
+- The speech-activity cue is hidden from assistive technology; the `Listening`
+  text carries that state on its own, and a bar-height readout announces
+  nothing.
 - Essential icons have accessible names; decorative graphics are hidden
   from assistive technology.
 - Support portrait and landscape.
@@ -738,7 +740,7 @@ Before considering a screen consistent with Wonderturn, verify:
 - The canvas reads as warm paper beside white, and the control zone sits on the
   plinth tone.
 - The talk control has its inner rim, and its Listening ring is a static shape.
-- The level meter is live only while recording, and rests otherwise.
+- The speech-activity cue is live only while listening, and rests otherwise.
 - The reading family sets the transcript and titles; the UI family sets
   everything else.
 - The canvas, ink, and primary action use the declared tokens.

@@ -47,7 +47,7 @@ parses the bounded request, calls the one text seam, pairs fixed outcomes with
 bundled audio, and fails closed into the content-free error contract. Its
 offline route tests and production build pass. The interactive voice screen is
 code-complete locally: its explicit lifecycle reducer, browser recognition,
-level meter, atomic playback, barge-in, bounded sitting, stale-turn rejection,
+speech-activity cue, atomic playback, barge-in, bounded sitting, stale-turn rejection,
 permission states, and client-side fixed failure audio pass offline
 verification and a 320px layout check. Direct localhost Google SSO reaches
 this screen and survives a Safari reload (D61). Phase 2 still needs its manual
@@ -950,7 +950,7 @@ Append-only. Stable IDs; reversals say what they supersede.
   a static Listening ring, with the ring-versus-glow line drawn explicitly — an
   instrument holds a shape, a companion moves; and the listening waveform
   promoted from an optional flourish inside the control to the Listening status
-  glyph itself, as a real amplitude meter. That last one resolves a collision the
+  glyph itself, as a live speech-activity cue. That last one resolves a collision the
   old text created, where a waveform and a stop glyph competed inside one 104px
   circle, and it is the design's one permitted living element precisely because
   it reflects the person's own voice rather than performing a personality.
@@ -1223,3 +1223,19 @@ Append-only. Stable IDs; reversals say what they supersede.
   arrives. The classifier also pins greetings, short answers, and repetitions
   of real words to `ordinary`; `nudge` remains for genuinely content-free
   input.
+- **D63 (2026-07-27) — Browser recognition exclusively owns the microphone,
+  and the client timeout uses an explicit controller timer.** Real-device
+  testing isolated two independent compatibility failures. On Chrome Android,
+  raw `getUserMedia` capture drove the amplitude bars and Web Speech worked by
+  itself, but Web Speech produced no transcript while both consumers held the
+  microphone. The production screen therefore removes its parallel
+  `getUserMedia`/Web Audio stream and drives an honest speech-activity cue from
+  the recognizer's audio, sound, speech, and result events. This narrows the
+  visual promise from raw amplitude while preserving the cue's purpose and
+  gives recognition one owner of the device.
+
+  On iPhone Safari, stopping after successful recognition produced the fixed
+  client error without any `POST /api/turn` reaching Vercel. The client had
+  called `AbortSignal.any()`, which WebKit did not ship until Safari 17.4. A
+  plain `AbortController` plus an explicit 15-second timer preserves P20's
+  timeout and cancellation semantics without that newer browser dependency.

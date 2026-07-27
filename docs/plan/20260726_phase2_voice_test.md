@@ -27,7 +27,8 @@ the recognized text differs from what you said.
 3. Tap `Talk`.
 4. If the browser asks for microphone access, choose **Allow**.
 5. Say: **“Why do stars twinkle?”**
-6. Confirm the level bars move while you speak.
+6. Confirm the activity bars rise when the recognizer detects speech and rest
+   when speech ends. With Reduce Motion enabled, they remain at rest.
 7. Tap `Done`.
 8. Confirm the visible sequence is `Listening` → `Thinking` → `Speaking` →
    `Ready`. If the request takes more than about four seconds, `Thinking` may
