@@ -51,10 +51,10 @@ uses one microphone stream for OpenAI live transcription and honest amplitude
 bars. Its authenticated, model-scoped token route, 24 kHz PCM capture,
 streaming transcript, manual finalization, explicit lifecycle reducer, atomic
 playback, barge-in, bounded sitting, stale-turn rejection, permission states,
-and client-side fixed failure audio are code-complete locally. Direct localhost
-Google SSO reaches this screen and survives a Safari reload (D61). Phase 2
-still needs its manual phone outcome and delayed-stale-result checks before
-exit.
+client-side fixed failure audio, and latest-turn repair are code-complete
+locally. Direct localhost Google SSO reaches this screen and survives a Safari
+reload (D61). Phase 2 still needs its manual phone outcome, repair, and
+delayed-stale-result checks before exit.
 
 ## Scope
 
@@ -239,6 +239,12 @@ leave their numbers behind rather than causing a renumber (D24).
   bounded too: the client fetch carries `AbortSignal.timeout(15_000)`, and
   the timeout resolves to P7's one failure shape, so the thinking cue cannot
   run forever.
+- **P21 — Repair rewinds exactly one exchange.** `Say again` is available only
+  for the newest recognized human turn during thinking, speaking, and idle.
+  It invalidates active work, removes that turn plus the zero or one AI reply
+  based on it from both rendered and submitted history, and starts ordinary
+  listening immediately. It never changes earlier exchanges, asks for
+  confirmation, retains audio, or introduces a repair lifecycle state.
 
 ## Phases
 
@@ -432,6 +438,12 @@ on-screen copy come from `DESIGN.md` and are not restated here (D36). Barge-in
 stops playback and starts listening. A client turn identifier enforces P1;
 request cancellation only saves work.
 
+The newest completed human turn carries `Say again` through thinking,
+speaking, and idle. It applies P21 before opening the same transcription
+session as `Talk`; the replacement is a new turn rather than an edit to a
+submitted request. The existing client turn identifier is the stale-result
+boundary when repair races a pending reply.
+
 Target timeline, to be checked against Phase 0b measurements:
 
 | | |
@@ -447,8 +459,9 @@ If this misses, the clearing check is the critical path and the first lever
 
 **Exit:** every outcome kind is reachable by hand on a phone, including a
 forced clearing rejection that discards completed TTS. With a deliberately
-delayed turn, starting over and starting a new turn both prevent the stale
-text and audio from appearing.
+delayed turn, starting over, starting a new turn, and saying the latest turn
+again prevent stale text and audio from appearing. Repair preserves earlier
+exchanges while removing the discarded wording from future model history.
 
 ### Phase 3 — Safety verification
 
@@ -564,6 +577,7 @@ Each feature-doc acceptance outcome, with where it is proven.
 | 10. Breakage is visible | Induced failure reaches the alert channel | 4 |
 | 11. Doesn't pretend to remember | The "what do you remember from last time?" ask in `pnpm register` | 3 |
 | 12. Spend ceiling holds | Tiny Gateway budget: crossing request may finish; next request rejected before new provider work | 4 |
+| 13. Mishearing is recoverable | Reducer contract plus manual repair during thinking, speaking, and idle on both phones; delayed discarded result never surfaces | 2, 4 |
 
 G1 is a future gate on expanding access, not an MVP gate.
 
@@ -1302,3 +1316,18 @@ Append-only. Stable IDs; reversals say what they supersede.
   diagnostics-function request with a cache-busting query. This removes
   backend work and makes later taps a cache hit without changing playback
   authorization semantics.
+- **D68 (2026-07-27) — Latest-turn repair is explicit undo, not transcript
+  inference. Extends P1 and P8.** Live transcription accuracy is acceptable
+  but not infallible, and the prior screen made recognized wording final as
+  soon as the person tapped `Done`. The newest completed `You` turn therefore
+  carries `Say again` until later listening begins. Activating it invalidates
+  pending work, stops playback, removes that human turn and its zero or one
+  dependent AI reply from client history, and opens the ordinary listening
+  path immediately.
+
+  Repair does not retain or re-transcribe audio, ask for confirmation on every
+  successful turn, infer intended words from conversation history, expose
+  alternatives, or edit older turns beneath replies built from them. Those
+  choices preserve the fast happy path, the no-storage boundary, and honest
+  model context while giving the child one visible way to recover from a
+  mishearing.

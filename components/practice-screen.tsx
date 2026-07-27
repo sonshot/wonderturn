@@ -213,7 +213,7 @@ export function PracticeScreen() {
     }
   }
 
-  async function startListening() {
+  async function startListening(repairLatest = false) {
     if (pendingTranscriptionTurnRef.current !== null) {
       return;
     }
@@ -222,7 +222,7 @@ export function PracticeScreen() {
     stopActiveWork(turnId);
     unlockPlayback();
     pendingTranscriptionTurnRef.current = turnId;
-    dispatch({ turnId, type: "listen" });
+    dispatch({ turnId, type: repairLatest ? "repair" : "listen" });
 
     try {
       const transcription = await startRealtimeTranscription({
@@ -310,10 +310,14 @@ export function PracticeScreen() {
     void startListening();
   }
 
+  function repairLatestTurn() {
+    void startListening(true);
+  }
+
   return (
     <main className="bg-canvas mx-auto flex min-h-dvh w-full max-w-[42rem] flex-col">
       <PracticeHeader onStartOver={startOver} />
-      <Transcript state={state} />
+      <Transcript onRepairLatest={repairLatestTurn} state={state} />
       <ControlZone
         level={level}
         onActivate={activateTalkControl}
@@ -367,7 +371,13 @@ function PracticeHeader({ onStartOver }: { onStartOver: () => void }) {
   );
 }
 
-function Transcript({ state }: { state: PracticeState }) {
+function Transcript({
+  onRepairLatest,
+  state,
+}: {
+  onRepairLatest: () => void;
+  state: PracticeState;
+}) {
   const notice =
     state.microphone === "needed"
       ? "I need to hear you to practice. Tap Allow, then choose Allow again when your phone asks."
@@ -385,6 +395,13 @@ function Transcript({ state }: { state: PracticeState }) {
     state.interimText === "" &&
     notice === null &&
     error === null;
+  const canRepairLatest =
+    state.lifecycle === "thinking" ||
+    state.lifecycle === "speaking" ||
+    state.lifecycle === "idle";
+  const latestUserIndex = canRepairLatest
+    ? state.history.findLastIndex((entry) => entry.role === "user")
+    : -1;
 
   if (isEmpty) {
     return (
@@ -416,6 +433,15 @@ function Transcript({ state }: { state: PracticeState }) {
             <p className="font-reading text-transcript text-ink">
               {entry.text}
             </p>
+            {index === latestUserIndex ? (
+              <button
+                type="button"
+                className="text-button text-ink-muted focus-visible:ring-focus focus-visible:ring-offset-canvas mt-xs inline-flex min-h-12 items-center self-start rounded-sm underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:outline-none"
+                onClick={onRepairLatest}
+              >
+                Say again
+              </button>
+            ) : null}
           </li>
         ))}
         {state.lifecycle === "listening" && state.interimText !== "" ? (

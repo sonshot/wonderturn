@@ -161,6 +161,31 @@ settings changes directly.
 | No duplicate text or audio |  |  |
 | Start over recovered |  |  |
 
+## I. Say the latest turn again
+
+1. Complete an ordinary exchange with **“What color is grass?”** and let it
+   return to `Ready`.
+2. Start another turn, say **“Tell me about elephants.”**, and tap `Done`.
+3. While the status says `Thinking`, tap `Say again` under that newest `You`
+   turn.
+4. Confirm listening starts immediately, the elephant wording disappears, the
+   earlier grass exchange remains, and no elephant reply appears later.
+5. Say **“Tell me about penguins.”**, tap `Done`, and wait for Talia to begin
+   speaking.
+6. Tap `Say again` while Talia is speaking. Confirm playback stops, the
+   penguin turn and its reply disappear, and listening starts.
+7. Say **“Tell me about whales.”**, tap `Done`, and let the exchange finish.
+8. From `Ready`, tap `Say again` once more. Confirm the whale exchange
+   disappears and listening starts while the earlier grass exchange remains.
+
+| Check | Result | Notes |
+| --- | --- | --- |
+| Repair while thinking removed the turn and stale reply |  |  |
+| Repair while speaking stopped audio and removed the exchange |  |  |
+| Repair from idle started listening |  |  |
+| Earlier exchange remained throughout |  |  |
+| Only the newest `You` turn showed `Say again` |  |  |
+
 ## Engineering-assisted checks
 
 Do not try to manufacture these through sensitive or dangerous voice prompts.
@@ -179,7 +204,7 @@ ordinary, nudge, and disclosure rows above can be run now.
 
 ## Device summary
 
-| Device/browser | A | B | C | D | E | F | G | H | Notes |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| iPhone / Safari |  |  |  |  |  |  |  |  |  |
-| Android / Chrome |  |  |  |  |  |  |  |  |  |
+| Device/browser | A | B | C | D | E | F | G | H | I | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| iPhone / Safari |  |  |  |  |  |  |  |  |  |  |
+| Android / Chrome |  |  |  |  |  |  |  |  |  |  |

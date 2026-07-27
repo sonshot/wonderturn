@@ -16,6 +16,7 @@ export type PracticeState = {
 
 export type PracticeAction =
   | { turnId: number; type: "listen" }
+  | { turnId: number; type: "repair" }
   | { turnId: number; type: "interrupt" }
   | { text: string; turnId: number; type: "interim" }
   | { said: string; turnId: number; type: "think" }
@@ -53,10 +54,18 @@ export function practiceReducer(
   state: PracticeState,
   action: PracticeAction,
 ): PracticeState {
-  if (action.type === "listen") {
+  if (action.type === "listen" || action.type === "repair") {
+    const latestUserIndex = state.history.findLastIndex(
+      (entry) => entry.role === "user",
+    );
+
     return {
       ...state,
       activeTurnId: action.turnId,
+      history:
+        action.type === "repair" && latestUserIndex !== -1
+          ? state.history.slice(0, latestUserIndex)
+          : state.history,
       interimText: "",
       lifecycle: "listening",
       microphone: "ready",

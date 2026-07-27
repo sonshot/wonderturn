@@ -72,6 +72,50 @@ describe("practice state machine", () => {
     });
   });
 
+  it("repairs the latest human turn and every reply based on it", () => {
+    const state: PracticeState = {
+      ...initialPracticeState,
+      activeTurnId: 2,
+      history: [
+        { role: "user", text: "Tell me about volcanoes." },
+        { role: "assistant", text: "Volcanoes release hot rock and gas." },
+        { role: "user", text: "Tell me about telephones." },
+        { role: "assistant", text: "Telephones carry voices over distance." },
+      ],
+      lifecycle: "speaking",
+    };
+    const repairing = practiceReducer(state, {
+      turnId: 3,
+      type: "repair",
+    });
+
+    expect(repairing).toMatchObject({
+      activeTurnId: 3,
+      history: state.history.slice(0, 2),
+      interimText: "",
+      lifecycle: "listening",
+    });
+  });
+
+  it("repairs a human turn while its reply is still pending", () => {
+    const state: PracticeState = {
+      ...initialPracticeState,
+      activeTurnId: 2,
+      history: [
+        { role: "user", text: "Tell me about volcanoes." },
+        { role: "assistant", text: "Volcanoes release hot rock and gas." },
+        { role: "user", text: "Tell me about telephones." },
+      ],
+      lifecycle: "thinking",
+    };
+    const repairing = practiceReducer(state, {
+      turnId: 3,
+      type: "repair",
+    });
+
+    expect(repairing.history).toEqual(state.history.slice(0, 2));
+  });
+
   it("keeps only the newest twenty history entries", () => {
     const history: PracticeState["history"] = Array.from(
       { length: 20 },

@@ -363,6 +363,16 @@ Streaming transcription updates the current `You` turn in place. Do not
 announce every interim word to assistive technology. A cleared AI reply is
 inserted once, in full.
 
+Only the newest completed `You` turn carries a secondary `Say again` action.
+Place it beneath the transcript text, aligned to the same left edge, with at
+least a 48 by 48 CSS-pixel target. It is a quiet underlined text action in
+muted ink, not a second filled control, chip, bubble, menu, or icon-only
+button. It remains available while the reply is thinking, speaking, and idle,
+and disappears as soon as a later listening turn begins. Activating it stops
+pending work or playback, removes that `You` turn and any AI reply based on
+it, and immediately returns to ordinary listening. Do not add confirmation
+copy or a separate repair state.
+
 Redirects, disclosures, nudges, and ordinary replies share identical visual
 styling. The interface does not expose or dramatize safety machinery.
 
@@ -543,8 +553,9 @@ not borrow the speaking presentation, and the audio changes nothing visually.
 
 Preserve every completed transcript turn. Do not insert a fabricated or
 empty `AI reply` for the failed attempt. Show the error notice as the newest
-item in the transcript region; `Start over` remains the only action that
-clears history.
+item in the transcript region. `Start over` remains the only action that
+clears the whole history; `Say again` may remove only the newest human turn
+and the single reply that depended on it.
 
 ### Sign-in gate
 
@@ -716,6 +727,7 @@ Use plain English, contractions, and short sentences. Prefer the next
 concrete action over technical explanation.
 
 - Say `Talk`, not `Begin voice interaction`.
+- Say `Say again`, not `Wrong`, `Correct`, or `Try harder`.
 - Say `I need to hear you to practice`, not `Microphone permission was not
   granted`.
 - Say `AI reply`, not a human name or relational role.
@@ -751,6 +763,8 @@ Before considering a screen consistent with Wonderturn, verify:
   has been introduced.
 - The transcript is readable at the declared size and survives 200% zoom.
 - The talk control and start-over action meet their target sizes.
+- The latest-turn `Say again` action meets its target size, removes no earlier
+  exchange, and is absent while listening.
 - Safe-area insets and short landscape viewports do not obscure controls or
   transcript.
 - Reduced motion produces a complete, understandable experience.

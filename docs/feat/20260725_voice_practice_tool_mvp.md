@@ -173,6 +173,11 @@ appear to disagree about appearance, `DESIGN.md` is right.
   makes any unfinished earlier turn obsolete: its result must never later
   appear or be spoken. The plan pins how active work is cancelled or
   discarded.
+- **A misheard latest turn is reversible.** The person can say the newest
+  recognized turn again without restarting the sitting. Repair abandons any
+  reply based on that wording and removes both from conversational history
+  before listening resumes; it never edits an older turn in place beneath
+  replies that depended on it.
 - **An interruption isn't a failure** (see Key flows). If the OS discards the
   backgrounded page outright, the next visit is a fresh, empty conversation —
   a clean start, not a crash.
@@ -225,7 +230,12 @@ appear to disagree about appearance, `DESIGN.md` is right.
    short. Tapping while a reply is still being worked out does the same
    thing, abandoning that turn for a new one — there is no state in which
    the button means something else.
-9. **Something goes wrong:** Any pipeline failure, including the safety
+9. **Misheard latest turn:** Activating the repair action on the newest
+   recognized human turn stops pending work or playback, removes that turn
+   and any reply based on it from the visible transcript and model history,
+   and starts listening immediately. Earlier exchanges remain. No
+   confirmation, explanation, or error interrupts the repair.
+10. **Something goes wrong:** Any pipeline failure, including the safety
    check being unavailable or the spend ceiling being hit (see Security) →
    one clear "something went wrong, try again," plus the grown-up nudge if
    it persists. No half-finished, unchecked, or guessed replies. A reply is
@@ -345,6 +355,11 @@ Shipped when all of these hold, each with evidence:
     reached, no new provider work begins and the person sees the ordinary
     failure state. The plan pins the ceiling's scope, values, window, and
     concurrency semantics.
+13. **A mishearing is recoverable.** During thinking, speaking, and idle, the
+    newest recognized human turn can be said again in one action. The
+    discarded wording, any dependent AI reply, and any stale in-flight result
+    disappear from both the transcript and future model history; earlier
+    exchanges stay intact.
 
 Left for the plan to pin: the session window and how soon removal from the
 allowlist bites; the reply-length bound that keeps a
