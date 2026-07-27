@@ -106,8 +106,13 @@ their checked manifest.
 The practice screen streams one microphone source as 24 kHz mono PCM to
 OpenAI `gpt-realtime-whisper` through Vercel AI Gateway. The same source drives
 the visible input-level bars. English is pinned as the language hint and the
-stream uses the model's `medium` delay setting; tapping `Done` closes the audio
+stream uses the model's `low` delay setting; tapping `Done` closes the audio
 stream and the resulting final transcript enters the existing turn pipeline.
+
+Microphone permission and the short-lived token request begin concurrently.
+Audio is sent in 2048-sample chunks. Safari's delayed-playback unlock uses the
+preloaded, cacheable static `/audio/silence.wav` asset rather than a server
+function request.
 
 The browser never receives the project's Gateway credential. An authenticated
 `POST /api/transcriptions/token` mints a 60-second token scoped only to the

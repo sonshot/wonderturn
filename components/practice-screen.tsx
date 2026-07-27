@@ -18,6 +18,7 @@ import {
 
 const TURN_TIMEOUT_MS = 15_000;
 const RECORDING_LIMIT_MS = 60_000;
+const PLAYBACK_UNLOCK_AUDIO = "/audio/silence.wav";
 
 export function PracticeScreen() {
   const [state, dispatch] = useReducer(practiceReducer, initialPracticeState);
@@ -107,7 +108,7 @@ export function PracticeScreen() {
     }
 
     audio.pause();
-    audio.src = `/api/diagnostics/audio?mode=silence&run=${Date.now()}`;
+    audio.src = PLAYBACK_UNLOCK_AUDIO;
     audio.currentTime = 0;
     void audio.play().catch(() => undefined);
   }
@@ -334,6 +335,7 @@ export function PracticeScreen() {
         }}
         preload="auto"
         ref={playbackRef}
+        src={PLAYBACK_UNLOCK_AUDIO}
       />
     </main>
   );

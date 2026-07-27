@@ -44,6 +44,8 @@ export async function startRealtimeTranscription(
 
   try {
     await context.resume();
+    const tokenPromise = requestTranscriptionToken();
+    void tokenPromise.catch(() => undefined);
     microphone = await navigator.mediaDevices.getUserMedia({
       audio: {
         autoGainControl: true,
@@ -51,7 +53,7 @@ export async function startRealtimeTranscription(
         noiseSuppression: true,
       },
     });
-    const token = await requestTranscriptionToken();
+    const token = await tokenPromise;
     const gateway = createGateway({ apiKey: token });
     let audioController:
       ReadableStreamDefaultController<Uint8Array | string> | undefined;
@@ -72,7 +74,7 @@ export async function startRealtimeTranscription(
       providerOptions: {
         openai: {
           language: "en",
-          streaming: { delay: "medium" },
+          streaming: { delay: "low" },
         },
       },
     });
@@ -203,7 +205,7 @@ function startMicrophoneCapture(
   onLevel: (level: number) => void,
 ) {
   const source = context.createMediaStreamSource(microphone);
-  const processor = context.createScriptProcessor(4096, 1, 1);
+  const processor = context.createScriptProcessor(2048, 1, 1);
   let active = true;
 
   processor.onaudioprocess = (event) => {

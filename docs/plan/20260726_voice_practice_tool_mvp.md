@@ -1288,3 +1288,17 @@ Append-only. Stable IDs; reversals say what they supersede.
   existing budget now covers transcription as well as text work. Any token,
   socket, provider, or finalization failure fails closed into the ordinary
   content-free error state.
+- **D67 (2026-07-27) — The first transcription latency pass changes transport
+  timing, not product semantics. Extends D66.** Real preview use proved the
+  OpenAI path reliable but slower than the operator wants. The experiment
+  changes `gpt-realtime-whisper` delay from `medium` to `low`, starts
+  microphone permission and token minting concurrently, and halves PCM capture
+  chunks from 4096 to 2048 samples (about 171ms to 85ms at 24 kHz). These are
+  deliberate latency-for-accuracy and batching tradeoffs to validate on both
+  family phones; the final provider transcript still owns submitted speech.
+
+  Safari's already-proven delayed-playback unlock remains, but its silence is
+  now a preloaded, immutable static WAV under `public/` rather than a dynamic
+  diagnostics-function request with a cache-busting query. This removes
+  backend work and makes later taps a cache hit without changing playback
+  authorization semantics.
