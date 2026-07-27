@@ -16,11 +16,13 @@ import {
 
 const TRANSCRIPTION_REQUEST_TIMEOUT_MS = 10_000;
 const TRANSCRIPTION_FINALIZATION_TIMEOUT_MS = 10_000;
+const START_TONE_DURATION_SECONDS = 0.16;
 
 type RealtimeTranscriptionOptions = {
   onError: () => void;
   onLevel: (level: number) => void;
   onTranscript: (text: string) => void;
+  signal?: AbortSignal;
 };
 
 export type RealtimeTranscriptionSession = {
@@ -43,8 +45,9 @@ export async function startRealtimeTranscription(
   let microphone: MediaStream | null = null;
 
   try {
+    throwIfAborted(options.signal);
     await context.resume();
-    const tokenPromise = requestTranscriptionToken();
+    const tokenPromise = requestTranscriptionToken(options.signal);
     void tokenPromise.catch(() => undefined);
     microphone = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -54,7 +57,10 @@ export async function startRealtimeTranscription(
       },
     });
     const token = await tokenPromise;
+    throwIfAborted(options.signal);
     const gateway = createGateway({ apiKey: token });
+    await playStartTone(context, options.signal);
+    throwIfAborted(options.signal);
     let audioController:
       ReadableStreamDefaultController<Uint8Array | string> | undefined;
     const audio = new ReadableStream<Uint8Array | string>({
@@ -173,14 +179,17 @@ export async function startRealtimeTranscription(
   }
 }
 
-async function requestTranscriptionToken() {
+async function requestTranscriptionToken(signal?: AbortSignal) {
   const controller = new AbortController();
+  const abortRequest = () => controller.abort();
+  signal?.addEventListener("abort", abortRequest, { once: true });
   const timeout = setTimeout(
     () => controller.abort(),
     TRANSCRIPTION_REQUEST_TIMEOUT_MS,
   );
 
   try {
+    throwIfAborted(signal);
     const response = await fetch("/api/transcriptions/token", {
       method: "POST",
       signal: controller.signal,
@@ -195,7 +204,70 @@ async function requestTranscriptionToken() {
     return transcriptionTokenSchema.parse(body).token;
   } finally {
     clearTimeout(timeout);
+    signal?.removeEventListener("abort", abortRequest);
   }
+}
+
+async function playStartTone(context: AudioContext, signal?: AbortSignal) {
+  throwIfAborted(signal);
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  const startsAt = context.currentTime;
+  const endsAt = startsAt + START_TONE_DURATION_SECONDS;
+
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(660, startsAt);
+  oscillator.frequency.exponentialRampToValueAtTime(880, endsAt);
+  gain.gain.setValueAtTime(0.0001, startsAt);
+  gain.gain.exponentialRampToValueAtTime(0.16, startsAt + 0.025);
+  gain.gain.exponentialRampToValueAtTime(0.0001, endsAt);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+
+  await new Promise<void>((resolve, reject) => {
+    let settled = false;
+
+    function finish(error?: DOMException) {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      signal?.removeEventListener("abort", abortTone);
+      oscillator.disconnect();
+      gain.disconnect();
+
+      if (error === undefined) {
+        resolve();
+      } else {
+        reject(error);
+      }
+    }
+
+    function abortTone() {
+      try {
+        oscillator.stop();
+      } catch {
+        // The tone already ended.
+      }
+      finish(abortError());
+    }
+
+    signal?.addEventListener("abort", abortTone, { once: true });
+    oscillator.onended = () => finish();
+    oscillator.start(startsAt);
+    oscillator.stop(endsAt);
+  });
+}
+
+function throwIfAborted(signal?: AbortSignal) {
+  if (signal?.aborted) {
+    throw abortError();
+  }
+}
+
+function abortError() {
+  return new DOMException("Aborted", "AbortError");
 }
 
 function startMicrophoneCapture(

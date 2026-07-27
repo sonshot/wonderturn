@@ -15,6 +15,10 @@ import {
   startRealtimeTranscription,
   type RealtimeTranscriptionSession,
 } from "@/lib/turn/realtime-transcription";
+import {
+  createSpeechEndDetector,
+  type SpeechEndDetector,
+} from "@/lib/turn/speech-end-detector";
 
 const TURN_TIMEOUT_MS = 15_000;
 const RECORDING_LIMIT_MS = 60_000;
@@ -27,7 +31,9 @@ export function PracticeScreen() {
   const stateRef = useRef(state);
   const turnCounterRef = useRef(0);
   const requestControllerRef = useRef<AbortController | null>(null);
+  const transcriptionSetupControllerRef = useRef<AbortController | null>(null);
   const transcriptionRef = useRef<RealtimeTranscriptionSession | null>(null);
+  const speechEndDetectorRef = useRef<SpeechEndDetector | null>(null);
   const pendingTranscriptionTurnRef = useRef<number | null>(null);
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playbackRef = useRef<HTMLAudioElement | null>(null);
@@ -57,11 +63,13 @@ export function PracticeScreen() {
       const turnId = ++turnCounterRef.current;
       requestControllerRef.current?.abort();
       requestControllerRef.current = null;
+      transcriptionSetupControllerRef.current?.abort();
+      transcriptionSetupControllerRef.current = null;
       pendingTranscriptionTurnRef.current = null;
       transcriptionRef.current?.abort();
       transcriptionRef.current = null;
       playbackRef.current?.pause();
-      stopListeningCue(recordingTimerRef, setLevel);
+      stopListeningCue(recordingTimerRef, speechEndDetectorRef, setLevel);
       dispatch({ turnId, type: "interrupt" });
     }
 
@@ -69,21 +77,24 @@ export function PracticeScreen() {
     return () => {
       document.removeEventListener("visibilitychange", interruptWhenHidden);
       requestControllerRef.current?.abort();
+      transcriptionSetupControllerRef.current?.abort();
       pendingTranscriptionTurnRef.current = null;
       transcriptionRef.current?.abort();
       playback?.pause();
-      stopListeningCue(recordingTimerRef, setLevel);
+      stopListeningCue(recordingTimerRef, speechEndDetectorRef, setLevel);
     };
   }, []);
 
   function stopActiveWork(turnId: number) {
     requestControllerRef.current?.abort();
     requestControllerRef.current = null;
+    transcriptionSetupControllerRef.current?.abort();
+    transcriptionSetupControllerRef.current = null;
     pendingTranscriptionTurnRef.current = null;
     transcriptionRef.current?.abort();
     transcriptionRef.current = null;
     playbackRef.current?.pause();
-    stopListeningCue(recordingTimerRef, setLevel);
+    stopListeningCue(recordingTimerRef, speechEndDetectorRef, setLevel);
     dispatch({ turnId, type: "interrupt" });
   }
 
@@ -189,7 +200,8 @@ export function PracticeScreen() {
       return;
     }
 
-    stopListeningCue(recordingTimerRef, setLevel);
+    stopListeningCue(recordingTimerRef, speechEndDetectorRef, setLevel);
+    dispatch({ turnId, type: "finish" });
     const transcription = transcriptionRef.current;
     transcriptionRef.current = null;
 
@@ -221,8 +233,10 @@ export function PracticeScreen() {
     const turnId = ++turnCounterRef.current;
     stopActiveWork(turnId);
     unlockPlayback();
+    const setupController = new AbortController();
+    transcriptionSetupControllerRef.current = setupController;
     pendingTranscriptionTurnRef.current = turnId;
-    dispatch({ turnId, type: repairLatest ? "repair" : "listen" });
+    dispatch({ turnId, type: repairLatest ? "repair" : "start" });
 
     try {
       const transcription = await startRealtimeTranscription({
@@ -236,7 +250,7 @@ export function PracticeScreen() {
 
           transcriptionRef.current.abort();
           transcriptionRef.current = null;
-          stopListeningCue(recordingTimerRef, setLevel);
+          stopListeningCue(recordingTimerRef, speechEndDetectorRef, setLevel);
           void playError(turnId);
         },
         onLevel: (nextLevel) => {
@@ -245,6 +259,7 @@ export function PracticeScreen() {
             transcriptionRef.current !== null
           ) {
             setLevel(nextLevel);
+            speechEndDetectorRef.current?.observe(nextLevel);
           }
         },
         onTranscript: (text) => {
@@ -257,6 +272,7 @@ export function PracticeScreen() {
 
           dispatch({ text, turnId, type: "interim" });
         },
+        signal: setupController.signal,
       });
 
       if (turnCounterRef.current !== turnId) {
@@ -266,10 +282,14 @@ export function PracticeScreen() {
 
       pendingTranscriptionTurnRef.current = null;
       transcriptionRef.current = transcription;
+      speechEndDetectorRef.current = createSpeechEndDetector(
+        () => void completeListening(turnId),
+      );
       recordingTimerRef.current = setTimeout(
         () => void completeListening(turnId),
         RECORDING_LIMIT_MS,
       );
+      dispatch({ turnId, type: "listen" });
     } catch (error) {
       if (turnCounterRef.current !== turnId) {
         return;
@@ -277,7 +297,7 @@ export function PracticeScreen() {
 
       pendingTranscriptionTurnRef.current = null;
       transcriptionRef.current = null;
-      stopListeningCue(recordingTimerRef, setLevel);
+      stopListeningCue(recordingTimerRef, speechEndDetectorRef, setLevel);
 
       if (
         error instanceof DOMException &&
@@ -292,6 +312,10 @@ export function PracticeScreen() {
       }
 
       await playError(turnId);
+    } finally {
+      if (transcriptionSetupControllerRef.current === setupController) {
+        transcriptionSetupControllerRef.current = null;
+      }
     }
   }
 
@@ -315,12 +339,18 @@ export function PracticeScreen() {
   }
 
   return (
-    <main className="bg-canvas mx-auto flex min-h-dvh w-full max-w-[42rem] flex-col">
+    <main
+      className="practice-shell bg-canvas relative mx-auto grid h-dvh w-full max-w-[42rem] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden"
+      data-recording={state.lifecycle === "listening"}
+    >
+      <div aria-hidden="true" className="recording-wash" />
       <PracticeHeader onStartOver={startOver} />
-      <Transcript onRepairLatest={repairLatestTurn} state={state} />
+      <Transcript state={state} />
       <ControlZone
+        canRepairLatest={canRepairLatestTurn(state)}
         level={level}
         onActivate={activateTalkControl}
+        onRepairLatest={repairLatestTurn}
         state={state}
         stillThinking={
           state.lifecycle === "thinking" &&
@@ -347,18 +377,21 @@ export function PracticeScreen() {
 
 function stopListeningCue(
   recordingTimerRef: RefObject<ReturnType<typeof setTimeout> | null>,
+  speechEndDetectorRef: RefObject<SpeechEndDetector | null>,
   setLevel: (value: number) => void,
 ) {
   if (recordingTimerRef.current !== null) {
     clearTimeout(recordingTimerRef.current);
     recordingTimerRef.current = null;
   }
+  speechEndDetectorRef.current?.stop();
+  speechEndDetectorRef.current = null;
   setLevel(0);
 }
 
 function PracticeHeader({ onStartOver }: { onStartOver: () => void }) {
   return (
-    <header className="gap-md px-lg max-[359px]:px-md flex min-h-16 items-center justify-between pt-[env(safe-area-inset-top)]">
+    <header className="gap-md px-lg max-[359px]:px-md flex min-h-16 shrink-0 items-center justify-between pt-[env(safe-area-inset-top)]">
       <h1 className="font-reading text-section-title">Practice</h1>
       <button
         type="button"
@@ -371,13 +404,18 @@ function PracticeHeader({ onStartOver }: { onStartOver: () => void }) {
   );
 }
 
-function Transcript({
-  onRepairLatest,
-  state,
-}: {
-  onRepairLatest: () => void;
-  state: PracticeState;
-}) {
+function canRepairLatestTurn(state: PracticeState) {
+  return (
+    (state.lifecycle === "thinking" ||
+      state.lifecycle === "speaking" ||
+      state.lifecycle === "idle") &&
+    state.history.some((entry) => entry.role === "user")
+  );
+}
+
+function Transcript({ state }: { state: PracticeState }) {
+  const scrollRef = useRef<HTMLElement | null>(null);
+  const followNewestRef = useRef(true);
   const notice =
     state.microphone === "needed"
       ? "I need to hear you to practice. Tap Allow, then choose Allow again when your phone asks."
@@ -395,19 +433,21 @@ function Transcript({
     state.interimText === "" &&
     notice === null &&
     error === null;
-  const canRepairLatest =
-    state.lifecycle === "thinking" ||
-    state.lifecycle === "speaking" ||
-    state.lifecycle === "idle";
-  const latestUserIndex = canRepairLatest
-    ? state.history.findLastIndex((entry) => entry.role === "user")
-    : -1;
+
+  useEffect(() => {
+    const scroll = scrollRef.current;
+
+    if (scroll !== null && followNewestRef.current) {
+      scroll.scrollTop = scroll.scrollHeight;
+    }
+  }, [state.history, state.interimText]);
 
   if (isEmpty) {
     return (
       <section
         aria-labelledby="empty-transcript-title"
-        className="gap-xs px-lg max-[359px]:px-md flex min-h-[120px] flex-1 flex-col justify-center overflow-y-auto pb-[8%]"
+        className="gap-xs px-lg max-[359px]:px-md flex min-h-0 flex-col justify-center overflow-y-auto pb-[8%]"
+        ref={scrollRef}
       >
         <h2
           id="empty-transcript-title"
@@ -423,7 +463,15 @@ function Transcript({
   }
 
   return (
-    <section className="px-lg py-xl max-[359px]:px-md min-h-[120px] flex-1 overflow-y-auto">
+    <section
+      className="px-lg py-xl max-[359px]:px-md min-h-0 overflow-y-auto overscroll-contain"
+      onScroll={(event) => {
+        const scroll = event.currentTarget;
+        followNewestRef.current =
+          scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight <= 24;
+      }}
+      ref={scrollRef}
+    >
       <ol aria-live="off" className="gap-lg flex flex-col" role="log">
         {state.history.map((entry, index) => (
           <li key={`${index}-${entry.role}`} className="gap-xxs flex flex-col">
@@ -433,18 +481,10 @@ function Transcript({
             <p className="font-reading text-transcript text-ink">
               {entry.text}
             </p>
-            {index === latestUserIndex ? (
-              <button
-                type="button"
-                className="text-button text-ink-muted focus-visible:ring-focus focus-visible:ring-offset-canvas mt-xs inline-flex min-h-12 items-center self-start rounded-sm underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:outline-none"
-                onClick={onRepairLatest}
-              >
-                Say again
-              </button>
-            ) : null}
           </li>
         ))}
-        {state.lifecycle === "listening" && state.interimText !== "" ? (
+        {(state.lifecycle === "listening" || state.lifecycle === "finishing") &&
+        state.interimText !== "" ? (
           <li className="gap-xxs flex flex-col">
             <span className="text-meta text-ink-muted">You</span>
             <p className="font-reading text-transcript text-ink">
@@ -469,22 +509,29 @@ function Transcript({
 }
 
 function ControlZone({
+  canRepairLatest,
   level,
   onActivate,
+  onRepairLatest,
   state,
   stillThinking,
 }: {
+  canRepairLatest: boolean;
   level: number;
   onActivate: () => void;
+  onRepairLatest: () => void;
   state: PracticeState;
   stillThinking: boolean;
 }) {
   const presentation = controlPresentation(state, stillThinking);
+  const isWaiting =
+    state.lifecycle === "starting" || state.lifecycle === "finishing";
+  const isListening = state.lifecycle === "listening";
 
   return (
     <section
       aria-label="Talk controls"
-      className="bg-plinth px-lg pt-md max-[359px]:px-md flex flex-col items-center pb-[calc(var(--spacing-md)+env(safe-area-inset-bottom))]"
+      className="practice-control-zone bg-plinth px-lg pt-md max-[359px]:px-md flex shrink-0 flex-col items-center pb-[calc(var(--spacing-md)+env(safe-area-inset-bottom))]"
     >
       <div
         aria-atomic="true"
@@ -506,15 +553,28 @@ function ControlZone({
             : presentation.action
         }
         className={`bg-primary p-md text-button text-on-primary after:border-primary-active focus-visible:ring-focus focus-visible:ring-offset-canvas relative inline-flex min-h-[104px] min-w-[104px] touch-manipulation flex-col items-center justify-center rounded-full transition-transform duration-100 after:pointer-events-none after:absolute after:inset-[6px] after:rounded-full after:border-[1.5px] focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 ${
-          state.lifecycle === "listening"
-            ? "before:border-primary before:absolute before:-inset-2 before:rounded-full before:border"
+          isListening
+            ? "bg-recording! after:border-recording-active! before:border-recording before:absolute before:-inset-2 before:rounded-full before:border"
             : ""
-        }`}
+        } ${isWaiting ? "cursor-wait opacity-65 active:scale-100" : ""}`}
+        disabled={isWaiting}
         onClick={onActivate}
       >
-        {state.lifecycle === "listening" ? <StopIcon /> : <MicrophoneIcon />}
+        {isListening ? <StopIcon /> : <MicrophoneIcon />}
         <span className="mt-xxs">{presentation.action}</span>
       </button>
+      <div className="mt-sm flex min-h-12 items-center justify-center">
+        {canRepairLatest ? (
+          <button
+            type="button"
+            className="rounded-control border-line-strong bg-canvas px-md text-button text-ink focus-visible:ring-focus focus-visible:ring-offset-canvas gap-xs py-sm inline-flex min-h-12 items-center border focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:outline-none"
+            onClick={onRepairLatest}
+          >
+            <RedoIcon />
+            That&apos;s not what I said
+          </button>
+        ) : null}
+      </div>
     </section>
   );
 }
@@ -530,7 +590,21 @@ function controlPresentation(state: PracticeState, stillThinking: boolean) {
   if (state.lifecycle === "listening") {
     return {
       action: "Done",
-      status: "Listening",
+      status: "Listening — speak now",
+      statusClass: "text-recording",
+    };
+  }
+  if (state.lifecycle === "starting") {
+    return {
+      action: "Wait",
+      status: "Getting ready",
+      statusClass: "text-ink-muted",
+    };
+  }
+  if (state.lifecycle === "finishing") {
+    return {
+      action: "Wait",
+      status: "Finishing",
       statusClass: "text-ink-muted",
     };
   }
@@ -576,6 +650,9 @@ function StatusIcon({
 }) {
   if (lifecycle === "listening") {
     return <LevelMeter level={level} />;
+  }
+  if (lifecycle === "starting" || lifecycle === "finishing") {
+    return <span aria-hidden="true">•••</span>;
   }
   if (lifecycle === "thinking") {
     return <span aria-hidden="true">•••</span>;
@@ -671,6 +748,24 @@ function SpeakerIcon() {
     >
       <path d="M5 10v4h4l5 4V6l-5 4H5Z" />
       <path d="M17 9a4 4 0 0 1 0 6" />
+    </svg>
+  );
+}
+
+function RedoIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="size-5"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.75"
+    >
+      <path d="M4 8v5h5" />
+      <path d="M5.5 12a7 7 0 1 0 2-5" />
     </svg>
   );
 }

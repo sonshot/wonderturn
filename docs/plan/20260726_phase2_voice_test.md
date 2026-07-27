@@ -26,15 +26,19 @@ the transcribed text differs from what you said.
    and the control says `Talk`.
 3. Tap `Talk`.
 4. If the browser asks for microphone access, choose **Allow**.
-5. Say: **“Why do stars twinkle?”**
-6. Confirm the activity bars track microphone loudness while you speak and
-   rest after you tap `Done`. With Reduce Motion enabled, they remain at rest.
-7. Tap `Done`.
-8. Confirm the visible sequence is `Listening` → `Thinking` → `Speaking` →
-   `Ready`. If the request takes more than about four seconds, `Thinking` may
-   advance once to `Still thinking`.
-9. Confirm your transcribed speech appears under `You`, one reply appears under
-   `AI reply`, and Talia reads that same complete reply aloud.
+5. Confirm the status first says `Getting ready`. Do not speak yet.
+6. Confirm a short tone plays; only then does the viewport gain a pulsing red
+   edge wash, the control turn red, and the status say
+   `Listening — speak now`.
+7. Say: **“Why do stars twinkle?”** Confirm the activity bars track microphone
+   loudness while you speak.
+8. Do not tap `Done`. Remain silent and confirm recording stops itself after
+   about three seconds: the red treatment and bars stop immediately, the
+   status says `Finishing`, then advances to `Thinking` → `Speaking` → `Ready`.
+   If the request takes more than about four seconds, `Thinking` may advance
+   once to `Still thinking`.
+9. Confirm your transcribed speech appears under `You`, one reply appears
+   under `AI reply`, and Talia reads that same complete reply aloud.
 10. Start another turn, say **“Hello hello”**, and tap `Done` as soon as the
     words appear. Confirm both words remain under `You` and the result is an
     ordinary reply, not **“I didn't quite catch that — want to try again?”**
@@ -45,7 +49,10 @@ the transcribed text differs from what you said.
 | Check | Result | Notes |
 | --- | --- | --- |
 | Permission accepted and retained |  |  |
+| Setup stayed distinct from active capture |  |  |
+| Start tone and recording-red treatment began together |  |  |
 | OpenAI transcription usable |  | Transcribed: |
+| Three-second silence stopped and finalized the recording |  |  |
 | State sequence correct |  |  |
 | Reply text appeared once |  |  |
 | Talia played once and matched the text |  |  |
@@ -56,8 +63,8 @@ the transcribed text differs from what you said.
 
 1. Start an ordinary turn with: **“Tell me two facts about dolphins.”**
 2. While Talia is speaking, tap `Talk`.
-3. Confirm the old audio stops immediately and the status changes to
-   `Listening`.
+3. Confirm the old audio stops immediately, the status changes to
+   `Getting ready`, and the start tone precedes `Listening — speak now`.
 4. Say: **“Now tell me one fact about whales.”**
 5. Tap `Done`.
 6. Confirm the completed dolphin reply remains in history, but only the whale
@@ -166,17 +173,18 @@ settings changes directly.
 1. Complete an ordinary exchange with **“What color is grass?”** and let it
    return to `Ready`.
 2. Start another turn, say **“Tell me about elephants.”**, and tap `Done`.
-3. While the status says `Thinking`, tap `Say again` under that newest `You`
-   turn.
-4. Confirm listening starts immediately, the elephant wording disappears, the
+3. While the status says `Thinking`, tap `That's not what I said` in the fixed
+   control zone.
+4. Confirm setup starts immediately, the elephant wording disappears, the
    earlier grass exchange remains, and no elephant reply appears later.
 5. Say **“Tell me about penguins.”**, tap `Done`, and wait for Talia to begin
    speaking.
-6. Tap `Say again` while Talia is speaking. Confirm playback stops, the
-   penguin turn and its reply disappear, and listening starts.
+6. Tap `That's not what I said` while Talia is speaking. Confirm playback
+   stops, the penguin turn and its reply disappear, and setup starts.
 7. Say **“Tell me about whales.”**, tap `Done`, and let the exchange finish.
-8. From `Ready`, tap `Say again` once more. Confirm the whale exchange
-   disappears and listening starts while the earlier grass exchange remains.
+8. From `Ready`, tap `That's not what I said` once more. Confirm the whale
+   exchange disappears and setup starts while the earlier grass exchange
+   remains.
 
 | Check | Result | Notes |
 | --- | --- | --- |
@@ -184,7 +192,27 @@ settings changes directly.
 | Repair while speaking stopped audio and removed the exchange |  |  |
 | Repair from idle started listening |  |  |
 | Earlier exchange remained throughout |  |  |
-| Only the newest `You` turn showed `Say again` |  |  |
+| Repair stayed visible in the fixed control zone |  |  |
+
+## J. Fixed controls and reduced motion
+
+1. Continue enough ordinary turns to make the transcript taller than the
+   viewport.
+2. Confirm the header, talk control, and reserved repair row remain visible
+   while only the transcript scrolls.
+3. Scroll upward in the transcript, complete another turn, and confirm the app
+   does not steal the reading position. Return near the bottom, complete
+   another turn, and confirm it follows the newest entry.
+4. Enable Reduce Motion and start recording again.
+5. Confirm the red edge wash remains visible but does not pulse; the status,
+   start tone, red control, stop glyph, and `Done` still make recording clear.
+
+| Check | Result | Notes |
+| --- | --- | --- |
+| Transcript alone scrolled |  |  |
+| Talk and repair controls remained visible and stationary |  |  |
+| Follow-newest respected the current scroll position |  |  |
+| Reduced motion kept a static recording indication |  |  |
 
 ## Engineering-assisted checks
 
@@ -204,7 +232,7 @@ ordinary, nudge, and disclosure rows above can be run now.
 
 ## Device summary
 
-| Device/browser | A | B | C | D | E | F | G | H | I | Notes |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| iPhone / Safari |  |  |  |  |  |  |  |  |  |  |
-| Android / Chrome |  |  |  |  |  |  |  |  |  |  |
+| Device/browser | A | B | C | D | E | F | G | H | I | J | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| iPhone / Safari |  |  |  |  |  |  |  |  |  |  |  |
+| Android / Chrome |  |  |  |  |  |  |  |  |  |  |  |

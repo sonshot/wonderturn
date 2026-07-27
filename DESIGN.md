@@ -50,8 +50,8 @@ a canvas whose highest channel was green while this very sentence promised warm
 paper. A browser finds both in seconds; no amount of reading does.
 
 Numbers that carry an *argument* still belong here — the contrast ratios under
-Colors, the ~360px at which the control zone stops being sticky, "48px is a
-floor, not a fixed value." Those are reasoning, not configuration.
+Colors, the three-second silence window, "48px is a floor, not a fixed value."
+Those are reasoning, not configuration.
 
 Theme primitives are cited by their real custom properties —
 `--color-canvas`, `--text-transcript` — and an offline test asserts that every
@@ -63,8 +63,9 @@ tokens.
 
 1. **Practice, not relationship.** No face, name, avatar, mood, backstory,
    presence indicator, or companion language belongs to the AI.
-2. **State is the personality.** Ready, listening, thinking, speaking, and
-   failure must be unmistakable without decorative animation.
+2. **State is the personality.** Getting ready, listening, finishing,
+   thinking, speaking, ready, and failure must be unmistakable without a
+   character or persona.
 3. **One screen, one active turn.** Earlier turns remain readable, but only
    the current turn and the large talk control compete for attention.
 4. **Transcript, not chat.** Conversation is an ordered dialogue ledger,
@@ -98,7 +99,7 @@ Reference points, in order of usefulness:
   proportion, tone, and edge rather than in graphics.
 
 Explicitly not: a chat app, a smart-speaker companion, a learning game, a
-dashboard, a meditation app, or anything with a hero gradient.
+dashboard, a meditation app, or anything with a decorative hero gradient.
 
 Five commitments, each of them checkable on a screenshot:
 
@@ -109,8 +110,9 @@ Five commitments, each of them checkable on a screenshot:
 3. **The talk control reads as an object** — it has an edge and a rim, and it
    looks like it could be pressed.
 4. **There are two planes, not one flat field:** canvas and plinth.
-5. **Exactly one element is alive, and only while recording** — the level
-   meter, driven by the person's own voice.
+5. **The whole viewport confirms active recording.** The level meter follows
+   the person's voice while a warm red edge wash pulses around the viewport.
+   Both begin only when capture is ready and stop the instant capture stops.
 
 A screen that honours every prohibition here and still looks like an unstyled
 form has failed this section. This is the section to fix it against.
@@ -137,7 +139,11 @@ functional; they never replace a text label or icon.
 - **Primary (`--color-primary`).** The talk control and the rare highest
   priority action. Do not spread teal across headings or transcript turns.
 - **Primary active (`--color-primary-active`).** The talk control's inner rim
-  and pressed fill; it is not a separate voice-state color.
+  and pressed fill outside active recording.
+- **Recording (`--color-recording`, `--color-recording-active`).** The
+  listening control, its rim, the listening status, and the functional
+  viewport wash. Recording red is paired with `Listening — speak now`, live
+  level bars, a stop glyph, and `Done`; color never carries the state alone.
 - **On primary (`--color-on-primary`).** Action text and glyphs placed on the
   primary fill.
 - **Soft line (`--color-line-soft`).** Decorative separation only.
@@ -149,18 +155,21 @@ functional; they never replace a text label or icon.
   (`--color-speaking-bg`, `--color-speaking-ink`).** Reserved for their status
   chips. The words and glyphs still carry the state.
 - **Error (`--color-error-bg`, `--color-error-ink`).** Reserved for actual
-  failure. Listening is never red.
+  failure notices and status text. Recording red is brighter and appears only
+  with active-capture signals, so it cannot be the sole distinction between
+  listening and error.
 
 The declared foreground/background pairs target WCAG 2.2 AA and were computed
 against the warm canvas, not the old neutral one: ink 14.9:1, muted ink 6.1:1
 on canvas and 5.7:1 on the plinth, white on primary 6.4:1, thinking 6.9:1,
-speaking 7.5:1, error 6.2:1, strong line 4.0:1. Browser-level contrast checks
-remain required because rendering, opacity, and compositing can change the
-result.
+speaking 7.5:1, recording on plinth 5.5:1, white on recording 6.5:1, error
+6.2:1, strong line 4.0:1. Browser-level contrast checks remain required
+because rendering, opacity, and compositing can change the result.
 
-Do not add gradients, rainbow accents, neon “AI” colors, or dark cinematic
-surfaces. A dark theme is deferred until every state can be tested as a
-complete system.
+Do not add decorative gradients, rainbow accents, neon “AI” colors, or dark
+cinematic surfaces. The active-recording edge wash is the one functional
+gradient in the system. A dark theme is deferred until every state can be
+tested as a complete system.
 
 ## Typography
 
@@ -235,6 +244,7 @@ area. It has one centered content column with a maximum width of 42rem.
 │        │    talk    │        │   104 × 104, circular
 │        │  control   │        │
 │        └────────────┘        │
+│   latest-turn repair action  │   reserved 48px row
 └──────────────────────────────┘ ← calc(16px + safe-area inset bottom)
 ```
 
@@ -246,7 +256,7 @@ of this diagram. Both are traps. Copy drifts the moment it exists in two files �
 feature doc's deleted mockups had a stale header title, a stale speaker label,
 and a stale control label — and a set of one-box-per-state drawings would
 duplicate the talk-control table while conveying less, since the whole point
-of these five states is that the boxes never move.
+of these states is that the boxes never move.
 
 ### Phone layout
 
@@ -263,10 +273,13 @@ of these five states is that the boxes never move.
 - A notice replaces the empty state rather than joining it. Once a microphone
   or error notice is present, `Tap Talk…` is gone — leaving it there tells the
   person to do the thing that just didn't work.
-- Control zone: filled with `--color-plinth`, `--spacing-md` top padding and
+- Control zone: fixed in the viewport layout, filled with `--color-plinth`,
+  `--spacing-md` top padding and
   `calc(16px + env(safe-area-inset-bottom))` bottom padding. The tone change is
   what marks the region — it takes no border, radius, or shadow of its own.
-- The control zone may be sticky, but it must never overlay transcript text.
+- The header and control zone never scroll out of view. The app shell is one
+  dynamic viewport tall; only the flexible transcript region scrolls. The
+  control zone never overlays transcript text.
 - Landscape remains usable; do not lock orientation.
 
 ### Whitespace
@@ -363,15 +376,16 @@ Streaming transcription updates the current `You` turn in place. Do not
 announce every interim word to assistive technology. A cleared AI reply is
 inserted once, in full.
 
-Only the newest completed `You` turn carries a secondary `Say again` action.
-Place it beneath the transcript text, aligned to the same left edge, with at
-least a 48 by 48 CSS-pixel target. It is a quiet underlined text action in
-muted ink, not a second filled control, chip, bubble, menu, or icon-only
-button. It remains available while the reply is thinking, speaking, and idle,
-and disappears as soon as a later listening turn begins. Activating it stops
-pending work or playback, removes that `You` turn and any AI reply based on
-it, and immediately returns to ordinary listening. Do not add confirmation
-copy or a separate repair state.
+The stable control zone reserves a 48px row beneath the talk control for the
+latest-turn repair action. When repair is available, render a bordered
+secondary button with a redo glyph and the exact label
+`That's not what I said`; when it is unavailable, keep the row empty so the
+talk control never jumps. It remains available while the reply is thinking,
+speaking, and idle, and disappears as soon as setup for later listening
+begins. Activating it stops pending work or playback, removes the newest `You`
+turn and any AI reply based on it, and enters the ordinary `Getting ready`
+path. Do not leave the repair action inside the scrolling transcript, add
+confirmation copy, or introduce a separate repair state.
 
 Redirects, disclosures, nudges, and ordinary replies share identical visual
 styling. The interface does not expose or dramatize safety machinery.
@@ -383,7 +397,9 @@ Place a short icon-and-text status immediately above the talk control:
 - `Ready`
 - `Microphone needed`
 - `Microphone blocked`
-- `Listening`
+- `Getting ready`
+- `Listening — speak now`
+- `Finishing`
 - `Thinking`
 - `Speaking`
 - `Something went wrong`
@@ -393,27 +409,31 @@ control label, which describes the next action. Use a polite live region for
 status changes; errors are announced once.
 
 Only `Thinking` and `Speaking` are filled, using their declared tonal status
-chips. Every other status is an unfilled inline row: `Ready` and `Listening` in
-muted ink, the two microphone rows in ink, `Something went wrong` in error ink.
+chips. Every other status is an unfilled inline row: `Ready`, `Getting ready`,
+and `Finishing` in muted ink, `Listening — speak now` in recording red, the two
+microphone rows in ink, and `Something went wrong` in error ink.
 There is deliberately **no error status chip**, and its absence from the tokens
 is the rule, not an omission — the error notice below already carries a tonal
 error fill, and a second one directly above it turns one calm failure into the
 red spectacle this system forbids.
 
 Status glyphs are always paired with visible text: open circle for Ready,
-microphone for both permission rows, ellipsis for Thinking, speaker for
-Speaking, exclamation for Error. Listening is the exception — its bars are a
-live speech-activity cue rather than an icon (see Listening cue).
+microphone for both permission rows, ellipsis for Getting ready, Finishing,
+and Thinking, speaker for Speaking, exclamation for Error. Listening is the
+exception — its bars are a live speech-activity cue rather than an icon (see
+Listening cue).
 
 The gap between the status row and the talk control is `--spacing-md`.
 
-A fresh screen opens on `Ready` with the `Talk` label. One activation both
-requests the microphone and starts listening, so an untouched screen must
-never open on `Microphone needed` — that would contradict the empty state's
-own `Tap Talk` instruction. `Microphone needed` is the state *after* a prompt
-was dismissed without a decision; `Microphone blocked` is a denial the page
-cannot re-prompt. Where a browser reports no permission state at all, `Ready`
-is always the correct opening status.
+A fresh screen opens on `Ready` with the `Talk` label. One activation requests
+the microphone and enters `Getting ready`; only an actually ready capture
+session may advance to `Listening — speak now`, play the start cue, and show
+the recording treatment. An untouched screen must never open on `Microphone
+needed` — that would contradict the empty state's own `Tap Talk` instruction.
+`Microphone needed` is the state *after* a prompt was dismissed without a
+decision; `Microphone blocked` is a denial the page cannot re-prompt. Where a
+browser reports no permission state at all, `Ready` is always the correct
+opening status.
 
 ### Talk control
 
@@ -425,7 +445,9 @@ stop/listening, or speaker glyph and a short visible action label.
 | Idle | Ready | microphone | Talk |
 | Microphone prompt dismissed | Microphone needed | microphone | Allow |
 | Microphone blocked | Microphone blocked | microphone | Try again |
-| Listening | Listening | stop square | Done |
+| Starting | Getting ready | microphone | Wait |
+| Listening | Listening — speak now | stop square | Done |
+| Finishing | Finishing | microphone | Wait |
 | Thinking | Thinking | microphone | Talk |
 | Speaking | Speaking | microphone | Talk |
 | Error | Something went wrong | microphone | Try again |
@@ -434,35 +456,29 @@ What each activation *does* belongs to the feature document's key flows and
 the plan's P1. This table exists for one purpose: to show that the status and
 the action can never be read as the same claim.
 
-The glyph always describes the action, never the state, which is why it is a
-microphone in six rows out of seven: every one of those activations ends in
-listening. Only `Listening` differs, where a stop square matches `Done`. Do
-not put the speaker glyph on this control while the reply is playing — the
-status row already carries a speaker there, and repeating it on a button whose
-label says `Talk` is exactly the status/action collision this table exists to
-prevent. Action glyphs are single-color line art, `--spacing-xxs` above the
-label.
+The glyph describes the action, never the state. `Listening` uses the stop
+square that matches `Done`; the brief `Getting ready` and `Finishing` rows use
+a disabled microphone control labelled `Wait`. Do not put the speaker glyph
+on this control while the reply is playing — the status row already carries a
+speaker there, and repeating it on a button whose label says `Talk` is exactly
+the status/action collision this table exists to prevent. Action glyphs are
+single-color line art, `--spacing-xxs` above the label.
 
 The control is `--radius-full` at a **minimum** of 104 by 104 CSS pixels, not
 a fixed 104. Under large text it grows; the label never clips and never
 overflows the circle. `Try again` at 200% is the case that proves it.
 
-Give it the quality of a real object, because it is the only one on the screen.
-The disc is a flat `--color-primary` fill with a hairline inner rim, which
-reads as a machined edge rather than as decoration. Its action glyph is larger
-than a status glyph, with the label `--spacing-xxs` beneath it. While
-Listening, add one static concentric ring in `--color-primary` outside the
-disc. A ring is a form; it does not breathe, pulse, or glow, and it disappears
-the instant recording stops. That distinction is the whole line between an
-instrument and an orb: an instrument shows its state by holding a shape, a
-companion shows it by moving.
+Give it the quality of a real object, because it is the primary instrument on
+the screen. Outside listening, the disc is a flat `--color-primary` fill with
+a hairline `--color-primary-active` inner rim. While capture is active, both
+change to their recording tokens and one static recording-red concentric ring
+appears outside the disc. The viewport edge wash supplies the recording pulse;
+the control itself does not breathe, scale, or glow. Every recording treatment
+disappears the instant capture stops.
 
-The rim is the entire effect. Do not add directional shading, an inner
-highlight, a soft inner shadow, or any other simulation of light falling on the
-disc — that is a gradient wearing a different name, and it is the first thing a
-capable implementer reaches for when asked to make a flat circle feel physical.
-The object quality comes from an honest edge and generous size, not from faked
-material.
+The rim is the entire effect on the disc. Do not add directional shading, an
+inner highlight, a soft inner shadow, or any simulation of light falling on
+the button. The recording edge wash belongs to the viewport, not the disc.
 
 Keep the visible label inside the 104px circle to two short words at most.
 The permission button's accessible name is `Allow microphone`; its visible
@@ -477,10 +493,10 @@ cancellation, or a call/hang-up metaphor.
 
 The talk control's pressed treatment changes the fill and nothing else: it
 applies while a pointer or key is held down, alongside the press-feedback
-transform under Motion, and it reverts on release. It is not the Listening
-state's fill. No voice state changes this control's color — the status row, the
-glyph, and the label carry state, and a state-colored button would put a fourth
-signal on the one element that must stay recognisable as a single instrument.
+transform under Motion, and it reverts on release. Active listening is the one
+state that changes the resting fill, from primary teal to recording red. The
+status row, level bars, start tone, stop glyph, label, and viewport wash make
+that change redundant rather than color-only.
 
 Set `touch-action: manipulation` on the control so a fast second tap cannot
 trigger double-tap zoom. Never reach for `user-scalable=no` to get that: the
@@ -502,10 +518,12 @@ the fastest possible answer to the only question that matters while recording �
 *is it hearing me?*
 
 It never appears inside the talk control, which carries the stop glyph and
-`Done` at that moment. It stops on the same frame audio capture stops, rests
-at its minimum height, and never moves while the microphone is inactive. Under
-`prefers-reduced-motion: reduce`, hold the bars at rest and let the `Listening`
-text carry the state alone.
+`Done` at that moment. It begins only after setup finishes, alongside a short
+nonverbal start tone and `Listening — speak now`. It stops on the same frame
+audio capture stops, rests at its minimum height, and never moves while the
+microphone is inactive. Under `prefers-reduced-motion: reduce`, hold the bars
+and viewport wash at rest; the status text, tone, red control, and stop glyph
+still carry the state.
 
 ### Thinking cue
 
@@ -554,8 +572,8 @@ not borrow the speaking presentation, and the audio changes nothing visually.
 Preserve every completed transcript turn. Do not insert a fabricated or
 empty `AI reply` for the failed attempt. Show the error notice as the newest
 item in the transcript region. `Start over` remains the only action that
-clears the whole history; `Say again` may remove only the newest human turn
-and the single reply that depended on it.
+clears the whole history; `That's not what I said` may remove only the newest
+human turn and the single reply that depended on it.
 
 ### Sign-in gate
 
@@ -625,19 +643,21 @@ who administers it, or offer signup, invitation, appeal, or support flows.
 
 ## Voice State Semantics
 
-There are five visual states: idle, listening, thinking, speaking, and error.
-`Microphone needed` and `Microphone blocked` are explicit idle variants, not
-extra lifecycle states. A nudge, redirect, or disclosure is content
-delivered through the ordinary speaking presentation, not a special visual
-state.
+There are seven visual states: idle, starting, listening, finishing, thinking,
+speaking, and error. `Microphone needed` and `Microphone blocked` are explicit
+idle variants, not extra lifecycle states. A nudge, redirect, or disclosure is
+content delivered through the ordinary speaking presentation, not a special
+visual state.
 
 An interruption returns calmly to idle. It does not produce a warning,
 completion badge, or celebratory cue. Starting over clears the transcript
 immediately and preserves the signed-in shell.
 
-A recording that reaches the plan's length limit stops itself through the
-ordinary `Done` path: listening ends, thinking begins, and no notice, warning,
-or explanation appears. It is not a state and it is not an error.
+A recording that reaches three seconds of silence after speech, the plan's
+length limit, or a manual `Done` stops through the same finalization path:
+recording treatment disappears, `Finishing` accounts for provider
+finalization, and then thinking begins. No notice, warning, or explanation
+appears.
 
 Status and action must not contradict each other. For example, while the
 system is speaking, `Speaking` describes the state and `Talk` describes what
@@ -653,15 +673,18 @@ Motion is functional and brief:
 - Standard easing: `cubic-bezier(.2,.8,.2,1)`.
 - Thinking dots: one 900ms sequence, then at rest.
 - Thinking text advances once, at ~4s: `Thinking` → `Still thinking`.
+- Active-recording edge wash: 1.4s alternate opacity pulse.
 
 The speech-activity cue is not on this list. It follows live microphone
-amplitude and stops when capture does.
+amplitude and stops when capture does. The recording pulse is functional,
+bounded by that same real capture lifetime, and never appears during setup.
 
-With `prefers-reduced-motion: reduce`, remove transforms and animation.
-Change status text instantly. Never auto-scroll in a way that steals the
-person’s reading position; follow the newest turn only when they were already
-within 24px of the bottom. State duration is driven by real lifecycle events;
-motion timings are transitions, not timers for mocked thinking or speaking.
+With `prefers-reduced-motion: reduce`, remove transforms and animation,
+including the recording pulse; retain its static edge wash. Change status text
+instantly. Never auto-scroll in a way that steals the person’s reading
+position; follow the newest turn only when they were already within 24px of
+the bottom. State duration is driven by real lifecycle events; motion timings
+are transitions, not timers for mocked thinking or speaking.
 
 ## Accessibility
 
@@ -712,14 +735,10 @@ a phone.
 - **1024px and above:** cap the interaction column at 42rem. The surrounding
   canvas expands; the application does not become a dashboard.
 - **Short landscape viewports:** reduce vertical whitespace before reducing
-  type or target sizes. Keep at least 120px for the transcript region; below
-  that threshold, let the page scroll rather than shrinking or covering
-  controls and text. The arithmetic is worth stating, because it decides a real
-  case rather than an edge one: a 64px header, a control zone of roughly 176px
-  (16 + status 32 + 16 + control 104 + 16), and the 120px transcript floor need
-  about 360px of height. Small phones in landscape are shorter than that, so
-  there the control zone stops being sticky and the whole page scrolls. Nothing
-  shrinks, and nothing is covered.
+  type or target sizes. The header and control zone remain in the dynamic
+  viewport; the transcript may become shallow but remains independently
+  scrollable. Never let transcript growth push the talk or repair controls
+  outside the viewport, and never overlay transcript text.
 
 ## Copy and Content
 
@@ -727,7 +746,8 @@ Use plain English, contractions, and short sentences. Prefer the next
 concrete action over technical explanation.
 
 - Say `Talk`, not `Begin voice interaction`.
-- Say `Say again`, not `Wrong`, `Correct`, or `Try harder`.
+- Say `That's not what I said`, not `Say again`, `Wrong`, `Correct`, or
+  `Try harder`.
 - Say `I need to hear you to practice`, not `Microphone permission was not
   granted`.
 - Say `AI reply`, not a human name or relational role.
@@ -752,19 +772,25 @@ Before considering a screen consistent with Wonderturn, verify:
   quiet — and the transcript is literally the largest text present.
 - The canvas reads as warm paper beside white, and the control zone sits on the
   plinth tone.
-- The talk control has its inner rim, and its Listening ring is a static shape.
+- The talk control has its inner rim; active listening changes it and its ring
+  to recording red.
 - The speech-activity cue is live only while listening, and rests otherwise.
+- `Getting ready` precedes the start tone; the recording wash begins only with
+  real capture and disappears before `Finishing`.
 - The reading family sets the transcript and titles; the UI family sets
   everything else.
 - The canvas, ink, and primary action use the declared tokens.
-- All five visual states preserve one layout.
+- All seven visual states preserve one layout.
 - State and next action are both visible and cannot be confused.
 - No AI persona, relationship cue, chat convention, or engagement mechanic
   has been introduced.
 - The transcript is readable at the declared size and survives 200% zoom.
 - The talk control and start-over action meet their target sizes.
-- The latest-turn `Say again` action meets its target size, removes no earlier
-  exchange, and is absent while listening.
+- The fixed control zone never leaves the viewport, only the transcript
+  scrolls, and the reserved repair row keeps the talk control stationary.
+- The latest-turn `That's not what I said` action meets its target size,
+  removes no earlier exchange, and is absent during setup, listening, and
+  finalization.
 - Safe-area insets and short landscape viewports do not obscure controls or
   transcript.
 - Reduced motion produces a complete, understandable experience.

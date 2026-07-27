@@ -8,10 +8,11 @@ import {
 
 describe("practice state machine", () => {
   it("moves one turn through listening, thinking, speaking, and idle", () => {
-    const listening = practiceReducer(initialPracticeState, {
+    const starting = practiceReducer(initialPracticeState, {
       turnId: 1,
-      type: "listen",
+      type: "start",
     });
+    const listening = practiceReducer(starting, { turnId: 1, type: "listen" });
     const thinking = practiceReducer(listening, {
       said: "Why do stars twinkle?",
       turnId: 1,
@@ -37,11 +38,31 @@ describe("practice state machine", () => {
     expect(idle.lifecycle).toBe("idle");
   });
 
-  it("ignores every result from an obsolete turn", () => {
-    const newer = practiceReducer(initialPracticeState, {
-      turnId: 2,
+  it("distinguishes setup, active capture, and finalization", () => {
+    const starting = practiceReducer(initialPracticeState, {
+      turnId: 1,
+      type: "start",
+    });
+    const listening = practiceReducer(starting, {
+      turnId: 1,
       type: "listen",
     });
+    const finishing = practiceReducer(listening, {
+      turnId: 1,
+      type: "finish",
+    });
+
+    expect(starting.lifecycle).toBe("starting");
+    expect(listening.lifecycle).toBe("listening");
+    expect(finishing.lifecycle).toBe("finishing");
+  });
+
+  it("ignores every result from an obsolete turn", () => {
+    const starting = practiceReducer(initialPracticeState, {
+      turnId: 2,
+      type: "start",
+    });
+    const newer = practiceReducer(starting, { turnId: 2, type: "listen" });
 
     expect(
       practiceReducer(newer, {
@@ -93,7 +114,7 @@ describe("practice state machine", () => {
       activeTurnId: 3,
       history: state.history.slice(0, 2),
       interimText: "",
-      lifecycle: "listening",
+      lifecycle: "starting",
     });
   });
 
@@ -124,10 +145,11 @@ describe("practice state machine", () => {
         text: `Turn ${index}`,
       }),
     );
-    const listening = practiceReducer(
+    const starting = practiceReducer(
       { ...initialPracticeState, history },
-      { turnId: 1, type: "listen" },
+      { turnId: 1, type: "start" },
     );
+    const listening = practiceReducer(starting, { turnId: 1, type: "listen" });
     const thinking = practiceReducer(listening, {
       said: "Newest",
       turnId: 1,
@@ -143,12 +165,14 @@ describe("practice state machine", () => {
   });
 
   it("tracks repeat failures and resets the whole sitting", () => {
-    const listening = practiceReducer(initialPracticeState, {
+    const starting = practiceReducer(initialPracticeState, {
       turnId: 1,
-      type: "listen",
+      type: "start",
     });
+    const listening = practiceReducer(starting, { turnId: 1, type: "listen" });
     const failed = practiceReducer(listening, { turnId: 1, type: "fail" });
-    const retried = practiceReducer(failed, { turnId: 2, type: "listen" });
+    const retrying = practiceReducer(failed, { turnId: 2, type: "start" });
+    const retried = practiceReducer(retrying, { turnId: 2, type: "listen" });
     const failedAgain = practiceReducer(retried, {
       turnId: 2,
       type: "fail",

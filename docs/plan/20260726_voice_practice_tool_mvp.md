@@ -53,7 +53,10 @@ streaming transcript, manual finalization, explicit lifecycle reducer, atomic
 playback, barge-in, bounded sitting, stale-turn rejection, permission states,
 client-side fixed failure audio, and latest-turn repair are code-complete
 locally. Direct localhost Google SSO reaches this screen and survives a Safari
-reload (D61). Phase 2 still needs its manual phone outcome, repair, and
+reload (D61). A follow-up interaction experiment now adds truthful setup and
+finalization states, a capture-ready start tone, post-speech automatic stop,
+fixed viewport controls, and a prominent latest-turn repair action (D69).
+Phase 2 still needs its manual phone outcome, recording-state, repair, and
 delayed-stale-result checks before exit.
 
 ## Scope
@@ -230,21 +233,32 @@ leave their numbers behind rather than causing a renumber (D24).
   generation input, never a checker input, so a modified client cannot plant
   a prior turn that instructs a reviewer.
 - **P20 — The turn and the sitting are bounded.** A single recording stops
-  itself after 60 seconds, routed through the ordinary stop path so it never
-  reads as a failure. The request schema caps history at 20 turns and each
-  entry and the current `said` value at 1,000 characters, with the oldest
-  turns dropped client-side. This is a cost bound as much as a latency one:
-  stateless re-send makes token cost quadratic in turn count, so one long
-  happy session is the realistic way P12's ceiling gets hit. The wait is
-  bounded too: the client fetch carries `AbortSignal.timeout(15_000)`, and
-  the timeout resolves to P7's one failure shape, so the thinking cue cannot
-  run forever.
-- **P21 — Repair rewinds exactly one exchange.** `Say again` is available only
-  for the newest recognized human turn during thinking, speaking, and idle.
-  It invalidates active work, removes that turn plus the zero or one AI reply
-  based on it from both rendered and submitted history, and starts ordinary
-  listening immediately. It never changes earlier exchanges, asks for
-  confirmation, retains audio, or introduces a repair lifecycle state.
+  itself after 60 seconds or after three seconds below normalized RMS level
+  `0.1` once a sample at or above that level has established that speech
+  began. Both route through the ordinary finalization path, so neither reads
+  as a failure; `Done` remains available.
+  The request schema caps history at 20 turns and each entry and the current
+  `said` value at 1,000 characters, with the oldest turns dropped client-side.
+  This is a cost bound as much as a latency one: stateless re-send makes token
+  cost quadratic in turn count, so one long happy session is the realistic way
+  P12's ceiling gets hit. The wait is bounded too: the client fetch carries
+  `AbortSignal.timeout(15_000)`, and the timeout resolves to P7's one failure
+  shape, so the thinking cue cannot run forever.
+- **P21 — Repair rewinds exactly one exchange.** `That's not what I said` is
+  available in the fixed control zone only for the newest recognized human
+  turn during thinking, speaking, and idle. It invalidates active work,
+  removes that turn plus the zero or one AI reply based on it from both
+  rendered and submitted history, and starts the ordinary setup path
+  immediately. It never changes earlier exchanges, asks for confirmation,
+  retains audio, or introduces a repair lifecycle state.
+- **P22 — Active recording begins at capture readiness.** The tap enters
+  `starting`; it does not claim to listen. Token and microphone setup run
+  concurrently. After both succeed, a 160ms Web Audio cue plays before PCM
+  capture begins, then the client enters `listening`. Manual, silence, and
+  length-limit stops end capture and its visual treatment synchronously,
+  enter `finishing` while the provider finalizes the transcript, and only then
+  enter the turn pipeline. Aborted setup may not play a stale cue or open a
+  stale capture.
 
 ## Phases
 
@@ -429,20 +443,20 @@ toward `disclosure`, and worked examples, because the spike showed a naive
 one-line prompt silently routing real disclosures to `ordinary` or `nudge`.
 It is production code and versioned as such, not a fixture.
 
-The screen is one layout with **five** states: idle, listening, thinking,
-speaking, error (D38). The others named in the feature doc are not states —
-`nudge`, `redirect`, and `disclosure` are three strings arriving through the
-`speaking` path, `interrupted` is `idle` after `pause()`, and the microphone
-prompt is `idle` with a different label. Composition, state presentation, and
-on-screen copy come from `DESIGN.md` and are not restated here (D36). Barge-in
-stops playback and starts listening. A client turn identifier enforces P1;
-request cancellation only saves work.
+The screen is one layout with **seven** states: idle, starting, listening,
+finishing, thinking, speaking, error (D69 supersedes D38's five-state count).
+`Nudge`, `redirect`, and `disclosure` remain three strings arriving through
+the `speaking` path, `interrupted` is `idle` after `pause()`, and the
+microphone prompt is `idle` with a different label. Composition, state
+presentation, and on-screen copy come from `DESIGN.md` and are not restated
+here (D36). Barge-in stops playback and enters setup. A client turn identifier
+enforces P1; request cancellation only saves work.
 
-The newest completed human turn carries `Say again` through thinking,
-speaking, and idle. It applies P21 before opening the same transcription
-session as `Talk`; the replacement is a new turn rather than an edit to a
-submitted request. The existing client turn identifier is the stale-result
-boundary when repair races a pending reply.
+The newest completed human turn carries `That's not what I said` in the fixed
+control zone through thinking, speaking, and idle. It applies P21 before
+opening the same setup and transcription path as `Talk`; the replacement is a
+new turn rather than an edit to a submitted request. The existing client turn
+identifier is the stale-result boundary when repair races a pending reply.
 
 Target timeline, to be checked against Phase 0b measurements:
 
@@ -578,6 +592,7 @@ Each feature-doc acceptance outcome, with where it is proven.
 | 11. Doesn't pretend to remember | The "what do you remember from last time?" ask in `pnpm register` | 3 |
 | 12. Spend ceiling holds | Tiny Gateway budget: crossing request may finish; next request rejected before new provider work | 4 |
 | 13. Mishearing is recoverable | Reducer contract plus manual repair during thinking, speaking, and idle on both phones; delayed discarded result never surfaces | 2, 4 |
+| 14. Recording state is truthful and fixed | Reducer and silence-detector contracts plus both-phone checks for setup cue, recording treatment, auto-stop, reduced motion, and long transcript scrolling with controls retained | 2, 4 |
 
 G1 is a future gate on expanding access, not an MVP gate.
 
@@ -1331,3 +1346,26 @@ Append-only. Stable IDs; reversals say what they supersede.
   choices preserve the fast happy path, the no-storage boundary, and honest
   model context while giving the child one visible way to recover from a
   mishearing.
+- **D69 (2026-07-27) — Recording readiness becomes a whole-screen state, and
+  controls stay in the viewport. Supersedes D38's five-state count, D41's
+  no-state-color conclusion, and D68's inline `Say again` presentation.**
+  Real use with the kids exposed three connected failures: the client claimed
+  `Listening` before transcription setup was ready, the stop action was easy
+  to forget, and repair inside the scrolling transcript was easy to miss.
+
+  Setup and provider finalization are now explicit `starting` and `finishing`
+  states around actual `listening`. A short Web Audio cue finishes before PCM
+  capture begins; only then does the screen show `Listening — speak now`, a
+  recording-red talk control, and a pulsing red edge wash. Three seconds of
+  below-threshold audio after speech uses the same finalization path as `Done`;
+  the 60-second cap remains. Reduced motion holds the wash static. The red
+  treatment is deliberately redundant with text, sound, level bars, glyph, and
+  control label, never a color-only state.
+
+  The app shell is one dynamic viewport tall with header and control rows
+  fixed in its grid; transcript content alone scrolls and follows the newest
+  turn only when the reader was already near the bottom. A reserved 48px row
+  keeps the main control stationary and exposes the latest-turn repair as the
+  bordered `That's not what I said` action. These observed usability failures
+  justify the functional gradient, pulse, recording-state color, and extra
+  lifecycle states that the earlier calm-recorder design rejected.

@@ -1,7 +1,13 @@
 import type { TurnRequest } from "./contracts";
 
 export type VoiceLifecycle =
-  "error" | "idle" | "listening" | "speaking" | "thinking";
+  | "error"
+  | "finishing"
+  | "idle"
+  | "listening"
+  | "speaking"
+  | "starting"
+  | "thinking";
 
 export type MicrophoneStatus = "blocked" | "needed" | "ready";
 
@@ -15,7 +21,9 @@ export type PracticeState = {
 };
 
 export type PracticeAction =
+  | { turnId: number; type: "start" }
   | { turnId: number; type: "listen" }
+  | { turnId: number; type: "finish" }
   | { turnId: number; type: "repair" }
   | { turnId: number; type: "interrupt" }
   | { text: string; turnId: number; type: "interim" }
@@ -54,7 +62,7 @@ export function practiceReducer(
   state: PracticeState,
   action: PracticeAction,
 ): PracticeState {
-  if (action.type === "listen" || action.type === "repair") {
+  if (action.type === "start" || action.type === "repair") {
     const latestUserIndex = state.history.findLastIndex(
       (entry) => entry.role === "user",
     );
@@ -67,7 +75,7 @@ export function practiceReducer(
           ? state.history.slice(0, latestUserIndex)
           : state.history,
       interimText: "",
-      lifecycle: "listening",
+      lifecycle: "starting",
       microphone: "ready",
     };
   }
@@ -107,6 +115,10 @@ export function practiceReducer(
       };
     case "interim":
       return { ...state, interimText: action.text };
+    case "finish":
+      return { ...state, lifecycle: "finishing" };
+    case "listen":
+      return { ...state, lifecycle: "listening" };
     case "permission":
       return {
         ...state,

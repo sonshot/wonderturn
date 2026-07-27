@@ -96,11 +96,12 @@ repeat.
   Product principles), and it is what lets a whole reply be cleared inside
   the latency bar. The bound is pinned in the plan.
 - A bounded turn and a bounded sitting: a single recording stops itself if it
-  runs long, ending the turn the ordinary way rather than as an error, and
-  only a recent window of the conversation is carried forward. Both protect
-  the latency bar the way the reply-length bound does, and both protect the
-  spend ceiling (see Security) from one long, happy session. Values are
-  pinned in the plan.
+  runs long or after a bounded post-speech silence, ending the turn the ordinary
+  way rather than as an error, and only a recent window of the conversation is
+  carried forward. Manual stop remains available. These bounds protect the
+  latency bar the way the reply-length bound does, and protect the spend
+  ceiling (see Security) from one long, happy session. Values are pinned in
+  the plan.
 - The family-topics deferral (see Product principles), as a persona
   requirement with test coverage, not a separate response type.
 - Google sign-in through the production domain, gated to a short, approved
@@ -158,9 +159,9 @@ appear to disagree about appearance, `DESIGN.md` is right.
   landed by the deadline the plan pins becomes the ordinary failure state, so
   the wait cannot run forever.
 - **One layout, every moment.** Idle, listening, thinking, speaking, the
-  microphone prompt, the empty-input nudge, the safety redirect, the
-  disclosure response, an interruption, and an error all reuse one screen.
-  None of them is a special occasion and none is dramatized.
+  microphone setup and finalization moments, the microphone prompt, the
+  empty-input nudge, the safety redirect, the disclosure response, an
+  interruption, and an error all reuse one screen.
 - **Both sides are visible as well as audible.** The person's words as
   they're recognized, and the reply once cleared — though nobody has to read
   either. This doesn't change the no-storage stance (see Security).
@@ -178,6 +179,11 @@ appear to disagree about appearance, `DESIGN.md` is right.
   reply based on that wording and removes both from conversational history
   before listening resumes; it never edits an older turn in place beneath
   replies that depended on it.
+- **Recording begins and ends unmistakably.** Setup is not presented as active
+  listening. The person receives redundant visible and audible confirmation
+  only when capture is ready, and post-speech silence normally finishes the
+  turn without requiring another tap. The manual stop and hard length limit
+  remain.
 - **An interruption isn't a failure** (see Key flows). If the OS discards the
   backgrounded page outright, the next visit is a fresh, empty conversation —
   a clean start, not a crash.
@@ -193,15 +199,17 @@ appear to disagree about appearance, `DESIGN.md` is right.
    happens. Approved: lands on the talk screen and stays signed in for
    later visits.
 2. **Microphone permission:** The first tap asks for the microphone.
-   Granted → straight into listening. Not yet granted, or the prompt
+   Granted → a truthful setup state, then an audible start cue and active
+   listening once capture is actually ready. Not yet granted, or the prompt
    dismissed → a plain ask rather than an error ("I need to be able to hear
    you — tap to allow"). Blocked outright → the same calm tone plus the
-   grown-up nudge, since only a settings change a kid won't find can undo
-   it. Neither is a failure state.
+   grown-up nudge, since only a settings change a kid won't find can undo it.
+   Neither is a failure state.
 3. **Happy path:** Tap to start, ask something, tap to stop → words stream
-   in as they're recognized → a "thinking" cue while a reply is formed and
-   cleared in full → the reply lands in the transcript whole and is spoken
-   from there, within the latency bar (see Acceptance outcomes).
+   in as they're recognized; or pause after speaking and let the turn finish
+   itself → a finalization cue, then a "thinking" cue while a reply is formed
+   and cleared in full → the reply lands in the transcript whole and is
+   spoken from there, within the latency bar (see Acceptance outcomes).
 4. **Empty or hesitant recording:** Hesitating or saying "never mind," then
    stopping with little or no real speech captured → a light,
    non-punishing nudge ("didn't quite catch that, want to try again?"), not
@@ -360,6 +368,12 @@ Shipped when all of these hold, each with evidence:
     discarded wording, any dependent AI reply, and any stale in-flight result
     disappear from both the transcript and future model history; earlier
     exchanges stay intact.
+14. **Recording state is truthful and hard to miss.** Setup never looks or
+    sounds like active capture. Active capture begins with the pinned start
+    cue and redundant viewport, status, control, and level indications; all
+    active-capture treatment disappears immediately on manual stop,
+    post-speech silence, or the hard turn limit. Transcript growth never moves
+    the talk or repair controls outside the dynamic viewport.
 
 Left for the plan to pin: the session window and how soon removal from the
 allowlist bites; the reply-length bound that keeps a
