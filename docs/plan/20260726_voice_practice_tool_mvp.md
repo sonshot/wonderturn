@@ -1239,3 +1239,10 @@ Append-only. Stable IDs; reversals say what they supersede.
   called `AbortSignal.any()`, which WebKit did not ship until Safari 17.4. A
   plain `AbortController` plus an explicit 15-second timer preserves P20's
   timeout and cancellation semantics without that newer browser dependency.
+- **D64 (2026-07-27) — Only the newest interim hypothesis is current speech.**
+  Chrome Android can expose several cumulative non-final hypotheses in one
+  recognition event, such as "tell", "tell me", and "tell me something".
+  Concatenating them manufactured a long repetitive transcript that the child
+  never said and could trigger a false `nudge`. Final results still accumulate
+  across the turn, but among non-final results the latest browser hypothesis
+  replaces the earlier ones.

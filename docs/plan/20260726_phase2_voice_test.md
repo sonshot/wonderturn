@@ -38,6 +38,9 @@ the recognized text differs from what you said.
 10. Start another turn, say **“Hello hello”**, and tap `Done` as soon as the
     words appear. Confirm both words remain under `You` and the result is an
     ordinary reply, not **“I didn't quite catch that — want to try again?”**
+11. On Chrome Android, say **“Tell me something funny about elephants.”**
+    Confirm the visible and submitted transcript contains the sentence once,
+    without accumulating shorter partial versions of it.
 
 | Check | Result | Notes |
 | --- | --- | --- |
@@ -47,6 +50,7 @@ the recognized text differs from what you said.
 | Reply text appeared once |  |  |
 | Talia played once and matched the text |  |  |
 | Short repeated greeting was retained and answered |  | Recognized: |
+| Android cumulative hypotheses were collapsed |  | Recognized: |
 
 ## B. Barge in during playback
 

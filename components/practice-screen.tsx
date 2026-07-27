@@ -11,6 +11,7 @@ import {
   type PracticeState,
   type VoiceLifecycle,
 } from "@/lib/turn/practice-machine";
+import { mergeRecognitionSegments } from "@/lib/turn/recognition-transcript";
 
 const TURN_TIMEOUT_MS = 15_000;
 const RECORDING_LIMIT_MS = 60_000;
@@ -263,7 +264,7 @@ export function PracticeScreen() {
         }
 
         showActivity(1);
-        let interim = "";
+        const segments = [];
 
         for (
           let index = event.resultIndex;
@@ -273,16 +274,17 @@ export function PracticeScreen() {
           const result = event.results[index];
           const transcript = result?.[0]?.transcript ?? "";
 
-          if (result?.isFinal) {
-            finalTranscriptRef.current =
-              `${finalTranscriptRef.current} ${transcript}`.trim();
-          } else {
-            interim = `${interim} ${transcript}`.trim();
+          if (result !== undefined) {
+            segments.push({ isFinal: result.isFinal, transcript });
           }
         }
 
-        latestTranscriptRef.current =
-          `${finalTranscriptRef.current} ${interim}`.trim();
+        const update = mergeRecognitionSegments(
+          finalTranscriptRef.current,
+          segments,
+        );
+        finalTranscriptRef.current = update.finalTranscript;
+        latestTranscriptRef.current = update.latestTranscript;
         dispatch({
           text: latestTranscriptRef.current,
           turnId,
