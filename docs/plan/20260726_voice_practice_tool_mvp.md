@@ -1246,3 +1246,12 @@ Append-only. Stable IDs; reversals say what they supersede.
   never said and could trigger a false `nudge`. Final results still accumulate
   across the turn, but among non-final results the latest browser hypothesis
   replaces the earlier ones.
+- **D65 (2026-07-27) — Recognition results follow the Web Speech indexed-list
+  contract. Supersedes D64.** `SpeechRecognitionEvent.results` is the complete
+  current list for one recognition session: immutable final entries followed
+  by replaceable or removable interim entries. `resultIndex` identifies the
+  first changed index; it does not turn later entries into append-only text.
+  The client therefore rebuilds final and interim text from index zero on every
+  result event, matching the specification's continuous-recognition example.
+  Only when the browser ends and the client explicitly restarts recognition
+  does the latest intelligible text become a completed-session prefix.

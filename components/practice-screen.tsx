@@ -11,7 +11,10 @@ import {
   type PracticeState,
   type VoiceLifecycle,
 } from "@/lib/turn/practice-machine";
-import { mergeRecognitionSegments } from "@/lib/turn/recognition-transcript";
+import {
+  assembleRecognitionResults,
+  type RecognitionSegment,
+} from "@/lib/turn/recognition-transcript";
 
 const TURN_TIMEOUT_MS = 15_000;
 const RECORDING_LIMIT_MS = 60_000;
@@ -27,7 +30,7 @@ export function PracticeScreen() {
   const recognitionTurnRef = useRef(0);
   const shouldListenRef = useRef(false);
   const submitOnEndRef = useRef(false);
-  const finalTranscriptRef = useRef("");
+  const completedTranscriptRef = useRef("");
   const latestTranscriptRef = useRef("");
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playbackRef = useRef<HTMLAudioElement | null>(null);
@@ -215,7 +218,7 @@ export function PracticeScreen() {
     const turnId = ++turnCounterRef.current;
     stopActiveWork(turnId);
     unlockPlayback();
-    finalTranscriptRef.current = "";
+    completedTranscriptRef.current = "";
     latestTranscriptRef.current = "";
 
     try {
@@ -264,13 +267,9 @@ export function PracticeScreen() {
         }
 
         showActivity(1);
-        const segments = [];
+        const segments: RecognitionSegment[] = [];
 
-        for (
-          let index = event.resultIndex;
-          index < event.results.length;
-          index += 1
-        ) {
+        for (let index = 0; index < event.results.length; index += 1) {
           const result = event.results[index];
           const transcript = result?.[0]?.transcript ?? "";
 
@@ -279,12 +278,9 @@ export function PracticeScreen() {
           }
         }
 
-        const update = mergeRecognitionSegments(
-          finalTranscriptRef.current,
-          segments,
-        );
-        finalTranscriptRef.current = update.finalTranscript;
-        latestTranscriptRef.current = update.latestTranscript;
+        const currentSession = assembleRecognitionResults(segments);
+        latestTranscriptRef.current =
+          `${completedTranscriptRef.current} ${currentSession.latestTranscript}`.trim();
         dispatch({
           text: latestTranscriptRef.current,
           turnId,
@@ -326,6 +322,7 @@ export function PracticeScreen() {
 
         if (shouldListenRef.current) {
           setLevel(0);
+          completedTranscriptRef.current = latestTranscriptRef.current;
           try {
             recognition.start();
           } catch {

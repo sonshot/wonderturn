@@ -1,35 +1,52 @@
 import { describe, expect, it } from "vitest";
 
-import { mergeRecognitionSegments } from "./recognition-transcript";
+import { assembleRecognitionResults } from "./recognition-transcript";
 
 describe("recognition transcript assembly", () => {
-  it("keeps only the newest cumulative interim hypothesis", () => {
+  it("assembles the complete current result list in index order", () => {
     expect(
-      mergeRecognitionSegments("", [
-        { isFinal: false, transcript: "tell" },
-        { isFinal: false, transcript: "tell me" },
-        { isFinal: false, transcript: "tell me something" },
-        {
-          isFinal: false,
-          transcript: "tell me something funny about elephant",
-        },
+      assembleRecognitionResults([
+        { isFinal: true, transcript: "tell me" },
+        { isFinal: true, transcript: "something funny" },
+        { isFinal: false, transcript: "about" },
+        { isFinal: false, transcript: "elephants" },
       ]),
     ).toEqual({
-      finalTranscript: "",
-      latestTranscript: "tell me something funny about elephant",
+      finalTranscript: "tell me something funny",
+      latestTranscript: "tell me something funny about elephants",
     });
   });
 
-  it("retains finalized speech before the newest interim hypothesis", () => {
+  it("rebuilds a replaced result instead of appending the previous event", () => {
+    const first = assembleRecognitionResults([
+      { isFinal: false, transcript: "tell" },
+    ]);
+    const second = assembleRecognitionResults([
+      { isFinal: false, transcript: "tell me" },
+    ]);
+    const third = assembleRecognitionResults([
+      {
+        isFinal: false,
+        transcript: "tell me something funny about elephants",
+      },
+    ]);
+
+    expect(first.latestTranscript).toBe("tell");
+    expect(second.latestTranscript).toBe("tell me");
+    expect(third).toEqual({
+      finalTranscript: "",
+      latestTranscript: "tell me something funny about elephants",
+    });
+  });
+
+  it("reflects removal of an interim result from the current list", () => {
     expect(
-      mergeRecognitionSegments("hello", [
-        { isFinal: true, transcript: "there" },
-        { isFinal: false, transcript: "tell" },
-        { isFinal: false, transcript: "tell me a joke" },
+      assembleRecognitionResults([
+        { isFinal: true, transcript: "hello hello" },
       ]),
     ).toEqual({
-      finalTranscript: "hello there",
-      latestTranscript: "hello there tell me a joke",
+      finalTranscript: "hello hello",
+      latestTranscript: "hello hello",
     });
   });
 });

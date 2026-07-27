@@ -3,11 +3,10 @@ export type RecognitionSegment = {
   transcript: string;
 };
 
-export function mergeRecognitionSegments(
-  currentFinal: string,
+export function assembleRecognitionResults(
   segments: readonly RecognitionSegment[],
 ) {
-  let finalTranscript = currentFinal.trim();
+  let finalTranscript = "";
   let interimTranscript = "";
 
   for (const segment of segments) {
@@ -17,10 +16,13 @@ export function mergeRecognitionSegments(
       continue;
     }
 
+    const current = segment.isFinal ? finalTranscript : interimTranscript;
+    const next = `${current} ${transcript}`.trim();
+
     if (segment.isFinal) {
-      finalTranscript = `${finalTranscript} ${transcript}`.trim();
+      finalTranscript = next;
     } else {
-      interimTranscript = transcript;
+      interimTranscript = next;
     }
   }
 
