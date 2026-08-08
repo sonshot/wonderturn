@@ -64,7 +64,7 @@ pass through the production text seam, the thirteen-ask register baseline is
 committed, and the tracked `spike/` harness is removed. Local model-latency
 benchmarking is deliberately absent (D72).
 
-Phase 3b is complete locally (D73–D81). Both expected-behaviour expansions and
+Phase 3b is complete locally (D73–D82). Both expected-behaviour expansions and
 their red runs were committed separately before prompt implementation. The
 final production seam passes all 30 model-backed outcome fixtures; all 17
 active register rows pass routing and all 127 applicable criteria from the
@@ -90,7 +90,7 @@ under Pinned semantics.
 | Speech in | OpenAI `gpt-realtime-whisper`, streamed as 24 kHz mono PCM through Vercel AI Gateway |
 | Models | Vercel AI Gateway via AI SDK |
 | Reply | `openai/gpt-5.6-luna` (D81) |
-| Input classification + clearing checks | `anthropic/claude-haiku-4.5` (D32) |
+| Input classification + clearing checks | `anthropic/claude-haiku-4.5` (D32, D82) |
 | Speech out | ElevenLabs, called directly (D33) |
 | Auth | Better Auth Google OAuth, stateless encrypted 180-day session, production-domain OAuth proxy for previews |
 | Storage | No database or conversation persistence; auth state exists only in encrypted cookies |
@@ -561,7 +561,7 @@ exists.
 
 ### Phase 3b — Child scaffolding calibration
 
-Phase 3b is **complete after transcript and judge calibration** (D80–D81).
+Phase 3b is **complete after transcript and model calibration** (D80–D82).
 The earlier D77–D79 evidence remains the completed first calibration slice.
 The four-row contract and its unchanged-prompt red baseline were committed
 before the follow-up prompt implementation. A Claude Sonnet 5 judge trial was
@@ -1651,3 +1651,29 @@ Append-only. Stable IDs; reversals say what they supersede.
   The final evidence is 30/30 live outcome fixtures, 17/17 active register
   routes and 127/127 GPT-5.6 Sol criteria, plus 71/71 offline tests; `REG-09`
   remains deferred.
+- **D82 (2026-08-08) — Haiku 4.5 remains the production classifier and
+  clearer after a fresh structured-output comparison. Extends D32 and D72.**
+  A one-off, untracked harness ran the production classifier and clearer
+  prompts, schemas, temperature, retry policy, and 32-token output budget over
+  ten cases per task. The same twenty cases covered ordinary, nudge, and
+  disclosure routing plus safe, relationship, secrecy, memory, and family
+  judgment candidates. Model order alternated in paired runs; no latency
+  command or harness was added to the repository.
+
+  Haiku returned the expected result in all 60 calls across three paired
+  rounds. Gemini 3.5 Flash Lite was faster at 1.039s classifier and 0.961s
+  clearer medians, but reached only 17/20: one structured-output failure, one
+  hesitation misroute, and one unsafe family-belief judgment cleared as safe.
+  Gemini 3.6 Flash produced no structured object in 20/20 calls at the
+  production budget; raising it to 128 tokens yielded only 4/20 successful
+  calls and removed its latency advantage. GPT-5.6 Luna reached 17/20 at 32
+  tokens because of three structured-output failures. At 128 tokens it reached
+  19/20, with 1.290s classifier and 1.421s clearer medians, but still routed an
+  explicit withdrawal as ordinary. Using Luna to clear Luna-written replies
+  would also reintroduce the correlated-blind-spot concern from D32.
+
+  Therefore the production check model remains `anthropic/claude-haiku-4.5`.
+  These laptop-to-Gateway timings are directional under D72 and do not replace
+  deployed latency validation. The repeated contract outcomes are evidence for
+  this narrow model choice, not a general safety claim; the Phase 4 disclosure
+  suite and real-device checks remain the acceptance gates.
