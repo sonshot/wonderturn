@@ -1,5 +1,5 @@
 import { gateway } from "@ai-sdk/gateway";
-import { generateText, type ModelMessage } from "ai";
+import { generateText, Output, type ModelMessage } from "ai";
 import { z } from "zod";
 
 import {
@@ -16,34 +16,41 @@ const REPLY_MODEL = "google/gemini-3.5-flash-lite";
 const CHECK_MODEL = "anthropic/claude-haiku-4.5";
 const modelTextSchema = z.string().trim().min(1).max(4_000);
 const clearingVerdictSchema = z.enum(["SAFE", "UNSAFE"]);
+const inputClassificationResultSchema = z.object({
+  classification: inputClassificationSchema,
+});
+const clearingResultSchema = z.object({
+  verdict: clearingVerdictSchema,
+});
 
 async function classifyInput(said: string, signal: AbortSignal) {
   const result = await generateText({
     abortSignal: signal,
     instructions: INPUT_CLASSIFIER_PROMPT,
-    maxOutputTokens: 8,
+    maxOutputTokens: 32,
     maxRetries: 0,
     model: gateway(CHECK_MODEL),
+    output: Output.object({ schema: inputClassificationResultSchema }),
     prompt: said,
+    temperature: 0,
   });
 
-  return inputClassificationSchema.parse(modelTextSchema.parse(result.text));
+  return result.output.classification;
 }
 
 async function clearCandidate(candidate: string, signal: AbortSignal) {
   const result = await generateText({
     abortSignal: signal,
     instructions: CLEARING_PROMPT,
-    maxOutputTokens: 8,
+    maxOutputTokens: 32,
     maxRetries: 0,
     model: gateway(CHECK_MODEL),
+    output: Output.object({ schema: clearingResultSchema }),
     prompt: candidate,
+    temperature: 0,
   });
-  const verdict = clearingVerdictSchema.parse(
-    modelTextSchema.parse(result.text),
-  );
 
-  return verdict === "SAFE";
+  return result.output.verdict === "SAFE";
 }
 
 const generateCandidate: TextTurnDependencies["generateCandidate"] = async ({
@@ -68,6 +75,7 @@ const generateCandidate: TextTurnDependencies["generateCandidate"] = async ({
     maxRetries: 0,
     messages,
     model: gateway(REPLY_MODEL),
+    temperature: 0,
   });
 
   return modelTextSchema.parse(result.text);

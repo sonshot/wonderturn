@@ -61,21 +61,15 @@ delayed-stale-result checks before exit.
 
 Phase 3a is complete locally (D70–D72). Its 25 model-backed outcome fixtures
 pass through the production text seam, the thirteen-ask register baseline is
-committed, and the tracked `spike/` harness is removed. The production prompts
-and fixed copy did not change. Phase 3b is next: a separate prompt-calibration
-slice for the observed stuck/unclear and family-deferral register failures.
-The cross-session-memory row is deferred with the already out-of-scope memory
-feature (D76). Local model-latency benchmarking is deliberately absent (D72).
+committed, and the tracked `spike/` harness is removed. Local model-latency
+benchmarking is deliberately absent (D72).
 
-Phase 3b has started test-first (D73–D76). Seven proposed expected-behaviour cases
-run against the unchanged production prompts; the first run is red with 4/31
-failures. They are a human review artifact, not authorization to tune the
-classifier, reply persona, or clearing boundary; implementation waits for
-explicit review of the inputs, expected outcome kinds, and prose rubric. Once
-approved, repeated prose grading is automated by a separate-family LLM judge.
-Review is now complete for six active cases; the seventh is deferred (D76).
-The post-review contract is red at 5/30 outcome fixtures with production
-prompts still unchanged.
+Phase 3b is complete locally (D73–D79). Its expected-behaviour contract and red
+run were committed separately before prompt implementation. The final
+production seam passes all 30 model-backed outcome fixtures; all 13 active
+register rows pass routing and all 81 applicable criteria from the pinned
+GPT-5.6 Luna judge. `REG-09` remains skipped with the out-of-scope
+cross-session-memory feature. The offline `verify` lane passes 71 tests.
 
 ## Scope
 
@@ -566,6 +560,11 @@ produces the expected `kind` for every fixture, and `spike/` no longer
 exists.
 
 ### Phase 3b — Child scaffolding calibration
+
+Phase 3b is **complete locally** (D77–D79). The reviewed contract was committed at
+`aa1175a` before any prompt implementation. The final `pnpm test:live` run
+passes 30/30 outcome fixtures, and `pnpm register` passes all 13 active rows
+and all 81 applicable judge criteria while printing `REG-09` as deferred.
 
 Begin with a review gate: commit no prompt fix in the same slice that proposes
 the expected-behaviour cases and qualitative rubric. Run the cases against the
@@ -1545,3 +1544,48 @@ Append-only. Stable IDs; reversals say what they supersede.
   rejects invented memory and relationship claims, so deferral does not loosen
   the current safety guarantee. Stable `REG-01` through `REG-14` IDs make these
   decisions addressable in review even when a row is skipped.
+- **D77 (2026-08-08) — Phase 3b routes intelligible uncertainty to generation
+  and uses structured checker output. Extends D76.** The classifier now reserves
+  `nudge` for content-free input and routes an intelligible statement of
+  uncertainty through the ordinary reply path. The reply prompt explicitly
+  acknowledges stuckness, supplies concrete new or current-topic directions,
+  and gives simpler wording of the immediately previous prompt priority over
+  changing the topic. General explanation rules keep necessary terms defined,
+  curiosity replies lively, sensitive replies gentle, adult language-learning
+  examples age-neutral, and advice endings actionable. The approved neutral
+  faith-family deferral remains safe.
+
+  Live evaluation exposed occasional free-text classifier and clearing output
+  outside their enum contracts. Those two small checks therefore use AI SDK
+  structured output backed by their existing Zod schemas, then return the
+  parsed field to the unchanged text-turn seam. This is boundary parsing, not
+  recovery: malformed provider output still fails fast. The final evidence is
+  30/30 live outcome fixtures, 13/13 active register routes, 81/81 applicable
+  GPT-5.6 Luna criteria, and 71/71 offline tests; `REG-09` remains deferred.
+- **D78 (2026-08-08) — Classifier examples are held apart from evaluation
+  inputs. Extends D77.** Exact or near-exact examples can make a passing route
+  demonstrate recall of prompt wording instead of category generalization. The
+  classifier therefore keeps its reviewed semantics without carrying examples;
+  ordered category definitions express the contract directly. The audited
+  outcome and register inputs remain unchanged as holdouts.
+
+  After removing the overlapping examples, the production seam still passes
+  30/30 live outcome fixtures—including both bare-help disclosure checks—and
+  all 13 active register routes plus 81/81 GPT-5.6 Luna criteria. This pass
+  strengthens the evidence without changing the Phase 3b contract.
+- **D79 (2026-08-08) — Prompt contracts use short, positive, route-local
+  instructions. Extends D77 and D78.** Three independent fresh-eye reviews
+  converged on removing classifier examples, ordering overlapping routes,
+  expressing reply requirements as observable sentence shapes, and separating
+  current-turn cooperation from personal relationship or cross-sitting-memory
+  claims. The classifier, reply, and clearing prompts now contain 106, 286, and
+  93 words respectively, with zero direct `must not`, `avoid`, `do not`,
+  `never`, `cannot`, or `without` instructions. The reply prompt remains shorter
+  than its 389-word starting point while retaining the route-local detail the
+  writer needed for stable child scaffolding.
+
+  Classifier, writer, and clearing calls use temperature zero. The register
+  judge instruction is also shorter and treats payload fields as quoted
+  evidence. The final production seam passes 30/30 live outcome fixtures, all
+  13 active register routes and 81/81 GPT-5.6 Luna criteria, plus 71/71 offline
+  tests; `REG-09` remains deferred.
