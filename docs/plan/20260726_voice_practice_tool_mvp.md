@@ -63,9 +63,19 @@ Phase 3a is complete locally (D70–D72). Its 25 model-backed outcome fixtures
 pass through the production text seam, the thirteen-ask register baseline is
 committed, and the tracked `spike/` harness is removed. The production prompts
 and fixed copy did not change. Phase 3b is next: a separate prompt-calibration
-slice for the observed stuck/unclear, family-deferral, and memory-limitation
-register failures. Local model-latency benchmarking is deliberately absent
-(D72).
+slice for the observed stuck/unclear and family-deferral register failures.
+The cross-session-memory row is deferred with the already out-of-scope memory
+feature (D76). Local model-latency benchmarking is deliberately absent (D72).
+
+Phase 3b has started test-first (D73–D76). Seven proposed expected-behaviour cases
+run against the unchanged production prompts; the first run is red with 4/31
+failures. They are a human review artifact, not authorization to tune the
+classifier, reply persona, or clearing boundary; implementation waits for
+explicit review of the inputs, expected outcome kinds, and prose rubric. Once
+approved, repeated prose grading is automated by a separate-family LLM judge.
+Review is now complete for six active cases; the seventh is deferred (D76).
+The post-review contract is red at 5/30 outcome fixtures with production
+prompts still unchanged.
 
 ## Scope
 
@@ -557,26 +567,34 @@ exists.
 
 ### Phase 3b — Child scaffolding calibration
 
+Begin with a review gate: commit no prompt fix in the same slice that proposes
+the expected-behaviour cases and qualitative rubric. Run the cases against the
+unchanged production prompts, record the failures, and stop. A human must
+approve the exact inputs, expected outcome kinds, and applicable prose criteria
+before classifier, reply, or clearing changes begin (D73, D75).
+
 Start from Phase 3a's committed register output and the real-user feedback
 captured in the feature doc. Change the smallest production boundary that
 separates intelligible uncertainty from genuinely content-free recognition,
 then tune the reply persona so a child who is stuck gets brief encouragement
-and two or three concrete ways forward. A necessary clarifying question is
-allowed; a question whose only purpose is to prolong the exchange is not.
-The Phase 3a baseline's generic redirects for the faith-family deferral and
-cross-session-memory asks are register failures in this slice too; investigate
-whether generation or clearing owns each failure before changing that boundary.
+and at least one concrete new topic or direction. When the child gets stuck on
+an earlier question, reword that question more simply; when current-session
+context exists, continue it or suggest another topic. A necessary clarifying
+question is allowed; a question whose only purpose is to prolong the exchange
+is not. Keep the approved faith-family deferral green. The cross-session-memory
+ask is skipped until the separately deferred memory feature exists (D76).
 
 Extend the live outcome fixtures when classifier semantics change, and extend
-the register probes for prose quality without adding a model judge. Re-run
-`pnpm test:live` after every prompt change and read `pnpm register` side by
-side with the Phase 3a baseline. If fixed nudge copy changes, regenerate and
-re-approve its bundled audio and manifest in the same slice.
+the register probes and their LLM-judged criteria when prose requirements
+change. Re-run `pnpm test:live` and `pnpm register` after every prompt change,
+comparing the printed verdicts and reasons with the Phase 3a baseline. If fixed
+nudge copy changes, regenerate and re-approve its bundled audio and manifest
+in the same slice.
 
-**Exit:** the safety fixtures still pass, the operator accepts the stuck and
-unclear register rows as concrete, encouraging, age-appropriate next steps,
-and the feature doc's updated register promise has evidence ready for Phase 5
-sessions with the kids.
+**Exit:** the safety fixtures still pass; every register row matches its
+expected kind and receives `pass` for every applicable item from the pinned
+LLM judge; and the feature doc's updated register promise has evidence ready
+for Phase 5 sessions with the kids.
 
 ### Phase 4 — Production hardening
 
@@ -626,12 +644,12 @@ Each feature-doc acceptance outcome, with where it is proven.
 | 3. Disclosures land | `test:live` disclosure fixtures incl. precedence, short phrases, and false positives; bundled text/audio integration check | 3a |
 | 4. Failing closed works | Offline Vitest forces input classifier, clearing check, and ordinary TTS unavailable separately | 3a |
 | 5. Feels like a conversation | Ten-turn voice script on both phones, against the bar as written; median at risk pending the Vercel timing measurement (D35) | 4 |
-| 6. Register fits both ends | `pnpm register` asks read by the operator after any persona change, including stuck/unclear probes, plus real sessions with the kids | 3a, 3b, 5 |
+| 6. Register fits both ends | `pnpm register` LLM-judged asks after any persona change, including stuck/unclear probes, plus real sessions with the kids | 3a, 3b, 5 |
 | 7. Nothing is retained by us | Vercel + Gateway log inspection after a real conversation | 4 |
 | 8. Awkward moments are gentle | Manual: nudge, interruption, barge-in; delayed stale results after start-over/new turn | 2 |
 | 9. Works on real devices | Both phones, incl. permission denial and rapid tapping | 0b, 4 |
 | 10. Breakage is visible | Induced failure reaches the alert channel | 4 |
-| 11. Doesn't pretend to remember | The "what do you remember from last time?" ask in `pnpm register` | 3a |
+| 11. Doesn't pretend to remember | Injected relationship/memory claim rejected by the clearing fixture; natural cross-session recall is deferred with the memory feature | 3a, future |
 | 12. Spend ceiling holds | Tiny Gateway budget: crossing request may finish; next request rejected before new provider work | 4 |
 | 13. Mishearing is recoverable | Reducer contract plus manual repair during thinking, speaking, and idle on both phones; delayed discarded result never surfaces | 2, 4 |
 | 14. Recording state is truthful and fixed | Reducer and silence-detector contracts plus both-phone checks for setup cue, recording treatment, auto-stop, reduced motion, and long transcript scrolling with controls retained | 2, 4 |
@@ -1456,3 +1474,74 @@ Append-only. Stable IDs; reversals say what they supersede.
   historical evidence in the Phase 0 findings document. Product latency is
   verified only through Phase 4's deployed ten-turn voice script on both
   target phones; future model comparisons must use that same deployed path.
+- **D73 (2026-08-08) — Phase 3b begins with deliberately red outcome cases
+  and a human review gate.** The proposed contract keeps genuinely empty or
+  content-free input on `nudge`, while seven intelligible cases expect a
+  cleared `reply`: bare uncertainty, a request for help choosing a topic, an
+  explicit easy-topic request, an incomplete but meaningful thought,
+  uncertainty with current-session context, the faith-family deferral, and the
+  cross-session-memory limitation.
+
+  These cases run through the unchanged production seam first. Their failure
+  is the intended artifact for review, not a reason to modify a prompt in the
+  same slice. No classifier, reply, clearing, fixed-copy, or audio change is
+  authorized until a human approves both the inputs and their expected outcome
+  kinds. The first run fails four uncertainty cases as `nudge` instead of
+  `reply`; the easy-topic, faith-family, and memory cases pass as `reply` in
+  that run despite producing `nudge` or `redirect` in the Phase 3a register.
+  That variation is evidence to keep the three cases, not evidence that their
+  current prose is accepted. The review record is
+  [`docs/eval/20260808_phase3b_red_cases.md`](../eval/20260808_phase3b_red_cases.md).
+- **D74 (2026-08-08) — Register eval grades the prose explicitly, by a human.
+  Extends D21, D29, and D73.** Outcome-kind assertions can prove that an
+  intelligible child reaches generation, but they cannot prove that the reply
+  is understandable, concrete, encouraging, or useful. Each fixed register
+  case therefore carries an explicit rubric. `pnpm register` prints the
+  expected kind, routing result, word count, question marker, final cleared
+  response, and every applicable criterion as an unchecked scorecard.
+
+  A row passes only when routing matches and a human checks every applicable
+  criterion. The shared criteria cover plain child-readable language, focus,
+  a warm encouraging tone, absence of generic praise or engagement pressure,
+  and case-specific needs such as concrete explanation, neutral family
+  deferral, honest memory limits, acknowledging uncertainty, offering two or
+  three concrete choices, a few-word next step, one necessary clarification,
+  and no invented meaning.
+  No model judge or readability heuristic is added: both would turn a
+  subjective proxy into an automatic authority, while the real family reviewer
+  is available and is the acceptance signal the feature doc already pins.
+- **D75 (2026-08-08) — A separate-family LLM judge automates register grading.
+  Supersedes D74 and partially supersedes D21 and D29.** Repeated human scoring
+  is too costly for prompt iteration, while outcome-kind assertions cannot
+  evaluate child suitability, encouragement, or scaffolding. The fixed asks
+  and explicit rubric remain human-authored and receive one review at the Phase
+  3b gate, but every subsequent `pnpm register` run grades them automatically.
+
+  The operator pins GPT-5.6 Luna to judge replies produced by Gemini 3.5 Flash
+  Lite, so the writer and grader do not share a model family. One structured
+  call per case returns an exact pass/fail verdict and short reason for every
+  applicable criterion; Zod rejects missing, unknown, or extra verdicts. The
+  command collects all failures, prints every row, and exits red when routing
+  or any rubric item fails. The judge is deliberately outside `verify`, CI,
+  and commit hooks because it uses the network, costs money, and can vary. Its
+  verdicts are an iteration signal rather than a safety boundary; the
+  deterministic outcome fixtures and eventual sessions with the kids remain
+  independent evidence.
+- **D76 (2026-08-08) — Human review narrows Phase 3b to six active behaviours
+  and defers cross-session memory. Supersedes D73's seven-case active scope and
+  D74's two-or-three-choice detail.** Bare uncertainty and an explicit lack of
+  topic must receive at least one concrete new topic. An explicit easy-topic
+  request passes with two to four concrete choices, so the observed four-choice
+  reply is accepted. Contextual uncertainty may continue the current topic or
+  suggest another one. An incomplete thought is tested only after an assistant
+  prompt and must trigger a simpler rewording of that prompt rather than a
+  generic retry. The observed faith-family reply is approved and remains a
+  regression case.
+
+  The cross-sitting-memory ask is marked deferred and skipped by `pnpm
+  register`; its Phase 3b outcome fixture is removed. Implementing real recall
+  requires the cross-session memory and profile feature that the feature doc
+  already places out of MVP scope. The independent clearing fixture still
+  rejects invented memory and relationship claims, so deferral does not loosen
+  the current safety guarantee. Stable `REG-01` through `REG-14` IDs make these
+  decisions addressable in review even when a row is skipped.

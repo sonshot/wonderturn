@@ -32,10 +32,11 @@ guarantees are hard launch requirements (see Security).
      questions asked just to extend a turn.
    - Intelligible uncertainty is part of conversation practice, not empty
      input. When the person does not know what to say or cannot yet express
-     the thought clearly, the tool gives one low-pressure next step: a few
-     concrete choices or one necessary clarification that can be answered in
-     a few words. It encourages without generic praise, inventing meaning, or
-     turning the prompt into engagement pressure.
+     the thought clearly, the tool gives one low-pressure next step: at least
+     one concrete new topic, a direction grounded in the current sitting, or a
+     simpler rewording of its previous prompt that can be answered in a few
+     words. It encourages without generic praise, inventing meaning, or turning
+     the prompt into engagement pressure.
    - Honest about its limits: it never implies it remembers an earlier
      conversation, has an inner life or a relationship with the person, or
      is more certain than it is. (It follows the thread within a sitting;

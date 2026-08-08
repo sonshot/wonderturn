@@ -130,8 +130,8 @@ pnpm build
 
 `verify` runs formatting, linting, strict TypeScript, and offline Vitest
 checks. Model-backed checks are deliberately separate: `pnpm test:live` runs
-the Phase 3a outcome fixtures, and `pnpm register` prints the qualitative
-register for operator review. Both use the network and cost money.
+the Phase 3a outcome fixtures, and `pnpm register` runs the qualitative
+register through an LLM judge. Both use the network and cost money.
 
 ## Project documents
 

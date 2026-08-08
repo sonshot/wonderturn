@@ -9,9 +9,9 @@ const LIVE_CASE_TIMEOUT_MS = 30_000;
 describe.sequential("production model-backed outcome fixtures", () => {
   it.each(OUTCOME_FIXTURES)(
     "$group: $label",
-    async ({ candidateOverride, expected, said }) => {
+    async ({ candidateOverride, expected, history, said }) => {
       const outcome = await runTextTurn(
-        { history: [], said },
+        { history: history ?? [], said },
         gatewayTextDependencies,
         { candidateOverride },
       );
