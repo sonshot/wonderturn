@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   initialPracticeState,
   practiceReducer,
+  toTurnHistory,
   type PracticeState,
 } from "./practice-machine";
 
@@ -18,6 +19,7 @@ describe("practice state machine", () => {
       type: "think",
     });
     const speaking = practiceReducer(thinking, {
+      audioUrl: "blob:reply-1",
       text: "Their light passes through moving air.",
       turnId: 1,
       type: "receive",
@@ -25,13 +27,15 @@ describe("practice state machine", () => {
     const idle = practiceReducer(speaking, { turnId: 1, type: "idle" });
 
     expect(thinking.history).toEqual([
-      { role: "user", text: "Why do stars twinkle?" },
+      { role: "user", text: "Why do stars twinkle?", turnId: 1 },
     ]);
     expect(speaking.history).toEqual([
-      { role: "user", text: "Why do stars twinkle?" },
+      { role: "user", text: "Why do stars twinkle?", turnId: 1 },
       {
         role: "assistant",
         text: "Their light passes through moving air.",
+        audioUrl: "blob:reply-1",
+        turnId: 1,
       },
     ]);
     expect(idle.lifecycle).toBe("idle");
@@ -45,6 +49,7 @@ describe("practice state machine", () => {
 
     expect(
       practiceReducer(newer, {
+        audioUrl: "blob:stale",
         text: "Stale reply.",
         turnId: 1,
         type: "receive",
@@ -57,7 +62,7 @@ describe("practice state machine", () => {
     const state: PracticeState = {
       ...initialPracticeState,
       activeTurnId: 1,
-      history: [{ role: "user", text: "A completed turn." }],
+      history: [{ role: "user", text: "A completed turn.", turnId: 1 }],
       lifecycle: "thinking",
     };
     const interrupted = practiceReducer(state, {
@@ -75,10 +80,15 @@ describe("practice state machine", () => {
   it("keeps only the newest twenty history entries", () => {
     const history: PracticeState["history"] = Array.from(
       { length: 20 },
-      (_, index) => ({
-        role: index % 2 === 0 ? ("user" as const) : ("assistant" as const),
-        text: `Turn ${index}`,
-      }),
+      (_, index) =>
+        index % 2 === 0
+          ? { role: "user", text: `Turn ${index}`, turnId: index }
+          : {
+              audioUrl: `blob:reply-${index}`,
+              role: "assistant",
+              text: `Turn ${index}`,
+              turnId: index,
+            },
     );
     const listening = practiceReducer(
       { ...initialPracticeState, history },
@@ -95,7 +105,48 @@ describe("practice state machine", () => {
     expect(thinking.history.at(-1)).toEqual({
       role: "user",
       text: "Newest",
+      turnId: 1,
     });
+  });
+
+  it("marks replay as speaking without adding a conversation turn", () => {
+    const state: PracticeState = {
+      ...initialPracticeState,
+      activeTurnId: 4,
+      history: [
+        { role: "user", text: "Why?", turnId: 4 },
+        {
+          audioUrl: "blob:reply-4",
+          role: "assistant",
+          text: "Because.",
+          turnId: 4,
+        },
+      ],
+    };
+
+    const replaying = practiceReducer(state, { turnId: 4, type: "replay" });
+
+    expect(replaying).toMatchObject({
+      history: state.history,
+      lifecycle: "speaking",
+    });
+  });
+
+  it("removes client-only replay fields from submitted history", () => {
+    expect(
+      toTurnHistory([
+        { role: "user", text: "Why?", turnId: 1 },
+        {
+          audioUrl: "blob:reply-1",
+          role: "assistant",
+          text: "Because.",
+          turnId: 1,
+        },
+      ]),
+    ).toEqual([
+      { role: "user", text: "Why?" },
+      { role: "assistant", text: "Because." },
+    ]);
   });
 
   it("tracks repeat failures and resets the whole sitting", () => {

@@ -2,15 +2,16 @@
 
 import { useEffect, useReducer, useRef, useState, type RefObject } from "react";
 
+import { ControlZone } from "@/components/practice/control-zone";
+import { Transcript } from "@/components/practice/transcript";
 import { turnFailureSchema, turnResponseSchema } from "@/lib/turn/contracts";
-import { ERROR_RESPONSES } from "@/lib/turn/fixed-responses";
 import {
   initialPracticeState,
   practiceReducer,
+  toTurnHistory,
   type MicrophoneStatus,
-  type PracticeState,
-  type VoiceLifecycle,
 } from "@/lib/turn/practice-machine";
+import { audioBlobFromBase64 } from "@/lib/turn/replay-audio";
 import {
   assembleRecognitionResults,
   type RecognitionSegment,
@@ -34,10 +35,27 @@ export function PracticeScreen() {
   const latestTranscriptRef = useRef("");
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playbackRef = useRef<HTMLAudioElement | null>(null);
+  const playbackRunRef = useRef(0);
+  const replayAudioUrlsRef = useRef(new Set<string>());
 
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    const retainedUrls = new Set(
+      state.history.flatMap((entry) =>
+        entry.role === "assistant" ? [entry.audioUrl] : [],
+      ),
+    );
+
+    for (const audioUrl of replayAudioUrlsRef.current) {
+      if (!retainedUrls.has(audioUrl)) {
+        URL.revokeObjectURL(audioUrl);
+        replayAudioUrlsRef.current.delete(audioUrl);
+      }
+    }
+  }, [state.history]);
 
   useEffect(() => {
     if (state.lifecycle !== "thinking") {
@@ -51,6 +69,7 @@ export function PracticeScreen() {
 
   useEffect(() => {
     const playback = playbackRef.current;
+    const replayAudioUrls = replayAudioUrlsRef.current;
 
     function interruptWhenHidden() {
       if (document.visibilityState !== "hidden") {
@@ -64,6 +83,7 @@ export function PracticeScreen() {
       submitOnEndRef.current = false;
       recognitionRef.current?.abort();
       recognitionRef.current = null;
+      playbackRunRef.current += 1;
       playbackRef.current?.pause();
       stopListeningCue(recordingTimerRef, setLevel);
       dispatch({ turnId, type: "interrupt" });
@@ -76,7 +96,12 @@ export function PracticeScreen() {
       shouldListenRef.current = false;
       submitOnEndRef.current = false;
       recognitionRef.current?.abort();
+      playbackRunRef.current += 1;
       playback?.pause();
+      for (const audioUrl of replayAudioUrls) {
+        URL.revokeObjectURL(audioUrl);
+      }
+      replayAudioUrls.clear();
       stopListeningCue(recordingTimerRef, setLevel);
     };
   }, []);
@@ -88,6 +113,7 @@ export function PracticeScreen() {
     submitOnEndRef.current = false;
     recognitionRef.current?.abort();
     recognitionRef.current = null;
+    playbackRunRef.current += 1;
     playbackRef.current?.pause();
     stopListeningCue(recordingTimerRef, setLevel);
     dispatch({ turnId, type: "interrupt" });
@@ -125,6 +151,7 @@ export function PracticeScreen() {
     }
 
     const repeated = stateRef.current.errorCount > 0;
+    playbackRunRef.current += 1;
     dispatch({ turnId, type: "fail" });
     const audio = playbackRef.current;
 
@@ -143,7 +170,7 @@ export function PracticeScreen() {
       return;
     }
 
-    const history = stateRef.current.history;
+    const history = toTurnHistory(stateRef.current.history);
     dispatch({ said, turnId, type: "think" });
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), TURN_TIMEOUT_MS);
@@ -169,15 +196,23 @@ export function PracticeScreen() {
         return;
       }
 
-      dispatch({ text: result.text, turnId, type: "receive" });
       const audio = playbackRef.current;
 
       if (audio === null) {
         throw new Error("Playback element unavailable");
       }
 
+      const audioUrl = URL.createObjectURL(audioBlobFromBase64(result.audio));
+      replayAudioUrlsRef.current.add(audioUrl);
+      dispatch({
+        audioUrl,
+        text: result.text,
+        turnId,
+        type: "receive",
+      });
+      playbackRunRef.current += 1;
       audio.pause();
-      audio.src = `data:audio/mpeg;base64,${result.audio}`;
+      audio.src = audioUrl;
       audio.currentTime = 0;
       await audio.play();
     } catch {
@@ -387,10 +422,41 @@ export function PracticeScreen() {
     void startListening();
   }
 
+  async function replayReply(audioUrl: string) {
+    if (state.lifecycle !== "idle" && state.lifecycle !== "speaking") {
+      return;
+    }
+
+    const audio = playbackRef.current;
+    const turnId = state.activeTurnId;
+
+    if (audio === null) {
+      await playError(turnId);
+      return;
+    }
+
+    const playbackRun = ++playbackRunRef.current;
+    audio.pause();
+    audio.src = audioUrl;
+    audio.currentTime = 0;
+    dispatch({ turnId, type: "replay" });
+
+    try {
+      await audio.play();
+    } catch {
+      if (
+        playbackRunRef.current === playbackRun &&
+        turnCounterRef.current === turnId
+      ) {
+        await playError(turnId);
+      }
+    }
+  }
+
   return (
     <main className="bg-canvas mx-auto flex min-h-dvh w-full max-w-[42rem] flex-col">
       <PracticeHeader onStartOver={startOver} />
-      <Transcript state={state} />
+      <Transcript onReplay={replayReply} state={state} />
       <ControlZone
         level={level}
         onActivate={activateTalkControl}
@@ -440,287 +506,5 @@ function PracticeHeader({ onStartOver }: { onStartOver: () => void }) {
         Start over
       </button>
     </header>
-  );
-}
-
-function Transcript({ state }: { state: PracticeState }) {
-  const notice =
-    state.microphone === "needed"
-      ? "I need to hear you to practice. Tap Allow, then choose Allow again when your phone asks."
-      : state.microphone === "blocked"
-        ? "This page can't use the microphone yet. A grown-up can switch it back on in your browser's settings for this site."
-        : null;
-  const error =
-    state.lifecycle === "error"
-      ? state.errorCount > 1
-        ? ERROR_RESPONSES.repeated
-        : ERROR_RESPONSES.first
-      : null;
-  const isEmpty =
-    state.history.length === 0 &&
-    state.interimText === "" &&
-    notice === null &&
-    error === null;
-
-  if (isEmpty) {
-    return (
-      <section
-        aria-labelledby="empty-transcript-title"
-        className="gap-xs px-lg max-[359px]:px-md flex min-h-[120px] flex-1 flex-col justify-center overflow-y-auto pb-[8%]"
-      >
-        <h2
-          id="empty-transcript-title"
-          className="font-reading text-section-title"
-        >
-          Ready when you are
-        </h2>
-        <p className="text-body text-ink-muted">
-          Tap Talk and say what you&apos;d like to practice.
-        </p>
-      </section>
-    );
-  }
-
-  return (
-    <section className="px-lg py-xl max-[359px]:px-md min-h-[120px] flex-1 overflow-y-auto">
-      <ol aria-live="off" className="gap-lg flex flex-col" role="log">
-        {state.history.map((entry, index) => (
-          <li key={`${index}-${entry.role}`} className="gap-xxs flex flex-col">
-            <span className="text-meta text-ink-muted">
-              {entry.role === "user" ? "You" : "AI reply"}
-            </span>
-            <p className="font-reading text-transcript text-ink">
-              {entry.text}
-            </p>
-          </li>
-        ))}
-        {state.lifecycle === "listening" && state.interimText !== "" ? (
-          <li className="gap-xxs flex flex-col">
-            <span className="text-meta text-ink-muted">You</span>
-            <p className="font-reading text-transcript text-ink">
-              {state.interimText}
-            </p>
-          </li>
-        ) : null}
-      </ol>
-      {notice !== null ? (
-        <p className="mt-lg text-body text-ink">{notice}</p>
-      ) : null}
-      {error !== null ? (
-        <p
-          className="bg-error-bg text-error-ink rounded-notice mt-lg p-md text-body"
-          role="alert"
-        >
-          {error}
-        </p>
-      ) : null}
-    </section>
-  );
-}
-
-function ControlZone({
-  level,
-  onActivate,
-  state,
-  stillThinking,
-}: {
-  level: number;
-  onActivate: () => void;
-  state: PracticeState;
-  stillThinking: boolean;
-}) {
-  const presentation = controlPresentation(state, stillThinking);
-
-  return (
-    <section
-      aria-label="Talk controls"
-      className="bg-plinth px-lg pt-md max-[359px]:px-md flex flex-col items-center pb-[calc(var(--spacing-md)+env(safe-area-inset-bottom))]"
-    >
-      <div
-        aria-atomic="true"
-        aria-live="polite"
-        className={`mb-md gap-xs text-body inline-flex min-h-8 items-center ${presentation.statusClass}`}
-      >
-        <StatusIcon
-          lifecycle={state.lifecycle}
-          level={level}
-          microphone={state.microphone}
-        />
-        {presentation.status}
-      </div>
-      <button
-        type="button"
-        aria-label={
-          state.microphone === "needed"
-            ? "Allow microphone"
-            : presentation.action
-        }
-        className={`bg-primary p-md text-button text-on-primary after:border-primary-active focus-visible:ring-focus focus-visible:ring-offset-canvas relative inline-flex min-h-[104px] min-w-[104px] touch-manipulation flex-col items-center justify-center rounded-full transition-transform duration-100 after:pointer-events-none after:absolute after:inset-[6px] after:rounded-full after:border-[1.5px] focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 ${
-          state.lifecycle === "listening"
-            ? "before:border-primary before:absolute before:-inset-2 before:rounded-full before:border"
-            : ""
-        }`}
-        onClick={onActivate}
-      >
-        {state.lifecycle === "listening" ? <StopIcon /> : <MicrophoneIcon />}
-        <span className="mt-xxs">{presentation.action}</span>
-      </button>
-    </section>
-  );
-}
-
-function controlPresentation(state: PracticeState, stillThinking: boolean) {
-  if (state.lifecycle === "error") {
-    return {
-      action: "Try again",
-      status: "Something went wrong",
-      statusClass: "text-error-ink",
-    };
-  }
-  if (state.lifecycle === "listening") {
-    return {
-      action: "Done",
-      status: "Listening",
-      statusClass: "text-ink-muted",
-    };
-  }
-  if (state.lifecycle === "thinking") {
-    return {
-      action: "Talk",
-      status: stillThinking ? "Still thinking" : "Thinking",
-      statusClass: "bg-thinking-bg text-thinking-ink rounded-full px-sm",
-    };
-  }
-  if (state.lifecycle === "speaking") {
-    return {
-      action: "Talk",
-      status: "Speaking",
-      statusClass: "bg-speaking-bg text-speaking-ink rounded-full px-sm",
-    };
-  }
-  if (state.microphone === "needed") {
-    return {
-      action: "Allow",
-      status: "Microphone needed",
-      statusClass: "text-ink",
-    };
-  }
-  if (state.microphone === "blocked") {
-    return {
-      action: "Try again",
-      status: "Microphone blocked",
-      statusClass: "text-ink",
-    };
-  }
-  return { action: "Talk", status: "Ready", statusClass: "text-ink-muted" };
-}
-
-function StatusIcon({
-  level,
-  lifecycle,
-  microphone,
-}: {
-  level: number;
-  lifecycle: VoiceLifecycle;
-  microphone: MicrophoneStatus;
-}) {
-  if (lifecycle === "listening") {
-    return <LevelMeter level={level} />;
-  }
-  if (lifecycle === "thinking") {
-    return <span aria-hidden="true">•••</span>;
-  }
-  if (lifecycle === "speaking") {
-    return <SpeakerIcon />;
-  }
-  if (lifecycle === "error") {
-    return <span aria-hidden="true">!</span>;
-  }
-  if (microphone !== "ready") {
-    return <MicrophoneIcon />;
-  }
-  return <ReadyIcon />;
-}
-
-function LevelMeter({ level }: { level: number }) {
-  const heights = [0.35, 0.7, 1, 0.55];
-
-  return (
-    <span
-      aria-hidden="true"
-      className="gap-xxs flex h-6 items-end motion-reduce:items-center"
-    >
-      {heights.map((weight, index) => (
-        <span
-          key={index}
-          className="bg-ink-muted w-0.5 rounded-full transition-[height] duration-100 motion-reduce:h-1! motion-reduce:transition-none"
-          style={{ height: `${4 + level * weight * 20}px` }}
-        />
-      ))}
-    </span>
-  );
-}
-
-function ReadyIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="size-6"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-    >
-      <circle cx="12" cy="12" r="7" />
-    </svg>
-  );
-}
-
-function MicrophoneIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="size-6"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.5"
-    >
-      <rect x="9" y="3" width="6" height="11" rx="3" />
-      <path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v4M9 21h6" />
-    </svg>
-  );
-}
-
-function StopIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="size-6"
-      fill="currentColor"
-    >
-      <rect x="6" y="6" width="12" height="12" rx="1" />
-    </svg>
-  );
-}
-
-function SpeakerIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="size-6"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.5"
-    >
-      <path d="M5 10v4h4l5 4V6l-5 4H5Z" />
-      <path d="M17 9a4 4 0 0 1 0 6" />
-    </svg>
   );
 }

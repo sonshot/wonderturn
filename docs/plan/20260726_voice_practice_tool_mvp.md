@@ -47,8 +47,8 @@ parses the bounded request, calls the one text seam, pairs fixed outcomes with
 bundled audio, and fails closed into the content-free error contract. Its
 offline route tests and production build pass. The interactive voice screen is
 code-complete locally: its explicit lifecycle reducer, browser recognition,
-speech-activity cue, atomic playback, barge-in, bounded sitting, stale-turn rejection,
-permission states, and client-side fixed failure audio pass offline
+speech-activity cue, atomic playback, whole-reply replay, barge-in, bounded
+sitting, stale-turn rejection, permission states, and client-side fixed failure audio pass offline
 verification and a 320px layout check. Direct localhost Google SSO reaches
 this screen and survives a Safari reload (D61). Phase 2 still needs its manual
 phone outcome and delayed-stale-result checks before exit.
@@ -240,6 +240,15 @@ leave their numbers behind rather than causing a renumber (D24).
   bounded too: the client fetch carries `AbortSignal.timeout(15_000)`, and
   the timeout resolves to P7's one failure shape, so the thinking cue cannot
   run forever.
+- **P21 — Retained replies keep exact replay audio.** Each assistant history
+  entry holds a client-only object URL for the validated MP3 returned with that
+  turn. The request boundary strips this local identifier and audio URL before
+  sending history. One shared audio element plays both new and replayed clips;
+  replay never synthesizes again or changes conversation history. Object URLs
+  are revoked when their matching entry leaves P20's 20-entry window, on
+  `Start over`, and on unmount. This bounds typical compressed replay audio to
+  roughly ten AI replies rather than retaining base64 strings or decoded audio
+  buffers for the sitting.
 
 ## Phases
 
@@ -424,6 +433,13 @@ on-screen copy come from `DESIGN.md` and are not restated here (D36). Barge-in
 stops playback and starts listening. A client turn identifier enforces P1;
 request cancellation only saves work.
 
+Every assistant entry retained by P20 also retains P21's exact compressed
+audio. In idle and speaking, tapping its whole transcript text stops the
+current clip and re-enters `speaking` with the selected clip from the start.
+It adds no turn and makes no request. Replay is unavailable during listening,
+thinking, and error so it cannot introduce a sixth mixed lifecycle or silently
+discard active work.
+
 Target timeline, to be checked against Phase 0b measurements:
 
 | | |
@@ -440,7 +456,9 @@ If this misses, the clearing check is the critical path and the first lever
 **Exit:** every outcome kind is reachable by hand on a phone, including a
 forced clearing rejection that discards completed TTS. With a deliberately
 delayed turn, starting over and starting a new turn both prevent the stale
-text and audio from appearing.
+text and audio from appearing. The real-device script also replays both a
+newest and an older retained response, proves that only one clip plays, and
+proves `Start over` removes their replay targets.
 
 ### Phase 3 — Safety verification
 
@@ -1255,3 +1273,13 @@ Append-only. Stable IDs; reversals say what they supersede.
   result event, matching the specification's continuous-recognition example.
   Only when the browser ends and the client explicitly restarts recognition
   does the latest intelligible text become a completed-session prefix.
+- **D66 (2026-08-08) — Every retained AI reply replays its exact original
+  audio on tap.** Replay is a presentation action, not a conversation turn:
+  it neither mutates submitted history nor calls TTS again. The client converts
+  validated base64 once to a compressed Blob URL, uses one shared audio
+  element, and revokes the URL with the bounded transcript entry, `Start over`,
+  or unmount. The whole reply is the touch target, with persistent visible and
+  accessible action copy while replay is available. Replay uses the existing
+  `speaking` state and is unavailable during listening, thinking, and error;
+  adding a mixed playback state or letting a transcript tap discard active
+  work was rejected.

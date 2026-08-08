@@ -163,6 +163,10 @@ appear to disagree about appearance, `DESIGN.md` is right.
 - **Both sides are visible as well as audible.** The person's words as
   they're recognized, and the reply once cleared — though nobody has to read
   either. This doesn't change the no-storage stance (see Security).
+- **A completed reply can be heard again.** Tapping any AI reply still visible
+  in the current sitting replays that reply's exact original audio. Replay is
+  local: it forms no new conversation turn, calls no provider, and retains
+  nothing across `Start over` or reload.
 - **Starting over is one tap and no questions.** It clears the conversation
   and stays signed in: the in-app equivalent of a reload, since a
   conversation is disposable by design. There is no sign-out in v1, so a
@@ -224,7 +228,13 @@ appear to disagree about appearance, `DESIGN.md` is right.
    short. Tapping while a reply is still being worked out does the same
    thing, abandoning that turn for a new one — there is no state in which
    the button means something else.
-9. **Something goes wrong:** Any pipeline failure, including the safety
+9. **Hear a reply again:** With the tool ready, or while a reply is already
+   playing, tap any visible `AI reply` → the current audio stops and that
+   reply's exact original audio starts from the beginning. The status uses the
+   ordinary `Speaking` presentation and `Talk` still interrupts into
+   listening. Listening, thinking, and error keep transcript text static so a
+   reply tap cannot silently discard active work or hide a failure.
+10. **Something goes wrong:** Any pipeline failure, including the safety
    check being unavailable or the spend ceiling being hit (see Security) →
    one clear "something went wrong, try again," plus the grown-up nudge if
    it persists. No half-finished, unchecked, or guessed replies. A reply is
@@ -343,6 +353,11 @@ Shipped when all of these hold, each with evidence:
     reached, no new provider work begins and the person sees the ordinary
     failure state. The plan pins the ceiling's scope, values, window, and
     concurrency semantics.
+13. **Completed replies replay exactly.** Every AI reply retained in the
+    visible sitting can replay its original cleared audio from the beginning,
+    including after another reply has arrived. Replay creates no transcript
+    entry or provider request, only one clip plays at a time, and `Start over`
+    makes every old reply and clip unavailable.
 
 Left for the plan to pin: the session window and how soon removal from the
 allowlist bites; the reply-length bound that keeps a

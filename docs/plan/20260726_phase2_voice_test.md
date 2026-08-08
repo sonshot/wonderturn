@@ -161,6 +161,28 @@ settings changes directly.
 | No duplicate text or audio |  |  |
 | Start over recovered |  |  |
 
+## I. Replay retained replies
+
+1. Complete two ordinary turns with visibly different replies and let the
+   second finish playing.
+2. Confirm both `AI reply` rows show a speaker glyph and `Tap to hear again`.
+3. Tap the older reply text and confirm its exact original audio starts from
+   the beginning, the status says `Speaking`, and no transcript row is added.
+4. Before it finishes, tap the newest reply. Confirm the older clip stops and
+   only the newest clip plays from the beginning.
+5. Tap `Talk` during replay and confirm playback stops and listening begins.
+6. Complete the turn or tap `Start over`, then tap `Start over` and confirm the
+   old transcript and every replay target are gone.
+
+| Check | Result | Notes |
+| --- | --- | --- |
+| Newest and older replies were replayable |  |  |
+| Replay matched original audio |  |  |
+| Replay added no transcript turn |  |  |
+| Switching replies never overlapped audio |  |  |
+| Talk interrupted replay into listening |  |  |
+| Start over removed replay targets |  |  |
+
 ## Engineering-assisted checks
 
 Do not try to manufacture these through sensitive or dangerous voice prompts.
@@ -179,7 +201,7 @@ ordinary, nudge, and disclosure rows above can be run now.
 
 ## Device summary
 
-| Device/browser | A | B | C | D | E | F | G | H | Notes |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| iPhone / Safari |  |  |  |  |  |  |  |  |  |
-| Android / Chrome |  |  |  |  |  |  |  |  |  |
+| Device/browser | A | B | C | D | E | F | G | H | I | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| iPhone / Safari |  |  |  |  |  |  |  |  |  |  |
+| Android / Chrome |  |  |  |  |  |  |  |  |  |  |

@@ -5,10 +5,23 @@ export type VoiceLifecycle =
 
 export type MicrophoneStatus = "blocked" | "needed" | "ready";
 
+export type PracticeHistoryEntry =
+  | {
+      role: "user";
+      text: string;
+      turnId: number;
+    }
+  | {
+      audioUrl: string;
+      role: "assistant";
+      text: string;
+      turnId: number;
+    };
+
 export type PracticeState = {
   activeTurnId: number;
   errorCount: number;
-  history: TurnRequest["history"];
+  history: PracticeHistoryEntry[];
   interimText: string;
   lifecycle: VoiceLifecycle;
   microphone: MicrophoneStatus;
@@ -19,7 +32,8 @@ export type PracticeAction =
   | { turnId: number; type: "interrupt" }
   | { text: string; turnId: number; type: "interim" }
   | { said: string; turnId: number; type: "think" }
-  | { text: string; turnId: number; type: "receive" }
+  | { audioUrl: string; text: string; turnId: number; type: "receive" }
+  | { turnId: number; type: "replay" }
   | { turnId: number; type: "idle" }
   | { turnId: number; type: "fail" }
   | {
@@ -47,6 +61,12 @@ function appendHistory(
   entry: PracticeState["history"][number],
 ) {
   return [...history, entry].slice(-20);
+}
+
+export function toTurnHistory(
+  history: PracticeState["history"],
+): TurnRequest["history"] {
+  return history.map(({ role, text }) => ({ role, text }));
 }
 
 export function practiceReducer(
@@ -109,11 +129,20 @@ export function practiceReducer(
       return {
         ...state,
         history: appendHistory(state.history, {
+          audioUrl: action.audioUrl,
           role: "assistant",
           text: action.text,
+          turnId: action.turnId,
         }),
         interimText: "",
         lifecycle: "speaking",
+      };
+    case "replay":
+      return {
+        ...state,
+        interimText: "",
+        lifecycle: "speaking",
+        microphone: "ready",
       };
     case "think": {
       const said = action.said.trim();
@@ -123,7 +152,11 @@ export function practiceReducer(
         history:
           said === ""
             ? state.history
-            : appendHistory(state.history, { role: "user", text: said }),
+            : appendHistory(state.history, {
+                role: "user",
+                text: said,
+                turnId: action.turnId,
+              }),
         interimText: "",
         lifecycle: "thinking",
       };

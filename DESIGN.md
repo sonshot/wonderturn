@@ -366,6 +366,15 @@ inserted once, in full.
 Redirects, disclosures, nudges, and ordinary replies share identical visual
 styling. The interface does not expose or dramatize safety machinery.
 
+When the lifecycle is idle or speaking, every retained `AI reply` is a native
+full-width replay button styled as the same plain transcript text. It gains no
+surface, border, bubble, or permanent decoration. Its meta row remains
+`AI reply` and adds a small speaker glyph paired with the visible instruction
+`Tap to hear again`. The whole reply text is the target; tapping it restarts
+that reply's exact original audio. While listening, thinking, or showing an
+error, the reply is static text and the replay instruction is absent. A control
+must not appear actionable when replay would be unavailable.
+
 ### State status
 
 Place a short icon-and-text status immediately above the talk control:
@@ -623,6 +632,11 @@ An interruption returns calmly to idle. It does not produce a warning,
 completion badge, or celebratory cue. Starting over clears the transcript
 immediately and preserves the signed-in shell.
 
+Replaying a retained reply uses the ordinary speaking state. Starting a replay
+stops any clip already playing, begins the selected clip from the start, and
+does not add, reorder, or announce a transcript turn. The talk control retains
+its speaking-state meaning: it stops replay and begins listening.
+
 A recording that reaches the plan's length limit stops itself through the
 ordinary `Done` path: listening ends, thinking begins, and no notice, warning,
 or explanation appears. It is not a state and it is not an error.
@@ -663,6 +677,10 @@ Target WCAG 2.2 AA.
   `height` has introduced a defect.
 - Every control works with Tab, Enter, and Space and has a persistent
   three-pixel focus ring.
+- A replayable AI reply has a minimum 48px target and an accessible name of
+  `Hear AI reply again: <reply text>`. Its visible `Tap to hear again` copy
+  prevents the speaker glyph, pointer cursor, or button semantics from being
+  the only indication that the transcript text is actionable.
 - Support 200% text zoom and reflow at 320 CSS pixels without clipping or
   horizontal page scrolling.
 - Tolerate user-overridden line height, paragraph spacing, letter spacing,
