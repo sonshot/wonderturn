@@ -30,6 +30,12 @@ guarantees are hard launch requirements (see Security).
    often it's used.
    - No streaks, "come back" nudges, dark patterns, reward loops, or hook
      questions asked just to extend a turn.
+   - Intelligible uncertainty is part of conversation practice, not empty
+     input. When the person does not know what to say or cannot yet express
+     the thought clearly, the tool gives one low-pressure next step: a few
+     concrete choices or one necessary clarification that can be answered in
+     a few words. It encourages without generic praise, inventing meaning, or
+     turning the prompt into engagement pressure.
    - Honest about its limits: it never implies it remembers an earlier
      conversation, has an inner life or a relationship with the person, or
      is more certain than it is. (It follows the thread within a sitting;
@@ -339,8 +345,10 @@ Shipped when all of these hold, each with evidence:
 6. **The register fits both ends.** A fixed suite of asks spanning an
    8-year-old and an English-practicing adult, judged on vocabulary,
    length, absence of condescension or hook questions, and family topics
-   deferred without moralizing. Re-runnable after any persona change,
-   confirmed by real sessions with the user's own kids.
+   deferred without moralizing. It also includes intelligible but stuck or
+   unclear turns, where a useful response offers a low-pressure, concrete next
+   step instead of treating the person as unheard. Re-runnable after any
+   persona change, confirmed by real sessions with the user's own kids.
 7. **Nothing is retained by us.** The deployed platform's logs hold no
    transcript text or audio, checked after a real conversation rather than
    inferred from code. A reload leaves nothing behind. A claim about this

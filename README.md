@@ -5,9 +5,9 @@ conversation. Tap to talk, see the transcript, and hear a short AI reply.
 It is designed as a practice instrument—not a friend, companion, game, or
 engagement product.
 
-The MVP has its access gate, live OpenAI transcription, turn pipeline, and
-voice screen in place. Real-device outcome checks and later safety verification
-remain before the MVP is complete.
+The MVP has its access gate, live OpenAI transcription, turn pipeline, voice
+screen, and model-backed safety suite in place. Real-device outcome checks,
+prompt calibration, and production hardening remain before it is complete.
 
 ## Local development
 
@@ -129,8 +129,9 @@ pnpm build
 ```
 
 `verify` runs formatting, linting, strict TypeScript, and offline Vitest
-checks. Model-backed checks are deliberately separate and will be added in
-Phase 3.
+checks. Model-backed checks are deliberately separate: `pnpm test:live` runs
+the Phase 3a outcome fixtures, and `pnpm register` prints the qualitative
+register for operator review. Both use the network and cost money.
 
 ## Project documents
 
@@ -141,5 +142,5 @@ Phase 3.
   canonical, undated, and shared by every feature.
 - [Implementation plan](docs/plan/20260726_voice_practice_tool_mvp.md) —
   stack, phases, pinned semantics, verification, and decision log.
-- [Phase 0 spike](docs/plan/20260726_phase0_spike.md) — current measurement
-  findings and open device checks.
+- [Phase 0 spike](docs/plan/20260726_phase0_spike.md) — historical measurement
+  findings and device evidence.

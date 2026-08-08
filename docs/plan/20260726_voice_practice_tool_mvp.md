@@ -59,6 +59,14 @@ fixed viewport controls, and a prominent latest-turn repair action (D69).
 Phase 2 still needs its manual phone outcome, recording-state, repair, and
 delayed-stale-result checks before exit.
 
+Phase 3a is complete locally (D70–D72). Its 25 model-backed outcome fixtures
+pass through the production text seam, the thirteen-ask register baseline is
+committed, and the tracked `spike/` harness is removed. The production prompts
+and fixed copy did not change. Phase 3b is next: a separate prompt-calibration
+slice for the observed stuck/unclear, family-deferral, and memory-limitation
+register failures. Local model-latency benchmarking is deliberately absent
+(D72).
+
 ## Scope
 
 This plan owns *how* the MVP gets built and verified. The feature doc owns
@@ -101,7 +109,7 @@ They rest on one afternoon of measurement recorded in
 [`20260726_phase0_spike.md`](20260726_phase0_spike.md) — eight round-robin
 rounds and an eight-prompt register read, which is enough to start building
 and nowhere near enough to settle anything. They are expected to be revisited
-once Phase 3's fixtures and register asks exist, because that is the first
+once Phase 3a's fixtures and register asks exist, because that is the first
 point where a swap can be judged on evidence instead of on a smoke test. The
 Gateway is what keeps this cheap: each row is a model string, so revisiting
 is a config change and a re-run, not a refactor. Treat a row that has
@@ -286,9 +294,9 @@ Scaffold the durable project before feature code:
   - `typecheck` — `tsc --noEmit`.
   - `test` — Vitest in non-watch mode, offline tests only.
   - `verify` — `format:check`, `lint`, `typecheck`, and `test`, in that order.
-  - `test:live` — the model-backed outcome fixtures, added in Phase 3. Never
+  - `test:live` — the model-backed outcome fixtures, added in Phase 3a. Never
     part of `verify`, never run by a hook or by CI.
-  - `register` — the register asks, dumped for reading, added in Phase 3.
+  - `register` — the register asks, dumped for reading, added in Phase 3a.
     Same exclusions.
 - A Husky pre-commit hook that runs `pnpm lint`, `pnpm typecheck`, and
   `pnpm test`. All three are offline and fast enough to survive daily use,
@@ -477,7 +485,18 @@ delayed turn, starting over, starting a new turn, and saying the latest turn
 again prevent stale text and audio from appearing. Repair preserves earlier
 exchanges while removing the discarded wording from future model history.
 
-### Phase 3 — Safety verification
+### Phase 3a — Safety verification and current-prompt baseline
+
+Phase 3a is **complete** (D71). `pnpm test:live` passes 25/25 fixtures,
+`pnpm register` prints all thirteen asks, the current-prompt evidence is
+committed under `docs/eval/`, and the tracked Phase 0 harness is gone.
+
+This phase deliberately freezes `INPUT_CLASSIFIER_PROMPT`, `REPLY_PROMPT`, and
+all fixed response copy. Its job is to make the existing behaviour repeatable
+before feedback changes it. The register therefore includes labelled baseline
+probes for an intelligible speaker who does not know what to talk about or has
+not expressed a complete thought; those rows are printed for inspection and
+are not prose assertions.
 
 One Vitest file of model-backed outcome fixtures calling `runTextTurn`
 directly through P13, with no browser, microphone, transcription, TTS,
@@ -526,15 +545,38 @@ asks spanning curiosity, a sensitive topic, family topics, and adult English
 practice. `spike/` is deleted in this phase once they and the classifier
 prompt are absorbed, leaving the suite as the single source of truth.
 
-If any later work compares model latency, it must interleave providers and
-randomize order per round, the way `spike/bench-rr.mjs` did. Measuring one
-provider's calls in a block and then the next confounds provider with
-time-of-run, and produced two rankings during the spike that had to be
-retracted.
+The Phase 0 latency harness is not migrated. Local measurements include the
+operator's network path and do not represent the deployed Vercel region or the
+end-to-end phone experience. Phase 4's deployed ten-turn voice measurement is
+the latency evidence for this product; a future model comparison must run on
+that deployed path rather than reintroducing a local benchmark command (D72).
 
 **Exit:** the offline contract tests pass in `verify`, `pnpm test:live`
 produces the expected `kind` for every fixture, and `spike/` no longer
 exists.
+
+### Phase 3b — Child scaffolding calibration
+
+Start from Phase 3a's committed register output and the real-user feedback
+captured in the feature doc. Change the smallest production boundary that
+separates intelligible uncertainty from genuinely content-free recognition,
+then tune the reply persona so a child who is stuck gets brief encouragement
+and two or three concrete ways forward. A necessary clarifying question is
+allowed; a question whose only purpose is to prolong the exchange is not.
+The Phase 3a baseline's generic redirects for the faith-family deferral and
+cross-session-memory asks are register failures in this slice too; investigate
+whether generation or clearing owns each failure before changing that boundary.
+
+Extend the live outcome fixtures when classifier semantics change, and extend
+the register probes for prose quality without adding a model judge. Re-run
+`pnpm test:live` after every prompt change and read `pnpm register` side by
+side with the Phase 3a baseline. If fixed nudge copy changes, regenerate and
+re-approve its bundled audio and manifest in the same slice.
+
+**Exit:** the safety fixtures still pass, the operator accepts the stuck and
+unclear register rows as concrete, encouraging, age-appropriate next steps,
+and the feature doc's updated register promise has evidence ready for Phase 5
+sessions with the kids.
 
 ### Phase 4 — Production hardening
 
@@ -560,7 +602,7 @@ induced failure reaches the phone.
 ### Phase 5 — Register calibration
 
 Real sessions with the kids. Tune the persona by reading `pnpm register`
-output between sessions; re-run the Phase 3 `kind` fixtures after each change
+output between sessions; re-run the Phase 3a `kind` fixtures after each change
 as a safety regression guard, not as a register signal — they assert on
 outcome kind and never on prose, so they cannot tell you whether a reply
 talks down to an 8-year-old. Expect several passes.
@@ -580,16 +622,16 @@ Each feature-doc acceptance outcome, with where it is proven.
 | Outcome | Verified by | Phase |
 | --- | --- | --- |
 | 1. Access is closed | Real non-approved account denied; approved session survives a restart; removing an authenticated account denies its next request after the env update is deployed | 1, 4 |
-| 2. Nothing unchecked reaches the person | `test:live` adversarial fixtures plus injected known-bad candidates against `runTextTurn`; offline commit-gate contracts | 3 |
-| 3. Disclosures land | `test:live` disclosure fixtures incl. precedence, short phrases, and false positives; bundled text/audio integration check | 3 |
-| 4. Failing closed works | Offline Vitest forces input classifier, clearing check, and ordinary TTS unavailable separately | 3 |
+| 2. Nothing unchecked reaches the person | `test:live` adversarial fixtures plus injected known-bad candidates against `runTextTurn`; offline commit-gate contracts | 3a |
+| 3. Disclosures land | `test:live` disclosure fixtures incl. precedence, short phrases, and false positives; bundled text/audio integration check | 3a |
+| 4. Failing closed works | Offline Vitest forces input classifier, clearing check, and ordinary TTS unavailable separately | 3a |
 | 5. Feels like a conversation | Ten-turn voice script on both phones, against the bar as written; median at risk pending the Vercel timing measurement (D35) | 4 |
-| 6. Register fits both ends | `pnpm register` asks read by the operator after any persona change, plus real sessions with the kids | 3, 5 |
+| 6. Register fits both ends | `pnpm register` asks read by the operator after any persona change, including stuck/unclear probes, plus real sessions with the kids | 3a, 3b, 5 |
 | 7. Nothing is retained by us | Vercel + Gateway log inspection after a real conversation | 4 |
 | 8. Awkward moments are gentle | Manual: nudge, interruption, barge-in; delayed stale results after start-over/new turn | 2 |
 | 9. Works on real devices | Both phones, incl. permission denial and rapid tapping | 0b, 4 |
 | 10. Breakage is visible | Induced failure reaches the alert channel | 4 |
-| 11. Doesn't pretend to remember | The "what do you remember from last time?" ask in `pnpm register` | 3 |
+| 11. Doesn't pretend to remember | The "what do you remember from last time?" ask in `pnpm register` | 3a |
 | 12. Spend ceiling holds | Tiny Gateway budget: crossing request may finish; next request rejected before new provider work | 4 |
 | 13. Mishearing is recoverable | Reducer contract plus manual repair during thinking, speaking, and idle on both phones; delayed discarded result never surfaces | 2, 4 |
 | 14. Recording state is truthful and fixed | Reducer and silence-detector contracts plus both-phone checks for setup cue, recording treatment, auto-stop, reduced motion, and long transcript scrolling with controls retained | 2, 4 |
@@ -1369,3 +1411,48 @@ Append-only. Stable IDs; reversals say what they supersede.
   bordered `That's not what I said` action. These observed usability failures
   justify the functional gradient, pulse, recording-state color, and extra
   lifecycle states that the earlier calm-recorder design rejected.
+- **D70 (2026-08-08) — Current-prompt verification precedes child-scaffolding
+  calibration.** Real use found that an intelligible child who says they do
+  not know what to discuss, or has not expressed a thought clearly, receives
+  too little encouragement or direction. The current classifier explicitly
+  routes `i dont know` to the fixed unheard-input nudge, so this is an observed
+  contract failure rather than a request for generally friendlier prose.
+
+  Phase 3 is split without weakening its safety exit. Phase 3a migrates the
+  existing safety fixtures and register asks, adds labelled feedback probes,
+  runs them against the production seam with the current prompts unchanged,
+  and deletes the absorbed spike. Phase 3b then updates classifier semantics
+  and reply prompting against that recorded baseline. It keeps genuinely
+  empty or inaudible recognition on the fixed nudge path, uses no model judge,
+  and does not add engagement hooks or generic praise. This changes durable
+  intent, so the feature doc's product principle and register outcome change
+  alongside the plan before prompt implementation begins.
+- **D71 (2026-08-08) — The current-prompt baseline is evidence, not a prompt
+  tuning pass. Extends D70.** Phase 3a's first durable run passes all 25
+  outcome fixtures after replacing one meta-labelled safe candidate with a
+  natural safe sentence; the production checker was unchanged. Its register
+  pass reproduces the user feedback on all four stuck or unclear probes: each
+  lands on the fixed unheard-input nudge, including the explicit request
+  "give me something easy to talk about." It also exposes two older acceptance
+  misses: the faith-family ask and the cross-session-memory ask both end in the
+  generic redirect rather than a natural family deferral or an honest memory
+  limitation.
+
+  These observations are committed in
+  [`docs/eval/20260808_phase3a_current_prompt.md`](../eval/20260808_phase3a_current_prompt.md).
+  Phase 3a does not change a production prompt to make the baseline prettier.
+  Phase 3b owns diagnosis and correction of all three register-failure groups,
+  with the 25 discrete safety outcomes rerun after every change.
+- **D72 (2026-08-08) — Local model-latency benchmarking is removed.
+  Supersedes D30's requirement to migrate the interleaved latency method.**
+  The Phase 0 scripts were useful for choosing an initial direction, but their
+  local network path does not represent Vercel's deployed region, the phone's
+  transcription path, server orchestration, synthesis, or playback. Keeping a
+  polished local command would make a non-product measurement look
+  authoritative.
+
+  Phase 3a therefore migrates only the labelled outcome fixtures and register
+  asks. The old measurements and their methodological caveats remain as
+  historical evidence in the Phase 0 findings document. Product latency is
+  verified only through Phase 4's deployed ten-turn voice script on both
+  target phones; future model comparisons must use that same deployed path.

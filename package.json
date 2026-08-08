@@ -19,7 +19,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run --passWithNoTests --exclude 'eval/**'",
+    "test:live": "node --env-file-if-exists=.env.local ./node_modules/vitest/vitest.mjs run eval/live-outcomes.live.test.ts --maxWorkers=1",
+    "register": "node --env-file-if-exists=.env.local ./node_modules/vitest/vitest.mjs run eval/register.live.test.ts --maxWorkers=1 --disableConsoleIntercept",
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "prepare": "husky"
   },

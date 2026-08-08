@@ -120,8 +120,11 @@ production figures. Two Gateway keys were used; the first was free tier and
 rate-limited on larger speech models, so all reported figures come from the
 funded key.
 
-Scripts live in `spike/` and read `AI_GATEWAY_API_KEY` and
-`ELEVENLABS_API_KEY` from an untracked `spike/.env.local`.
+The throwaway scripts lived in `spike/` during measurement. Phase 3a absorbed
+their labelled cases and register asks into `eval/`, then removed the tracked
+harness per D30 and D72. The latency scripts were not migrated because a local
+network path is not representative of the deployed product. This document
+remains the historical evidence for the findings below.
 
 ## Reply models — round-robin, 8 rounds, randomized order
 
