@@ -61,6 +61,7 @@ export async function judgeRegisterResponse(
     prompt: JSON.stringify({
       assistantResponse: response,
       conversationHistory: entry.history ?? [],
+      referenceFacts: entry.referenceFacts ?? [],
       rubric,
       speakerInput: entry.prompt,
       tag: entry.tag,

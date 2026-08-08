@@ -19,6 +19,10 @@ describe("register case IDs", () => {
       "REG-12",
       "REG-13",
       "REG-14",
+      "REG-15",
+      "REG-16",
+      "REG-17",
+      "REG-18",
     ]);
   });
 

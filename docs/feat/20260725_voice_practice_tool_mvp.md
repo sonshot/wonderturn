@@ -37,6 +37,12 @@ guarantees are hard launch requirements (see Security).
      simpler rewording of its previous prompt that can be answered in a few
      words. It encourages without generic praise, inventing meaning, or turning
      the prompt into engagement pressure.
+   - Ordinary questions begin with the answer or a specific acknowledgment,
+     not a stock claim that the subject is fun, interesting, or surprising.
+     Obvious speech-recognition substitutions are resolved from the current
+     wording and sitting context; malformed transcription alone is not evidence
+     that the person is unsure or stuck. When the intended meaning is clear, the
+     tool answers it directly; when it remains ambiguous, it clarifies neutrally.
    - Honest about its limits: it never implies it remembers an earlier
      conversation, has an inner life or a relationship with the person, or
      is more certain than it is. (It follows the thread within a sitting;
@@ -348,8 +354,10 @@ Shipped when all of these hold, each with evidence:
    length, absence of condescension or hook questions, and family topics
    deferred without moralizing. It also includes intelligible but stuck or
    unclear turns, where a useful response offers a low-pressure, concrete next
-   step instead of treating the person as unheard. Re-runnable after any
-   persona change, confirmed by real sessions with the user's own kids.
+   step instead of treating the person as unheard. Transcript-regression rows
+   also check contextual speech repair, direct answers, factual consistency,
+   misunderstanding repair, and natural openings. Re-runnable after any persona
+   change, confirmed by real sessions with the user's own kids.
 7. **Nothing is retained by us.** The deployed platform's logs hold no
    transcript text or audio, checked after a real conversation rather than
    inferred from code. A reload leaves nothing behind. A claim about this

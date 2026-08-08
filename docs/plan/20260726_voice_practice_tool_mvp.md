@@ -561,10 +561,10 @@ exists.
 
 ### Phase 3b — Child scaffolding calibration
 
-Phase 3b is **complete locally** (D77–D79). The reviewed contract was committed at
-`aa1175a` before any prompt implementation. The final `pnpm test:live` run
-passes 30/30 outcome fixtures, and `pnpm register` passes all 13 active rows
-and all 81 applicable judge criteria while printing `REG-09` as deferred.
+Phase 3b is **reopened for transcript-regression calibration** (D80). The
+earlier D77–D79 evidence remains the completed first calibration slice. The new
+four-row contract and its unchanged-prompt red baseline are committed before
+the follow-up prompt implementation.
 
 Begin with a review gate: commit no prompt fix in the same slice that proposes
 the expected-behaviour cases and qualitative rubric. Run the cases against the
@@ -1589,3 +1589,21 @@ Append-only. Stable IDs; reversals say what they supersede.
   evidence. The final production seam passes 30/30 live outcome fixtures, all
   13 active register routes and 81/81 GPT-5.6 Luna criteria, plus 71/71 offline
   tests; `REG-09` remains deferred.
+- **D80 (2026-08-08) — A real shark conversation reopens Phase 3b with four
+  transcript-regression rows and a committed red gate. Extends D75, D77, and
+  D79.** The transcript exposes four independently useful turns: recovery of an
+  obvious speech-recognition substitution in a standalone question, a factual
+  follow-up, contextual recovery of another substitution without inventing
+  stuckness, and explicit repair after the assistant missed the question.
+  `REG-15` through `REG-18` preserve those inputs and current-sitting histories.
+
+  GPT-5.6 Luna grades direct answering, contextual speech repair, absence of
+  invented stuckness, misunderstanding repair, and factual accuracy against
+  supplied fish-eye reference facts. A shared natural-opening criterion also
+  makes generic subject-praise filler fail across the whole register. The
+  unchanged production prompt routes all four new rows to `reply` but the full
+  register fails 12 of 127 applicable criteria: seven failures in the new rows
+  and five failures in existing rows. The audited evidence is
+  [`docs/eval/20260808_shark_transcript_red_baseline.md`](../eval/20260808_shark_transcript_red_baseline.md).
+  Production prompt changes follow only in a later commit, and their wording
+  stays distinct from the held-out transcript inputs.
