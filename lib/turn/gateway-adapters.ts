@@ -12,7 +12,7 @@ import {
   type TextTurnDependencies,
 } from "./run-text-turn";
 
-const REPLY_MODEL = "google/gemini-3.5-flash-lite";
+const REPLY_MODEL = "openai/gpt-5.6-luna";
 const CHECK_MODEL = "anthropic/claude-haiku-4.5";
 const modelTextSchema = z.string().trim().min(1).max(4_000);
 const clearingVerdictSchema = z.enum(["SAFE", "UNSAFE"]);
@@ -71,7 +71,7 @@ const generateCandidate: TextTurnDependencies["generateCandidate"] = async ({
   const result = await generateText({
     abortSignal: signal,
     instructions: REPLY_PROMPT,
-    maxOutputTokens: 150,
+    maxOutputTokens: 300,
     maxRetries: 0,
     messages,
     model: gateway(REPLY_MODEL),

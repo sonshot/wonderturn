@@ -64,11 +64,11 @@ pass through the production text seam, the thirteen-ask register baseline is
 committed, and the tracked `spike/` harness is removed. Local model-latency
 benchmarking is deliberately absent (D72).
 
-Phase 3b is complete locally (D73–D79). Its expected-behaviour contract and red
-run were committed separately before prompt implementation. The final
-production seam passes all 30 model-backed outcome fixtures; all 13 active
-register rows pass routing and all 81 applicable criteria from the pinned
-GPT-5.6 Luna judge. `REG-09` remains skipped with the out-of-scope
+Phase 3b is complete locally (D73–D81). Both expected-behaviour expansions and
+their red runs were committed separately before prompt implementation. The
+final production seam passes all 30 model-backed outcome fixtures; all 17
+active register rows pass routing and all 127 applicable criteria from the
+pinned GPT-5.6 Sol judge. `REG-09` remains skipped with the out-of-scope
 cross-session-memory feature. The offline `verify` lane passes 71 tests.
 
 ## Scope
@@ -89,7 +89,7 @@ under Pinned semantics.
 | React optimization | React Compiler |
 | Speech in | OpenAI `gpt-realtime-whisper`, streamed as 24 kHz mono PCM through Vercel AI Gateway |
 | Models | Vercel AI Gateway via AI SDK |
-| Reply | `google/gemini-3.5-flash-lite` (D31) |
+| Reply | `openai/gpt-5.6-luna` (D81) |
 | Input classification + clearing checks | `anthropic/claude-haiku-4.5` (D32) |
 | Speech out | ElevenLabs, called directly (D33) |
 | Auth | Better Auth Google OAuth, stateless encrypted 180-day session, production-domain OAuth proxy for previews |
@@ -561,10 +561,11 @@ exists.
 
 ### Phase 3b — Child scaffolding calibration
 
-Phase 3b is **reopened for transcript-regression calibration** (D80). The
-earlier D77–D79 evidence remains the completed first calibration slice. The new
-four-row contract and its unchanged-prompt red baseline are committed before
-the follow-up prompt implementation.
+Phase 3b is **complete after transcript and judge calibration** (D80–D81).
+The earlier D77–D79 evidence remains the completed first calibration slice.
+The four-row contract and its unchanged-prompt red baseline were committed
+before the follow-up prompt implementation. A Claude Sonnet 5 judge trial was
+reviewed before GPT-5.6 Sol was pinned for the final register gate.
 
 Begin with a review gate: commit no prompt fix in the same slice that proposes
 the expected-behaviour cases and qualitative rubric. Run the cases against the
@@ -1607,3 +1608,46 @@ Append-only. Stable IDs; reversals say what they supersede.
   [`docs/eval/20260808_shark_transcript_red_baseline.md`](../eval/20260808_shark_transcript_red_baseline.md).
   Production prompt changes follow only in a later commit, and their wording
   stays distinct from the held-out transcript inputs.
+- **D81 (2026-08-08) — Transcript repair is substance-first, the reply model
+  moves to GPT-5.6 Luna, and GPT-5.6 Sol judges it. Supersedes D31 and partially
+  supersedes D75's separate-family rationale.** Generic subject-praise openings
+  were an explicit product-prompt requirement, not a model quirk: the default
+  route told the writer to call every subject interesting, surprising, or fun.
+  That requirement is deleted. Ordinary facts now begin with the answer; brief
+  reassurance is reserved for sensitive, family, advice, or expressed-stuck
+  contexts.
+
+  The writer resolves obvious current-sitting sound-alikes as clear speech,
+  repairs a missed question with a short apology and answer, and treats earlier
+  assistant facts as unverified context rather than truth. Broad-group behavior
+  is a high-priority route that states the usual behavior and stops, keeping
+  anatomy, protection, full or partial action, and behavior distinct. These general
+  instructions contain neither the held-out transcript wording nor its fish-eye
+  facts. Stuck replies begin with brief reassurance and offer concrete choices;
+  advice ends with one immediate action.
+
+  Repeated temperature-zero runs showed Gemini 3.5 Flash Lite and Gemini 3.5
+  Flash reversing factual polarity or conflating anatomy, protection, and
+  behavior. GPT-5.6 Luna produced the smallest stable factual answers, so the
+  Phase 3 register evidence now supersedes D31's pre-Phase-3 eight-prompt model
+  choice. A Claude Sonnet 5 judge trial passed only 121/127 criteria: it counted
+  a three-sentence reply as four, rejected explicitly permitted choices and
+  omissions, and once exceeded the reason schema. GPT-5.6 Sol followed those
+  observable rubric contracts and is pinned as the judge. Luna and Sol are
+  different models from the same provider line, weakening D75's independence
+  argument; supplied reference facts, the separate Haiku production clearing
+  check, and real Phase 5 sessions remain independent evidence. The historical
+  laptop round-robin measured Flash Lite at 1.48s median / 1.86s p90 and Luna
+  at 1.73s median / 2.01s p90: a 0.25s median and 0.15s p90 cost for Luna, with
+  one Flash Lite failure and no Luna failures in eight rounds. These figures
+  are directional only under D72; deployed device validation remains the Phase
+  4 latency gate.
+
+  The judge output budget is 2,000 tokens so structured verdicts remain
+  complete. Each register writer and judge call has a 30-second abort signal,
+  and the full live test has a five-minute ceiling, so an upstream stall fails
+  fast instead of holding the eval loop indefinitely. Judge reasons are
+  explicitly bounded to 240 characters beneath the 300-character schema limit.
+  The final evidence is 30/30 live outcome fixtures, 17/17 active register
+  routes and 127/127 GPT-5.6 Sol criteria, plus 71/71 offline tests; `REG-09`
+  remains deferred.

@@ -8,10 +8,10 @@ network and costs money.
   `runTextTurn` seam. It asserts only the discrete outcome kind.
 - `pnpm register` runs the fixed qualitative asks through that same seam and
   prints the final cleared response, expected outcome kind, objective word and
-  question markers, and a case-specific LLM judgment. GPT-5.6 Luna grades every
+  question markers, and a case-specific LLM judgment. GPT-5.6 Sol grades every
   applicable criterion with a structured pass/fail verdict and reason; the
   command fails when routing or any criterion fails. The judge is a different
-  model family from the Gemini reply model.
+  model from the GPT-5.6 Luna reply model.
 
 `pnpm test` validates the judge-result boundary offline, including exact
 coverage of every applicable criterion. It does not call a model.

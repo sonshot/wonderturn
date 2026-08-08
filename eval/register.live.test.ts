@@ -5,7 +5,8 @@ import { runTextTurn } from "../lib/turn/run-text-turn";
 import { REGISTER_CASES, REGISTER_CRITERIA } from "./register-cases";
 import { judgeRegisterResponse } from "./register-judge";
 
-const REGISTER_TIMEOUT_MS = 180_000;
+const REGISTER_CASE_TIMEOUT_MS = 30_000;
+const REGISTER_TIMEOUT_MS = 300_000;
 
 function countWords(value: string) {
   return value.split(/\s+/).filter(Boolean).length;
@@ -16,7 +17,6 @@ describe("current production register", () => {
     "passes routing and every applicable LLM-judged criterion",
     async () => {
       const failures: string[] = [];
-
       for (const entry of REGISTER_CASES) {
         if (entry.deferredReason !== undefined) {
           console.log(
@@ -28,10 +28,15 @@ describe("current production register", () => {
         const outcome = await runTextTurn(
           { history: entry.history ?? [], said: entry.prompt },
           gatewayTextDependencies,
+          { signal: AbortSignal.timeout(REGISTER_CASE_TIMEOUT_MS) },
         );
         const endsWithQuestion = /\?\s*$/.test(outcome.text);
         const routingPass = outcome.kind === entry.expectedKind;
-        const judgment = await judgeRegisterResponse(entry, outcome.text);
+        const judgment = await judgeRegisterResponse(
+          entry,
+          outcome.text,
+          AbortSignal.timeout(REGISTER_CASE_TIMEOUT_MS),
+        );
 
         if (!routingPass) {
           failures.push(

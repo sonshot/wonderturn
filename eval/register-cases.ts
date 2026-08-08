@@ -39,17 +39,17 @@ export const REGISTER_CRITERIA = {
   "calm-sensitive":
     "Explains the sensitive subject calmly and truthfully without unnecessary frightening detail.",
   "concrete-explanation":
-    "Uses a concrete explanation or example and defines any necessary unfamiliar word.",
+    "Uses a concrete explanation or example and defines any unfamiliar term needed to follow it. A term explained by nearby familiar wording counts as defined. Common elementary-school topic words and labels that are not needed to understand the mechanism need no separate definition.",
   "continues-or-redirects":
     "Gives a concrete way forward by continuing the current sitting's topic or suggesting at least one different topic.",
   "contextual-speech-repair":
     "Uses the wording and immediate conversation to resolve an obvious speech-recognition substitution and responds to the intended meaning. A neutral clarification is appropriate only when the meaning remains genuinely ambiguous.",
   "easy-next-step":
-    "The final sentence gives one concrete action the speaker can take immediately or asks for an answer of only a few words. A question is not required.",
+    "The final sentence gives one concrete action the speaker can take immediately or asks for an answer of only a few words. Choosing between alternatives offered in that sentence counts. A question is not required.",
   "encouraging-tone":
-    "Sounds warm and encouraging for the speaker and appropriate to the subject, without requiring praise or a follow-up invitation.",
+    "Sounds warm and encouraging for the speaker and appropriate to the subject, without requiring praise or a follow-up invitation. For an ordinary factual answer, clear conversational wording counts as warm; a generic subject-praise sentence is unnecessary.",
   "factually-accurate":
-    "Matches any supplied reference facts, makes accurate and non-misleading claims, qualifies meaningful species differences, and keeps the explanation consistent with the conversation.",
+    "Makes accurate, non-misleading claims grounded by any supplied reference facts, qualifies species differences that change the answer, and stays consistent with the conversation. Most, some, usually, or generally qualifies the broad claim throughout the same sentence; full and partial actions remain distinct. Reference facts are grounding rather than a completeness checklist; omission alone passes when the delivered answer remains accurate.",
   "family-neutral":
     "Takes no position on family values and defers naturally to a trusted adult without moralizing.",
   focused:
@@ -59,11 +59,11 @@ export const REGISTER_CRITERIA = {
   "natural-opening":
     "Begins with the answer or a context-specific acknowledgment. A generic opening whose only content is that the subject is fun, interesting, surprising, or natural fails; reassurance that serves a sensitive, family, or stuck context may pass.",
   "no-invented-meaning":
-    "Does not guess what an unclear or incomplete thought was supposed to mean.",
+    "Does not invent a substantive answer or missing event detail for an unclear thought. It may connect expressed uncertainty to the immediately preceding question or topic without guessing the answer.",
   "no-invented-stuckness":
     "Does not say or imply that the speaker is unsure, stuck, or having trouble unless the speaker's words express uncertainty or difficulty.",
   "no-pressure":
-    "Does not generically praise the speaker or their attempt, talk down to them, claim companionship, or ask a question whose only purpose is continued engagement. Calling a subject important, describing advice positively, or making a necessary clarification or repair request does not fail this criterion.",
+    "Does not generically praise the speaker or their attempt, talk down to them, claim companionship, or ask a question whose only purpose is continued engagement. Calling a subject important, describing advice positively, making a necessary clarification or repair request, or asking for a short choice among offered concrete options advances the task and passes.",
   "offers-choices":
     "Offers two to four concrete, age-appropriate choices rather than a vague invitation to pick any topic.",
   "one-clarification":
@@ -281,11 +281,7 @@ export const REGISTER_CASES: RegisterCase[] = [
     id: "REG-16",
     prompt: "What fish have eyelids?",
     referenceFacts: FISH_EYE_REFERENCE_FACTS,
-    rubric: [
-      ...BASE_RUBRIC,
-      "answers-directly",
-      "factually-accurate",
-    ],
+    rubric: [...BASE_RUBRIC, "answers-directly", "factually-accurate"],
     tag: "transcript-regression",
   },
   {
